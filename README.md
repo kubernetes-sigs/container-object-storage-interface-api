@@ -1,3 +1,6 @@
+# DRAFT ONLY : UNTIL KEP IS MERGED 
+  https://github.com/kubernetes/enhancements/pull/1383
+
 # Container Object Storage Specification
 
 Kubernetes specific Container Object Storage Interface (COSI) components.

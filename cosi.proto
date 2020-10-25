@@ -1,0 +1,185 @@
+syntax = "proto3";
+package cosi.v1alpha1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "cosi";
+
+extend google.protobuf.EnumOptions {
+    // Indicates that this enum is OPTIONAL and part of an experimental
+    // API that may be deprecated and eventually removed between minor
+    // releases.
+    bool alpha_enum = 1060;
+}
+
+extend google.protobuf.EnumValueOptions {
+    // Indicates that this enum value is OPTIONAL and part of an
+    // experimental API that may be deprecated and eventually removed
+    // between minor releases.
+    bool alpha_enum_value = 1060;
+}
+
+extend google.protobuf.FieldOptions {
+    // Indicates that a field MAY contain information that is sensitive
+    // and MUST be treated as such (e.g. not logged).
+    bool cosi_secret = 1059;
+
+    // Indicates that this field is OPTIONAL and part of an experimental
+    // API that may be deprecated and eventually removed between minor
+    // releases.
+    bool alpha_field = 1060;
+}
+
+extend google.protobuf.MessageOptions {
+    // Indicates that this message is OPTIONAL and part of an experimental
+    // API that may be deprecated and eventually removed between minor
+    // releases.
+    bool alpha_message = 1060;
+}
+
+extend google.protobuf.MethodOptions {
+    // Indicates that this method is OPTIONAL and part of an experimental
+    // API that may be deprecated and eventually removed between minor
+    // releases.
+    bool alpha_method = 1060;
+}
+
+extend google.protobuf.ServiceOptions {
+    // Indicates that this service is OPTIONAL and part of an experimental
+    // API that may be deprecated and eventually removed between minor
+    // releases.
+    bool alpha_service = 1060;
+}
+
+service Provisioner {
+    // This call is meant to retrieve the unique provisioner Identity.
+    // This identity will have to be set in BucketRequest.Provisioner field in order to invoke this specific provisioner.
+    rpc ProvisionerGetInfo (ProvisionerGetInfoRequest) returns (ProvisionerGetInfoResponse) {}
+
+    // This call is made to create the bucket in the backend.
+    // This call is idempotent
+    //    1. If a bucket that matches both name and parameters already exists, then OK (success) must be returned.
+    //    2. If a bucket by same name, but different parameters is provided, then the appropriate error code ALREADY_EXISTS must be returned.
+    rpc ProvisionerCreateBucket (ProvisionerCreateBucketRequest) returns (ProvisionerCreateBucketResponse) {}
+    // This call is made to delete the bucket in the backend.
+    // If the bucket has already been deleted, then no error should be returned.
+    rpc ProvisionerDeleteBucket (ProvisionerDeleteBucketRequest) returns (ProvisionerDeleteBucketResponse) {}
+
+    // This call grants access to a particular principal. The principal is the account for which this access should be granted.
+    // If the principal is set, then it should be used as the username of the created credentials.
+    // If the principal is empty, then a new service account should be created in the backend that satisfies the requested access_policy.
+    // The principal returned in the response will be used as the unique identifier for deleting this access by calling ProvisionerRevokeBucketAccess.
+    rpc ProvisionerGrantBucketAccess (ProvisionerGrantBucketAccessRequest) returns (ProvisionerGrantBucketAccessResponse);
+    // This call revokes all access to a particular bucket from a principal.
+    rpc ProvisionerRevokeBucketAccess (ProvisionerRevokeBucketAccessRequest) returns (ProvisionerRevokeBucketAccessResponse);
+}
+
+message ProvisionerGetInfoRequest {
+    // Intentionally left blank
+}
+
+message ProvisionerGetInfoResponse {    
+    // This field is REQUIRED
+    // The name MUST follow domain name notation format
+    // (https://tools.ietf.org/html/rfc1035#section-2.3.1). It SHOULD
+    // include the plugin's host company name and the plugin name,
+    // to minimize the possibility of collisions. It MUST be 63
+    // characters or less, beginning and ending with an alphanumeric
+    // character ([a-z0-9A-Z]) with dashes (-), dots (.), and
+    // alphanumerics between.
+    string name = 1;
+}
+
+message ProvisionerCreateBucketRequest {    
+    // This field is REQUIRED
+    // Bucket name.
+    string bucket_name = 1;
+
+    // This field is OPTIONAL
+    // Protocol specific information required by the call is passed in as key,value pairs.
+    map<string,string> bucket_context = 2;
+
+    enum AnonymousBucketAccessMode {
+        // Default, disallow uncredentialed access to the backend storage.
+	BUCKET_PRIVATE = 0;
+        // Read only, uncredentialed users can call ListBucket and GetObject.
+	BUCKET_READ_ONLY = 1;
+        // Write only, uncredentialed users can only call PutObject.
+	BUCKET_WRITE_ONLY = 2;
+        // Read/Write, same as ro with the addition of PutObject being allowed.
+	BUCKET_READ_WRITE = 3;
+    }
+    
+    // This field is OPTIONAL
+    // Allow uncredentialed access to bucket.
+    AnonymousBucketAccessMode anonymous_bucket_access_mode = 3;
+}
+
+message ProvisionerCreateBucketResponse {
+    // Intentionally left blank
+}
+
+message ProvisionerDeleteBucketRequest {
+    // This field is REQUIRED
+    // Bucket name.
+    string bucket_name = 1;
+    
+    // This field is OPTIONAL
+    // Protocol specific information required by the call is passed in as key,value pairs.
+    map<string,string> bucket_context = 2;
+}
+
+message ProvisionerDeleteBucketResponse {
+     // Intentionally left blank
+}
+
+message ProvisionerGrantBucketAccessRequest {
+    // This field is REQUIRED
+    // Bucket name.
+    string bucket_name = 1;
+    
+    // This field is OPTIONAL
+    // Protocol specific information required by the call is passed in as key,value pairs.
+    map<string,string> bucket_context = 2;
+
+    // This field is OPTIONAL
+    // Principal for which access is requested
+    string principal = 3;
+    
+    // This field is REQUIRED
+    // Requested Access policy, ex: {"Effect":"Allow","Action":"s3:PutObject","Resource":"arn:aws:s3:::profilepics/*"}
+    string access_policy = 4;
+}
+
+message ProvisionerGrantBucketAccessResponse {
+    // This field is OPTIONAL
+    // This is the account that is being provided access. This will
+    // be required later to revoke access. 
+    string principal = 1;
+    
+    // This field is OPTIONAL
+    // Contents of the credential file, ex: aws access key id and secret, etc.
+    string credentials_file_contents = 2;
+    
+    // This field is OPTIONAL
+    // Path where the credential file will be mounted.
+    string credentials_file_path = 3;
+} 
+ 
+message ProvisionerRevokeBucketAccessRequest {
+    // This field is REQUIRED
+    // Bucket name.
+    string bucket_name = 1;
+    
+    // This field is OPTIONAL
+    // Protocol specific information required by the call is passed in as key,value pairs.
+    map<string,string> bucket_context = 2;
+
+    // This field is REQUIRED
+    // This is the account that is being revoked access.
+    string principal = 3;
+}
+
+message ProvisionerRevokeBucketAccessResponse {
+    // Intentionally left blank
+}

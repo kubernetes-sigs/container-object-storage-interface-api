@@ -1,14 +1,26 @@
+/*
+Copyright 2020 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
-
-type BucketRequestBinding struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace,omitempty"`
-}
 
 type BucketRequestSpec struct {
 	// +optional
@@ -46,8 +58,8 @@ type BucketSpec struct {
 	// +optional
 	AnonymousAccessMode AnonymousAccessMode `json:"anonymousAccessMode,omitempty"`
 	// +optional
-	BucketClassName string           `json:"bucketClassName,omitempty"`
-	BucketRequest   *ObjectReference `json:"bucketRequest,omitempty"`
+	BucketClassName string                  `json:"bucketClassName,omitempty"`
+	BucketRequest   *BucketRequestReference `json:"bucketRequest,omitempty"`
 	// +listType=atomic
 	AllowedNamespaces []string `json:"allowedNamespaces,omitempty"`
 	Protocol          Protocol `json:"protocol"`
@@ -79,8 +91,7 @@ type BucketRequest struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec BucketRequestSpec `json:"spec,omitempty"`
+	Spec              BucketRequestSpec `json:"spec,omitempty"`
 	// +optional
 	Status BucketRequestStatus `json:"status,omitempty"`
 }
@@ -104,8 +115,7 @@ type Bucket struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec BucketSpec `json:"spec,omitempty"`
+	Spec              BucketSpec `json:"spec,omitempty"`
 	// +optional
 	Status BucketStatus `json:"status,omitempty"`
 }
@@ -166,12 +176,9 @@ type BucketAccessClass struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
 	// +optional
-	Provisioner string `json:"provisioner,omitempty"`
-
-	PolicyActionsConfigMap *ObjectReference `json:"policyActionsConfigMap,omitempty"`
-
+	Provisioner            string                  `json:"provisioner,omitempty"`
+	PolicyActionsConfigMap *corev1.ObjectReference `json:"policyActionsConfigMap,omitempty"`
 	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`
 }
@@ -192,13 +199,10 @@ type BucketAccessSpec struct {
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	// +optional
-	MintedSecretName string `json:"mintedSecretName,omitempty"`
-
+	MintedSecretName           string `json:"mintedSecretName,omitempty"`
 	PolicyActionsConfigMapData string `json:"policyActionsConfigMapData,omitempty"`
-
 	// +optional
 	Principal string `json:"principal,omitempty"`
-
 	// +optional
 	Provisioner string `json:"provisioner,omitempty"`
 	// +optional
@@ -223,8 +227,7 @@ type BucketAccess struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec BucketAccessSpec `json:"spec,omitempty"`
+	Spec              BucketAccessSpec `json:"spec,omitempty"`
 	// +optional
 	Status BucketAccessStatus `json:"status"`
 }
@@ -239,12 +242,9 @@ type BucketAccessList struct {
 
 type BucketAccessRequestSpec struct {
 	// +optional
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
-
-	BucketRequestName string `json:"bucketRequestName"`
-
+	ServiceAccountName    string `json:"serviceAccountName,omitempty"`
+	BucketRequestName     string `json:"bucketRequestName"`
 	BucketAccessClassName string `json:"bucketAccessClassName"`
-
 	// +optional
 	BucketAccessName string `json:"bucketAccessName,omitempty"`
 }
@@ -266,8 +266,7 @@ type BucketAccessRequest struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec BucketAccessRequestSpec `json:"spec,omitempty"`
+	Spec              BucketAccessRequestSpec `json:"spec,omitempty"`
 	// +optional
 	Status BucketAccessRequestStatus `json:"status"`
 }
@@ -280,7 +279,7 @@ type BucketAccessRequestList struct {
 	Items           []BucketAccessRequest `json:"items"`
 }
 
-type ObjectReference struct {
+type BucketRequestReference struct {
 	// Namespace of the referent.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
 	// +optional

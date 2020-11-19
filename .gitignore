@@ -1,0 +1,10 @@
+*.tmp
+.DS_Store
+.build
+*.swp
+cosi.proto.tmp
+protoc
+protoc-gen-go
+cosi.a
+.protoc
+.idea

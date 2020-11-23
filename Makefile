@@ -13,20 +13,22 @@
 # limitations under the License.
 
 #CMDS=cosi-controller-manager
-all:  genapi unit build
+all:  unit build
 #.PHONY: reltools
-#reltools: release-tools/build.make
-#release-tools/build.make:
-#	$(eval CURDIR := $(shell pwd))
-#	$(eval TMP := $(shell mktemp -d))
-#	$(shell cd ${TMP} && git clone git@github.com:kubernetes-sigs/container-object-storage-interface-spec.git)
-#	$(shell cp -r ${TMP}/container-object-storage-interface-spec/release-tools ${CURDIR}/)
-#	$(shell rm -rf ${TMP})  
+reltools: release-tools/build.make
+release-tools/build.make:
+	$(eval CURDIR := $(shell pwd))
+	$(eval TMP := $(shell mktemp -d))
+	$(shell cd ${TMP} && git clone git@github.com:kubernetes-sigs/container-object-storage-interface-spec.git)
+	$(shell cp -r ${TMP}/container-object-storage-interface-spec/release-tools ${CURDIR}/)
+	$(shell rm -rf ${TMP})  
+	ln -s release-tools/travis.yml travis.yml
+
 
 build:
 test:
 unit:
-genapi: 
-#	$(shell ./hack/update-codegen.sh) 
+codegen: 
+	$(shell ./hack/update-codegen.sh) 
 
-#include release-tools/build.make
+include release-tools/build.make

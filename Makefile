@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+PROJECTNAME := $(shell basename "$(PWD)")
+GOFILES := $(wildcard controller/*.go)
+GOBIN := $(GOBASE)/bin
+
+
 #CMDS=cosi-controller-manager
 all:  unit build
 #.PHONY: reltools
@@ -26,6 +31,8 @@ release-tools/build.make:
 
 
 build:
+	@echo "  >  Building binary..."
+	go build $(GOFILES)
 test:
 unit:
 codegen: 

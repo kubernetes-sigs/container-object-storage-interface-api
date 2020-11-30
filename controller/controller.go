@@ -121,8 +121,10 @@ func NewDefaultObjectStorageController(identity string, leaderLockName string, t
 
 func NewObjectStorageController(identity string, leaderLockName string, threads int, limiter workqueue.RateLimiter) (*ObjectStorageController, error) {
 	cfg, err := func() (*rest.Config, error) {
-		kubeConfig := viper.GetString("kube-config")
-
+		kubeConfig := viper.GetString("kubeconfig")
+		if kubeConfig == "" {
+			kubeConfig = os.Getenv("KUBECONFIG")
+		}
 		if kubeConfig != "" {
 			return clientcmd.BuildConfigFromFlags("", kubeConfig)
 		}

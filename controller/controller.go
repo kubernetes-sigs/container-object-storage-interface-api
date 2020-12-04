@@ -142,8 +142,12 @@ func NewObjectStorageController(identity string, leaderLockName string, threads 
 	if err != nil {
 		return nil, err
 	}
+	return NewObjectStorageControllerWithClientset(identity, leaderLockName, threads, limiter, kubeClient, bucketClient)
+}
 
+func NewObjectStorageControllerWithClientset(identity string, leaderLockName string, threads int, limiter workqueue.RateLimiter, kubeClient kubeclientset.Interface, bucketClient bucketclientset.Interface) (*ObjectStorageController, error) {
 	id := identity
+	var err error
 	if id == "" {
 		id, err = os.Hostname()
 		if err != nil {
@@ -227,7 +231,7 @@ func (c *ObjectStorageController) Run(ctx context.Context) error {
 				c.runController(ctx)
 			},
 			OnStoppedLeading: func() {
-				glog.Fatal("stopped leading")
+				glog.Infof("stopped leading")
 			},
 			OnNewLeader: func(identity string) {
 				glog.V(3).Infof("new leader detected, current leader: %s", identity)
@@ -418,7 +422,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 		defer utilruntime.HandleCrash()
 		defer c.queue.ShutDown()
 
-		glog.V(3).Infof("Starting %s controller", name)
+		glog.V(1).Infof("Starting %s controller", name)
 		go ctrlr.Run(ctx.Done())
 
 		if !cache.WaitForCacheSync(ctx.Done(), ctrlr.HasSynced) {

@@ -160,31 +160,6 @@ test-vendor:
 	@ echo; echo "### $@:"
 	@ ./release-tools/verify-vendor.sh
 
-.PHONY: test-subtree
-test: test-subtree
-test-subtree:
-	@ echo; echo "### $@:"
-	./release-tools/verify-subtree.sh release-tools
-
-# Components can extend the set of directories which must pass shellcheck.
-# The default is to check only the release-tools directory itself.
-TEST_SHELLCHECK_DIRS=release-tools
-.PHONY: test-shellcheck
-test: test-shellcheck
-test-shellcheck:
-	@ echo; echo "### $@:"
-	@ ret=0; \
-	if ! command -v docker; then \
-		echo "skipped, no Docker"; \
-		exit 0; \
-        fi; \
-	for dir in $(abspath $(TEST_SHELLCHECK_DIRS)); do \
-		echo; \
-		echo "$$dir:"; \
-		./release-tools/verify-shellcheck.sh "$$dir" || ret=1; \
-	done; \
-	exit $$ret
-
 # Targets in the makefile can depend on check-go-version-<path to go binary>
 # to trigger a warning if the x.y version of that binary does not match
 # what the project uses. Make ensures that this is only checked once per

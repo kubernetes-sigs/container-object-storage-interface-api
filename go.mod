@@ -1,4 +1,4 @@
-module github.com/container-object-storage-interface/spec
+module github.com/kubernetes-sigs/container-object-storage-interface-spec
 
 go 1.15
 

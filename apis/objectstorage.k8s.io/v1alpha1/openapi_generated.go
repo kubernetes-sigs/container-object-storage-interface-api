@@ -47,7 +47,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketList":                schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketList(ref),
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequest":             schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequest(ref),
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestList":         schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestList(ref),
-		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestReference":    schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestReference(ref),
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestSpec":         schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestSpec(ref),
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestStatus":       schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestStatus(ref),
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketSpec":                schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketSpec(ref),
@@ -519,14 +518,12 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"bucketAccessRequest": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Ref: ref("k8s.io/api/core/v1.ObjectReference"),
 						},
 					},
 					"serviceAccount": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Ref: ref("k8s.io/api/core/v1.ObjectReference"),
 						},
 					},
 					"mintedSecretName": {
@@ -570,6 +567,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 				},
 			},
 		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ObjectReference"},
 	}
 }
 
@@ -873,39 +872,6 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 	}
 }
 
-func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"namespace": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"uid": {
-						SchemaProps: spec.SchemaProps{
-							Description: "UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -999,7 +965,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"bucketRequest": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestReference"),
+							Ref: ref("k8s.io/api/core/v1.ObjectReference"),
 						},
 					},
 					"allowedNamespaces": {
@@ -1044,7 +1010,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AnonymousAccessMode", "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestReference", "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol"},
+			"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AnonymousAccessMode", "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol", "k8s.io/api/core/v1.ObjectReference"},
 	}
 }
 

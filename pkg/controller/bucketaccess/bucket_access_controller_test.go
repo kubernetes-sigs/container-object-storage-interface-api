@@ -29,6 +29,7 @@ import (
 	fakespec "github.com/kubernetes-sigs/container-object-storage-interface-spec/fake"
 
 	v1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/version"
@@ -142,8 +143,8 @@ func TestAdd(t *testing.T) {
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.Region != region {
-					t.Errorf("expected %s, got %s", region, in.Region)
+				if in.BucketContext["Region"] != region {
+					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
 				}
 				if in.Principal != principal {
 					t.Errorf("expected %s, got %s", principal, in.Principal)
@@ -185,13 +186,13 @@ func TestAdd(t *testing.T) {
 					t.Errorf("expected %s, got %s", principal, in.Principal)
 				}
 				if in.BucketContext["ServiceAccount"] != account {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["ServiceAccount"])
+					t.Errorf("expected %s, got %s", account, in.BucketContext["ServiceAccount"])
 				}
 				if in.BucketContext["PrivateKeyName"] != keyName {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["PrivateKeyName"])
+					t.Errorf("expected %s, got %s", keyName, in.BucketContext["PrivateKeyName"])
 				}
 				if in.BucketContext["ProjectID"] != projID {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["ProjectID"])
+					t.Errorf("expected %s, got %s", projID, in.BucketContext["ProjectID"])
 				}
 				return &osspec.ProvisionerGrantBucketAccessResponse{
 					Principal:               principal,
@@ -219,7 +220,7 @@ func TestAdd(t *testing.T) {
 					t.Errorf("expected %s, got %s", principal, in.Principal)
 				}
 				if in.BucketContext["StorageAccount"] != account {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["StorageAccount"])
+					t.Errorf("expected %s, got %s", account, in.BucketContext["StorageAccount"])
 				}
 				return &osspec.ProvisionerGrantBucketAccessResponse{
 					Principal:               principal,
@@ -406,8 +407,8 @@ func TestDelete(t *testing.T) {
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.Region != region {
-					t.Errorf("expected %s, got %s", region, in.Region)
+				if in.BucketContext["Region"] != region {
+					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
 				}
 				if in.Principal != principal {
 					t.Errorf("expected %s, got %s", principal, in.Principal)
@@ -444,13 +445,13 @@ func TestDelete(t *testing.T) {
 					t.Errorf("expected %s, got %s", principal, in.Principal)
 				}
 				if in.BucketContext["ServiceAccount"] != account {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["ServiceAccount"])
+					t.Errorf("expected %s, got %s", account, in.BucketContext["ServiceAccount"])
 				}
 				if in.BucketContext["PrivateKeyName"] != keyName {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["PrivateKeyName"])
+					t.Errorf("expected %s, got %s", keyName, in.BucketContext["PrivateKeyName"])
 				}
 				if in.BucketContext["ProjectID"] != projID {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["ProjectID"])
+					t.Errorf("expected %s, got %s", projID, in.BucketContext["ProjectID"])
 				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
@@ -473,7 +474,7 @@ func TestDelete(t *testing.T) {
 					t.Errorf("expected %s, got %s", principal, in.Principal)
 				}
 				if in.BucketContext["StorageAccount"] != account {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["StorageAccount"])
+					t.Errorf("expected %s, got %s", account, in.BucketContext["StorageAccount"])
 				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
@@ -495,8 +496,8 @@ func TestDelete(t *testing.T) {
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.Region != region {
-					t.Errorf("expected %s, got %s", region, in.Region)
+				if in.BucketContext["Region"] != region {
+					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
 				}
 				if in.Principal != principal {
 					t.Errorf("expected %s, got %s", principal, in.Principal)

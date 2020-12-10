@@ -19,7 +19,6 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type BucketRequestSpec struct {
@@ -59,7 +58,7 @@ type BucketSpec struct {
 	AnonymousAccessMode AnonymousAccessMode `json:"anonymousAccessMode,omitempty"`
 	// +optional
 	BucketClassName string                  `json:"bucketClassName,omitempty"`
-	BucketRequest   *BucketRequestReference `json:"bucketRequest,omitempty"`
+	BucketRequest   *corev1.ObjectReference `json:"bucketRequest,omitempty"`
 	// +listType=atomic
 	AllowedNamespaces []string `json:"allowedNamespaces,omitempty"`
 	Protocol          Protocol `json:"protocol"`
@@ -195,9 +194,9 @@ type BucketAccessSpec struct {
 	// +optional
 	BucketInstanceName string `json:"bucketInstanceName,omitempty"`
 	// +optional
-	BucketAccessRequest string `json:"bucketAccessRequest,omitempty"`
+	BucketAccessRequest *corev1.ObjectReference `json:"bucketAccessRequest,omitempty"`
 	// +optional
-	ServiceAccount string `json:"serviceAccount,omitempty"`
+	ServiceAccount  *corev1.ObjectReference `json:"serviceAccount,omitempty"`
 	// +optional
 	MintedSecretName           string `json:"mintedSecretName,omitempty"`
 	PolicyActionsConfigMapData string `json:"policyActionsConfigMapData,omitempty"`
@@ -277,21 +276,6 @@ type BucketAccessRequestList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BucketAccessRequest `json:"items"`
-}
-
-type BucketRequestReference struct {
-	// Namespace of the referent.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-	// +optional
-	Namespace string `json:"namespace,omitempty"`
-	// Name of the referent.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-	// +optional
-	Name string `json:"name,omitempty"`
-	// UID of the referent.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
-	// +optional
-	UID types.UID `json:"uid,omitempty"`
 }
 
 func init() {

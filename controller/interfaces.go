@@ -30,19 +30,6 @@ func (c *ObjectStorageController) AddBucketListener(b BucketListener) {
 	c.BucketListener = b
 }
 
-type BucketClassListener interface {
-	GenericListener
-
-	Add(ctx context.Context, b *v1alpha1.BucketClass) error
-	Update(ctx context.Context, old *v1alpha1.BucketClass, new *v1alpha1.BucketClass) error
-	Delete(ctx context.Context, b *v1alpha1.BucketClass) error
-}
-
-func (c *ObjectStorageController) AddBucketClassListener(b BucketClassListener) {
-	c.initialized = true
-	c.BucketClassListener = b
-}
-
 type BucketRequestListener interface {
 	GenericListener
 
@@ -67,19 +54,6 @@ type BucketAccessListener interface {
 func (c *ObjectStorageController) AddBucketAccessListener(b BucketAccessListener) {
 	c.initialized = true
 	c.BucketAccessListener = b
-}
-
-type BucketAccessClassListener interface {
-	GenericListener
-
-	Add(ctx context.Context, b *v1alpha1.BucketAccessClass) error
-	Update(ctx context.Context, old *v1alpha1.BucketAccessClass, new *v1alpha1.BucketAccessClass) error
-	Delete(ctx context.Context, b *v1alpha1.BucketAccessClass) error
-}
-
-func (c *ObjectStorageController) AddBucketAccessClassListener(b BucketAccessClassListener) {
-	c.initialized = true
-	c.BucketAccessClassListener = b
 }
 
 type BucketAccessRequestListener interface {

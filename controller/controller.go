@@ -92,10 +92,8 @@ type ObjectStorageController struct {
 
 	// Listeners
 	BucketListener              BucketListener
-	BucketClassListener         BucketClassListener
 	BucketRequestListener       BucketRequestListener
 	BucketAccessListener        BucketAccessListener
-	BucketAccessClassListener   BucketAccessClassListener
 	BucketAccessRequestListener BucketAccessRequestListener
 
 	// leader election
@@ -466,21 +464,6 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 		}
 		go controllerFor("BucketRequests", &v1alpha1.BucketRequest{}, addFunc, updateFunc, deleteFunc)
 	}
-	if c.BucketClassListener != nil {
-		c.BucketClassListener.InitializeKubeClient(c.kubeClient)
-		c.BucketClassListener.InitializeBucketClient(c.bucketClient)
-		addFunc := func(ctx context.Context, obj interface{}) error {
-			return c.BucketClassListener.Add(ctx, obj.(*v1alpha1.BucketClass))
-		}
-		updateFunc := func(ctx context.Context, old interface{}, new interface{}) error {
-			return c.BucketClassListener.Update(ctx, old.(*v1alpha1.BucketClass), new.(*v1alpha1.BucketClass))
-		}
-		deleteFunc := func(ctx context.Context, obj interface{}) error {
-			return c.BucketClassListener.Delete(ctx, obj.(*v1alpha1.BucketClass))
-		}
-		go controllerFor("BucketClasses", &v1alpha1.BucketClass{}, addFunc, updateFunc, deleteFunc)
-	}
-
 	if c.BucketAccessListener != nil {
 		c.BucketAccessListener.InitializeKubeClient(c.kubeClient)
 		c.BucketAccessListener.InitializeBucketClient(c.bucketClient)
@@ -508,20 +491,6 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 			return c.BucketAccessRequestListener.Delete(ctx, obj.(*v1alpha1.BucketAccessRequest))
 		}
 		go controllerFor("BucketAccessRequests", &v1alpha1.BucketAccessRequest{}, addFunc, updateFunc, deleteFunc)
-	}
-	if c.BucketAccessClassListener != nil {
-		c.BucketAccessClassListener.InitializeKubeClient(c.kubeClient)
-		c.BucketAccessClassListener.InitializeBucketClient(c.bucketClient)
-		addFunc := func(ctx context.Context, obj interface{}) error {
-			return c.BucketAccessClassListener.Add(ctx, obj.(*v1alpha1.BucketAccessClass))
-		}
-		updateFunc := func(ctx context.Context, old interface{}, new interface{}) error {
-			return c.BucketAccessClassListener.Update(ctx, old.(*v1alpha1.BucketAccessClass), new.(*v1alpha1.BucketAccessClass))
-		}
-		deleteFunc := func(ctx context.Context, obj interface{}) error {
-			return c.BucketAccessClassListener.Delete(ctx, obj.(*v1alpha1.BucketAccessClass))
-		}
-		go controllerFor("BucketAccessClasses", &v1alpha1.BucketAccessClass{}, addFunc, updateFunc, deleteFunc)
 	}
 
 	<-ctx.Done()

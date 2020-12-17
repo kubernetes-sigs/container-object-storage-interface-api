@@ -9,3 +9,13 @@ resources:
   - objectstorage.k8s.io_bucketclasses.yaml
   - objectstorage.k8s.io_bucketrequests.yaml
   - objectstorage.k8s.io_buckets.yaml
+
+patches:
+- target:
+    kind: CustomResourceDefinition
+  patch: |-
+    - op: add
+      path: /metadata/annotations
+      value:
+        controller-gen.kubebuilder.io/version: (devel)
+        api-approved.kubernetes.io: https://github.com/kubernetes-sigs/container-object-storage-interface-api/pull/2

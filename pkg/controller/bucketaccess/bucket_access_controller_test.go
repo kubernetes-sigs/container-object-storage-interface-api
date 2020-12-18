@@ -28,6 +28,7 @@ import (
 	osspec "github.com/kubernetes-sigs/container-object-storage-interface-spec"
 	fakespec "github.com/kubernetes-sigs/container-object-storage-interface-spec/fake"
 
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,6 +119,8 @@ func TestAdd(t *testing.T) {
 	generatedPrincipal := "driverPrincipal"
 	sa := "serviceAccount"
 	mpc := struct{ fakespec.MockProvisionerClient }{}
+	extraParamName := "ParamName"
+	extraParamValue := "ParamValue"
 
 	testCases := []struct {
 		name           string
@@ -126,6 +129,7 @@ func TestAdd(t *testing.T) {
 		grantFunc      func(ctx context.Context, in *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error)
 		principal      string
 		serviceAccount string
+		params         map[string]string
 	}{
 		{
 			name: "S3",
@@ -158,6 +162,9 @@ func TestAdd(t *testing.T) {
 				if in.BucketContext["Endpoint"] != endpoint {
 					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
 				}
+				if in.BucketContext[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				}
 				return &osspec.ProvisionerGrantBucketAccessResponse{
 					Principal:               principal,
 					CredentialsFileContents: credsContents,
@@ -166,6 +173,9 @@ func TestAdd(t *testing.T) {
 			},
 			principal:      principal,
 			serviceAccount: "",
+			params: map[string]string{
+				extraParamName: extraParamValue,
+			},
 		},
 		{
 			name: "GCS",
@@ -194,6 +204,9 @@ func TestAdd(t *testing.T) {
 				if in.BucketContext["ProjectID"] != projID {
 					t.Errorf("expected %s, got %s", projID, in.BucketContext["ProjectID"])
 				}
+				if in.BucketContext[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				}
 				return &osspec.ProvisionerGrantBucketAccessResponse{
 					Principal:               principal,
 					CredentialsFileContents: credsContents,
@@ -202,6 +215,9 @@ func TestAdd(t *testing.T) {
 			},
 			principal:      principal,
 			serviceAccount: "",
+			params: map[string]string{
+				extraParamName: extraParamValue,
+			},
 		},
 		{
 			name: "AzureBlob",
@@ -222,6 +238,9 @@ func TestAdd(t *testing.T) {
 				if in.BucketContext["StorageAccount"] != account {
 					t.Errorf("expected %s, got %s", account, in.BucketContext["StorageAccount"])
 				}
+				if in.BucketContext[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				}
 				return &osspec.ProvisionerGrantBucketAccessResponse{
 					Principal:               principal,
 					CredentialsFileContents: credsContents,
@@ -230,6 +249,9 @@ func TestAdd(t *testing.T) {
 			},
 			principal:      principal,
 			serviceAccount: "",
+			params: map[string]string{
+				extraParamName: extraParamValue,
+			},
 		},
 		{
 			name: "No Principal",
@@ -252,6 +274,9 @@ func TestAdd(t *testing.T) {
 			},
 			principal:      "",
 			serviceAccount: "",
+			params: map[string]string{
+				extraParamName: extraParamValue,
+			},
 		},
 		{
 			name: "ServiceAccount exists",
@@ -274,6 +299,9 @@ func TestAdd(t *testing.T) {
 			},
 			principal:      principal,
 			serviceAccount: sa,
+			params: map[string]string{
+				extraParamName: extraParamValue,
+			},
 		},
 	}
 
@@ -297,8 +325,14 @@ func TestAdd(t *testing.T) {
 				BucketInstanceName: instanceName,
 				Provisioner:        provisioner,
 				Principal:          tc.principal,
-				ServiceAccount:     tc.serviceAccount,
+				Parameters:         tc.params,
 			},
+		}
+
+		if len(tc.serviceAccount) > 0 {
+			ba.Spec.ServiceAccount = &corev1.ObjectReference{
+				Name: tc.serviceAccount,
+			}
 		}
 
 		ctx := context.TODO()
@@ -383,6 +417,8 @@ func TestDelete(t *testing.T) {
 	endpoint := "endpoint1"
 	instanceName := "instance"
 	mpc := struct{ fakespec.MockProvisionerClient }{}
+	extraParamName := "ParamName"
+	extraParamValue := "ParamValue"
 
 	testCases := []struct {
 		name           string
@@ -390,6 +426,7 @@ func TestDelete(t *testing.T) {
 		protocolName   v1alpha1.ProtocolName
 		revokeFunc     func(ctx context.Context, in *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error)
 		serviceAccount string
+		params         map[string]string
 	}{
 		{
 			name: "S3",
@@ -422,9 +459,15 @@ func TestDelete(t *testing.T) {
 				if in.BucketContext["Endpoint"] != endpoint {
 					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
 				}
+				if in.BucketContext[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
 			serviceAccount: "",
+			params: map[string]string{
+				extraParamName: extraParamValue,
+			},
 		},
 		{
 			name: "GCS",
@@ -453,9 +496,15 @@ func TestDelete(t *testing.T) {
 				if in.BucketContext["ProjectID"] != projID {
 					t.Errorf("expected %s, got %s", projID, in.BucketContext["ProjectID"])
 				}
+				if in.BucketContext[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
 			serviceAccount: "",
+			params: map[string]string{
+				extraParamName: extraParamValue,
+			},
 		},
 		{
 			name: "AzureBlob",
@@ -476,9 +525,15 @@ func TestDelete(t *testing.T) {
 				if in.BucketContext["StorageAccount"] != account {
 					t.Errorf("expected %s, got %s", account, in.BucketContext["StorageAccount"])
 				}
+				if in.BucketContext[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
 			serviceAccount: "",
+			params: map[string]string{
+				extraParamName: extraParamValue,
+			},
 		},
 		{
 			name: "service account exists",
@@ -511,9 +566,15 @@ func TestDelete(t *testing.T) {
 				if in.BucketContext["Endpoint"] != endpoint {
 					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
 				}
+				if in.BucketContext[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
 			serviceAccount: "serviceAccount",
+			params: map[string]string{
+				extraParamName: extraParamValue,
+			},
 		},
 	}
 
@@ -537,11 +598,17 @@ func TestDelete(t *testing.T) {
 				BucketInstanceName: instanceName,
 				Provisioner:        provisioner,
 				Principal:          principal,
-				ServiceAccount:     tc.serviceAccount,
+				Parameters:         tc.params,
 			},
 			Status: v1alpha1.BucketAccessStatus{
 				AccessGranted: true,
 			},
+		}
+
+		if len(tc.serviceAccount) > 0 {
+			ba.Spec.ServiceAccount = &corev1.ObjectReference{
+				Name: tc.serviceAccount,
+			}
 		}
 		secretName := generateSecretName(ba.UID)
 		secret := v1.Secret{

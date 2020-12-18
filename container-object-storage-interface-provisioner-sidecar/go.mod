@@ -1,10 +1,12 @@
 module github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar
 
-go 1.14
+go 1.15
 
 require (
+	github.com/kubernetes-csi/csi-lib-utils v0.9.0
 	github.com/kubernetes-sigs/container-object-storage-interface-api v0.0.0-20201204201926-43539346a903
-	github.com/kubernetes-sigs/container-object-storage-interface-spec v0.0.0-20201208142312-59e00cb00687
+	github.com/kubernetes-sigs/container-object-storage-interface-spec v0.0.0-20201217184109-8cbf84dde8d3
+	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
 	google.golang.org/grpc v1.34.0
 	k8s.io/api v0.19.4

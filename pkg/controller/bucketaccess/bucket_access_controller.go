@@ -149,7 +149,7 @@ func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAc
 	// Only update the principal in the BucketAccess if it wasn't set because
 	// that means that the provisioner created one
 	if len(obj.Spec.Principal) == 0 {
-		err = bal.updatePrincipal(ctx, obj.Name, *rsp)
+		err = bal.updatePrincipal(ctx, obj.Name, rsp)
 		if err != nil {
 			return err
 		}
@@ -260,7 +260,7 @@ func (bal *bucketAccessListener) updateStatus(ctx context.Context, name, msg str
 	return err
 }
 
-func (bal *bucketAccessListener) updatePrincipal(ctx context.Context, name string, resp osspec.ProvisionerGrantBucketAccessResponse) error {
+func (bal *bucketAccessListener) updatePrincipal(ctx context.Context, name string, resp *osspec.ProvisionerGrantBucketAccessResponse) error {
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		bucketAccess, err := bal.bucketAccessClient.ObjectstorageV1alpha1().BucketAccesses().Get(ctx, name, metav1.GetOptions{})
 		if err != nil {

@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -116,7 +116,7 @@ func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAc
 	req := osspec.ProvisionerGrantBucketAccessRequest{
 		Principal:     obj.Spec.Principal,
 		AccessPolicy:  obj.Spec.PolicyActionsConfigMapData,
-		BucketContext: map[string]string{},
+		BucketContext: obj.Spec.Parameters,
 	}
 
 	switch bucket.Spec.Protocol.Name {
@@ -148,7 +148,7 @@ func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAc
 
 	// Only update the principal in the BucketAccess if it wasn't set because
 	// that means that the provisioner created one
-	if len(obj.Spec.Principal) == 0 {
+	if len(obj.Spec.Principal) == 0 && obj.Spec.ServiceAccount == nil {
 		err = bal.updatePrincipal(ctx, obj.Name, rsp)
 		if err != nil {
 			return err
@@ -158,8 +158,8 @@ func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAc
 	// Only create the secret with credentials if serviveAccount isn't set.
 	// If serviceAccount is set then authorization happens out of band in the
 	// cloud provider
-	if len(obj.Spec.ServiceAccount) == 0 {
-		secret := v1.Secret{
+	if obj.Spec.ServiceAccount == nil {
+		secret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: generateSecretName(obj.UID),
 			},
@@ -167,13 +167,16 @@ func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAc
 				"CredentialsFilePath":     rsp.CredentialsFilePath,
 				"CredentialsFileContents": rsp.CredentialsFileContents,
 			},
-			Type: v1.SecretTypeOpaque,
+			Type: corev1.SecretTypeOpaque,
 		}
+
 		// It's unlikely but should probably handle retries on rare case of collision
 		_, err = bal.kubeClient.CoreV1().Secrets("objectstorage-system").Create(ctx, &secret, metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
+
+		// TODO update the mintedSecretName in the BA
 	}
 
 	// update bucket access status to granted
@@ -203,7 +206,7 @@ func (bal *bucketAccessListener) Delete(ctx context.Context, obj *v1alpha1.Bucke
 
 	req := osspec.ProvisionerRevokeBucketAccessRequest{
 		Principal:     obj.Spec.Principal,
-		BucketContext: map[string]string{},
+		BucketContext: obj.Spec.Parameters,
 	}
 
 	switch bucket.Spec.Protocol.Name {
@@ -234,7 +237,9 @@ func (bal *bucketAccessListener) Delete(ctx context.Context, obj *v1alpha1.Bucke
 	klog.V(1).Infof("provisioner returned revoke bucket access response %v", rsp)
 
 	// Delete the secret
-	if len(obj.Spec.ServiceAccount) == 0 {
+	if obj.Spec.ServiceAccount == nil {
+		// TODO get the minted secret name from the BA
+
 		// It's unlikely but should probably handle retries on rare case of collision
 		err = bal.kubeClient.CoreV1().Secrets("objectstorage-system").Delete(ctx, generateSecretName(obj.UID), metav1.DeleteOptions{})
 		if err != nil {

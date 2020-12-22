@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+CMDS=objectstorage-sidecar
+
 all: reltools build
 .PHONY: reltools
 reltools: release-tools/build.make
@@ -23,6 +25,5 @@ release-tools/build.make:
 	$(shell rm -rf ${TMP})  
 	ln -s release-tools/travis.yml travis.yml
 
-#CMDS=provisioner-sidecar
 
 include release-tools/build.make

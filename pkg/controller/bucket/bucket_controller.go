@@ -59,7 +59,7 @@ func NewBucketController(provisionerName string, client osspec.ProvisionerClient
 		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
 	)
 
-	identity := fmt.Sprintf("object-storage-sidecar-%s", provisionerName)
+	identity := fmt.Sprintf("objectstorage-sidecar-%s", provisionerName)
 	bc, err := controller.NewObjectStorageController(identity, "bucket-controller", 5, rateLimit)
 	if err != nil {
 		return nil, err

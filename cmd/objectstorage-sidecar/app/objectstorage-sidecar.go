@@ -24,7 +24,7 @@ const (
 	defaultDriverAddress      = "tcp://0.0.0.0:9000"
 )
 
-// SidecarOptions defines the options
+// SidecarOptions defines the options for running the sidecar
 type SidecarOptions struct {
 	driverAddress string
 }

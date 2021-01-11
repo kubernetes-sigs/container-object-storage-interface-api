@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: objectstorage-provisioner-ns
+  labels:
+    app.kubernetes.io/part-of: container-object-storage-interface
+    app.kubernetes.io/component: provisioner
+    app.kubernetes.io/version: main
+    app.kubernetes.io/name: container-object-storage-interface-provisioner

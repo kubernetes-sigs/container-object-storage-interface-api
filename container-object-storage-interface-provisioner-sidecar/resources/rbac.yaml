@@ -1,0 +1,37 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: objectstorage-provisioner-role
+  namespace: objectstorage-provisioner-ns
+  labels:
+    app.kubernetes.io/part-of: container-object-storage-interface
+    app.kubernetes.io/component: provisioner
+    app.kubernetes.io/version: main
+    app.kubernetes.io/name: container-object-storage-interface-provisioner
+rules:
+- apiGroups: ["objectstorage.k8s.io"]
+  resources: ["buckets", "bucketaccess"]
+  verbs: ["get", "list", "watch", "update", "create", "delete"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["list", "watch", "create", "update", "patch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: objectstorage-provisioner-role-binding
+  namespace: objectstorage-provisioner-ns
+  labels:
+    app.kubernetes.io/part-of: container-object-storage-interface
+    app.kubernetes.io/component: provisioner
+    app.kubernetes.io/version: main
+    app.kubernetes.io/name: container-object-storage-interface-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: objectstorage-provisioner-sa
+    namespace: objectstorage-provisioner-ns
+roleRef:
+  kind: ClusterRole
+  name: objectstorage-provisioner-role
+  apiGroup: rbac.authorization.k8s.io

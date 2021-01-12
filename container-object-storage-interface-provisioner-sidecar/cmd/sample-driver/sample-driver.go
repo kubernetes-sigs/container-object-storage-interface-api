@@ -32,7 +32,6 @@ import (
 	"k8s.io/klog"
 
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/grpcserver"
-
 )
 
 var (

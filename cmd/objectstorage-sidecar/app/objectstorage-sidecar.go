@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar/pkg/controller/bucket"
-	"github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar/pkg/controller/bucketaccess"
-	"github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar/pkg/grpcclient"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/controller/bucket"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/controller/bucketaccess"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/grpcclient"
 
 	osspec "github.com/kubernetes-sigs/container-object-storage-interface-spec"
 

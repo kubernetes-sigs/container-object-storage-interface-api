@@ -4,7 +4,7 @@ COSI repos and images:
 [API](https://github.com/kubernetes-sigs/container-object-storage-interface-api) \
 [Controller](https://github.com/kubernetes-sigs/container-object-storage-interface-controller) <br/>
 &emsp; - [images: cosi-controller](https://quay.io/repository/containerobjectstorage/objectstorage-controller?tab=tags) \
- [Provisioner Sidecar](https://github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar) <br /> 
+ [Provisioner Sidecar](https://sigs.k8s.io/container-object-storage-interface-provisioner-sidecar) <br /> 
  &emsp; -  images: cosi-provisioner \
  [CSI Adapter](https://github.com/kubernetes-sigs/container-object-storage-interface-csi-adapter) <br /> 
  &emsp; - images: cosi-node-adapter 

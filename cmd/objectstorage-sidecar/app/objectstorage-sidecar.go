@@ -49,7 +49,7 @@ func (so *SidecarOptions) Run() {
 		os.Exit(1)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	klog.V(1).Infof("creating provisioner client")

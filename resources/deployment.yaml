@@ -46,7 +46,7 @@ spec:
         - secretRef:
             name: objectstorage-provisioner
       - name: objectstorage-provisioner-sidecar
-        image: quay.io/containerobjectstorage/objectstorage-provisioner-sidecar:latest
+        image: quay.io/containerobjectstorage/objectstorage-sidecar:latest
         resources:
           limits:
             cpu: 1

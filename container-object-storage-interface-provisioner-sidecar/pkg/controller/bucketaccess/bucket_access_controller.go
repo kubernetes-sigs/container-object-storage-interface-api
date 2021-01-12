@@ -38,7 +38,7 @@ import (
 
 	osspec "github.com/kubernetes-sigs/container-object-storage-interface-spec"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"golang.org/x/time/rate"
 )
@@ -100,7 +100,7 @@ func (bal *bucketAccessListener) InitializeBucketClient(bc bucketclientset.Inter
 
 // Add will call the provisioner to grant permissions
 func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAccess) error {
-	klog.V(1).Infof("bucketAccessListener: add called for bucket access %s", obj.Name)
+	klog.Infof("bucketAccessListener: add called for bucket access %s", obj.Name)
 
 	// Verify this bucket access is for this provisioner
 	if !strings.EqualFold(obj.Spec.Provisioner, bal.provisionerName) {
@@ -144,7 +144,7 @@ func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAc
 		klog.Errorf("error calling ProvisionerGrantBucketAccess: %v", err)
 		return err
 	}
-	klog.V(1).Infof("provisioner returned grant bucket access response %v", rsp)
+	klog.Infof("provisioner returned grant bucket access response %v", rsp)
 
 	// Only update the principal in the BucketAccess if it wasn't set because
 	// that means that the provisioner created one
@@ -185,13 +185,13 @@ func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAc
 
 // Update does nothing
 func (bal *bucketAccessListener) Update(ctx context.Context, old, new *v1alpha1.BucketAccess) error {
-	klog.V(1).Infof("bucketAccessListener: update called for bucket %s", old.Name)
+	klog.Infof("bucketAccessListener: update called for bucket %s", old.Name)
 	return nil
 }
 
 // Delete will call the provisioner to revoke permissions
 func (bal *bucketAccessListener) Delete(ctx context.Context, obj *v1alpha1.BucketAccess) error {
-	klog.V(1).Infof("bucketAccessListener: delete called for bucket access %s", obj.Name)
+	klog.Infof("bucketAccessListener: delete called for bucket access %s", obj.Name)
 
 	// Verify this bucket access is for this provisioner
 	if !strings.EqualFold(obj.Spec.Provisioner, bal.provisionerName) {
@@ -234,7 +234,7 @@ func (bal *bucketAccessListener) Delete(ctx context.Context, obj *v1alpha1.Bucke
 		klog.Errorf("error calling ProvisionerRevokeBucketAccess: %v", err)
 		return err
 	}
-	klog.V(1).Infof("provisioner returned revoke bucket access response %v", rsp)
+	klog.Infof("provisioner returned revoke bucket access response %v", rsp)
 
 	// Delete the secret
 	if obj.Spec.ServiceAccount == nil {

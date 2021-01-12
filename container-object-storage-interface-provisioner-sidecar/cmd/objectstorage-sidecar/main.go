@@ -19,7 +19,7 @@ package main
 import (
 	"os"
 
-	"github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar/cmd/objectstorage-sidecar/app"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/cmd/objectstorage-sidecar/app"
 )
 
 func main() {

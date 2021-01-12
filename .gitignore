@@ -8,3 +8,4 @@ protoc-gen-go
 cosi.a
 .protoc
 .idea
+.project

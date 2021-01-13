@@ -102,7 +102,7 @@ func (bl *bucketListener) Add(ctx context.Context, obj *v1alpha1.Bucket) error {
 
 	req := osspec.ProvisionerCreateBucketRequest{
 		BucketName:    obj.Name,
-		BucketContext: obj.Spec.Parameters,
+		BucketContext: bl.getParams(obj),
 	}
 
 	req.BucketContext["ProtocolVersion"] = obj.Spec.Protocol.Version
@@ -147,7 +147,7 @@ func (bl *bucketListener) Delete(ctx context.Context, obj *v1alpha1.Bucket) erro
 	}
 
 	req := osspec.ProvisionerDeleteBucketRequest{
-		BucketContext: obj.Spec.Parameters,
+		BucketContext: bl.getParams(obj),
 	}
 
 	switch obj.Spec.Protocol.Name {
@@ -197,4 +197,12 @@ func (bl *bucketListener) updateStatus(ctx context.Context, name, msg string, st
 		return err
 	})
 	return err
+}
+
+func (bl *bucketListener) getParams(obj *v1alpha1.Bucket) map[string]string {
+	params := map[string]string{}
+	if obj.Spec.Parameters != nil {
+		params = obj.Spec.Parameters
+	}
+	return params
 }

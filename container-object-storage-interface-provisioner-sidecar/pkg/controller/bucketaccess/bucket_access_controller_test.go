@@ -303,6 +303,47 @@ func TestAdd(t *testing.T) {
 				extraParamName: extraParamValue,
 			},
 		},
+		{
+			name: "Empty parameters",
+			setProtocol: func(b *v1alpha1.Bucket) {
+				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
+					Region:           region,
+					Version:          protocolVersion,
+					SignatureVersion: sigVersion,
+					BucketName:       bucketName,
+					Endpoint:         endpoint,
+				}
+			},
+			protocolName: v1alpha1.ProtocolNameS3,
+			grantFunc: func(ctx context.Context, in *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
+				if in.BucketName != bucketName {
+					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
+				}
+				if in.BucketContext["Region"] != region {
+					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
+				}
+				if in.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, in.Principal)
+				}
+				if in.BucketContext["Version"] != protocolVersion {
+					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["Version"])
+				}
+				if in.BucketContext["SignatureVersion"] != string(sigVersion) {
+					t.Errorf("expected %s, got %s", sigVersion, in.BucketContext["SignatureVersion"])
+				}
+				if in.BucketContext["Endpoint"] != endpoint {
+					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
+				}
+				return &osspec.ProvisionerGrantBucketAccessResponse{
+					Principal:               principal,
+					CredentialsFileContents: credsContents,
+					CredentialsFilePath:     credsFile,
+				}, nil
+			},
+			principal:      principal,
+			serviceAccount: "",
+			params:         nil,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -347,6 +388,7 @@ func TestAdd(t *testing.T) {
 			kubeClient:         kubeClient,
 		}
 
+		t.Logf(tc.name)
 		err := bal.Add(ctx, &ba)
 		if err != nil {
 			t.Errorf("add returned: %+v", err)
@@ -576,6 +618,42 @@ func TestDelete(t *testing.T) {
 				extraParamName: extraParamValue,
 			},
 		},
+		{
+			name: "Empty parameters",
+			setProtocol: func(b *v1alpha1.Bucket) {
+				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
+					Region:           region,
+					Version:          protocolVersion,
+					SignatureVersion: sigVersion,
+					BucketName:       bucketName,
+					Endpoint:         endpoint,
+				}
+			},
+			protocolName: v1alpha1.ProtocolNameS3,
+			revokeFunc: func(ctx context.Context, in *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+				if in.BucketName != bucketName {
+					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
+				}
+				if in.BucketContext["Region"] != region {
+					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
+				}
+				if in.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, in.Principal)
+				}
+				if in.BucketContext["Version"] != protocolVersion {
+					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["Version"])
+				}
+				if in.BucketContext["SignatureVersion"] != string(sigVersion) {
+					t.Errorf("expected %s, got %s", sigVersion, in.BucketContext["SignatureVersion"])
+				}
+				if in.BucketContext["Endpoint"] != endpoint {
+					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
+				}
+				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
+			},
+			serviceAccount: "",
+			params:         nil,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -619,6 +697,7 @@ func TestDelete(t *testing.T) {
 			Type: v1.SecretTypeOpaque,
 		}
 
+		t.Logf(tc.name)
 		ctx := context.TODO()
 		tc.setProtocol(&b)
 		client := fakebucketclientset.NewSimpleClientset(&ba, &b)

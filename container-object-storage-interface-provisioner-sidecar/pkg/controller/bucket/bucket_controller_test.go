@@ -212,6 +212,20 @@ func TestAddValidProtocols(t *testing.T) {
 				"AnonymousAccessMode": anonAccess,
 			},
 		},
+		{
+			name:         "Empty parameters",
+			protocolName: v1alpha1.ProtocolNameS3,
+			createFunc: func(ctx context.Context, in *osspec.ProvisionerCreateBucketRequest, opts ...grpc.CallOption) (*osspec.ProvisionerCreateBucketResponse, error) {
+				if in.BucketName != bucketName {
+					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
+				}
+				if in.BucketContext["ProtocolVersion"] != protocolVersion {
+					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["ProtocolVersion"])
+				}
+				return &osspec.ProvisionerCreateBucketResponse{}, nil
+			},
+			params: nil,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -242,7 +256,7 @@ func TestAddValidProtocols(t *testing.T) {
 			kubeClient:        kubeClient,
 		}
 
-		t.Logf("Testing protocol %s", tc.name)
+		t.Logf(tc.name)
 		err := bl.Add(ctx, &b)
 		if err != nil {
 			t.Errorf("add returned: %+v", err)
@@ -405,6 +419,41 @@ func TestDeleteValidProtocols(t *testing.T) {
 				extraParamName: extraParamValue,
 			},
 		},
+		{
+			name: "Empty parameters",
+			setProtocol: func(b *v1alpha1.Bucket) {
+				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
+					Region:           region,
+					Version:          protocolVersion,
+					SignatureVersion: sigVersion,
+					BucketName:       bucketName,
+					Endpoint:         endpoint,
+				}
+			},
+			protocolName: v1alpha1.ProtocolNameS3,
+			deleteFunc: func(ctx context.Context, in *osspec.ProvisionerDeleteBucketRequest, opts ...grpc.CallOption) (*osspec.ProvisionerDeleteBucketResponse, error) {
+				if in.BucketName != bucketName {
+					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
+				}
+				if in.BucketContext["Region"] != region {
+					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
+				}
+				if in.BucketContext["ProtocolVersion"] != protocolVersion {
+					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["ProtocolVersion"])
+				}
+				if in.BucketContext["SignatureVersion"] != string(sigVersion) {
+					t.Errorf("expected %s, got %s", sigVersion, in.BucketContext["SignatureVersion"])
+				}
+				if in.BucketContext["Endpoint"] != endpoint {
+					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
+				}
+				if in.BucketContext["ProtocolVersion"] != protocolVersion {
+					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["ProtocolVersion"])
+				}
+				return &osspec.ProvisionerDeleteBucketResponse{}, nil
+			},
+			params: nil,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -434,7 +483,7 @@ func TestDeleteValidProtocols(t *testing.T) {
 		}
 
 		tc.setProtocol(&b)
-		t.Logf("Testing protocol %s", tc.name)
+		t.Logf(tc.name)
 		err := bl.Delete(ctx, &b)
 		if err != nil {
 			t.Errorf("delete returned: %+v", err)

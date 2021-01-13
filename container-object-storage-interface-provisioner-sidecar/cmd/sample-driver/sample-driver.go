@@ -29,7 +29,8 @@ import (
 	"github.com/minio/minio/pkg/madmin"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"k8s.io/klog"
+
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/grpcserver"
 )

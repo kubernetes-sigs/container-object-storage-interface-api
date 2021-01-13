@@ -25,7 +25,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type options struct {
@@ -102,11 +102,11 @@ func (c *GRPCClient) ConnectWithLogging(interval time.Duration) (*grpc.ClientCon
 	klog.Infof("Connecting to %s", c.serverAddress)
 
 	grpcLogFunc := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		klog.V(5).Infof("GRPC call: %s", method)
-		klog.V(5).Infof("GRPC request: %s", req)
+		klog.Infof("GRPC call: %s", method)
+		klog.Infof("GRPC request: %s", req)
 		err := invoker(ctx, method, req, reply, cc, opts...)
-		klog.V(5).Infof("GRPC response: %s", reply)
-		klog.V(5).Infof("GRPC error: %v", err)
+		klog.Infof("GRPC response: %s", reply)
+		klog.Infof("GRPC error: %v", err)
 		return err
 	}
 

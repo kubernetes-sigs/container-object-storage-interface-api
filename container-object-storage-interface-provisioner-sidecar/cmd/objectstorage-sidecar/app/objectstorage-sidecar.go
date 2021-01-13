@@ -15,7 +15,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -36,7 +36,7 @@ func NewSidecarOptions() *SidecarOptions {
 
 // Run starts the sidecar with the configured options
 func (so *SidecarOptions) Run() {
-	klog.V(1).Infof("attempting to open a gRPC connection with: %q", so.driverAddress)
+	klog.Infof("attempting to open a gRPC connection with: %q", so.driverAddress)
 	grpcClient, err := grpcclient.NewGRPCClient(so.driverAddress, []grpc.DialOption{}, nil)
 	if err != nil {
 		klog.Errorf("error creating GRPC Client: %v", err)
@@ -52,7 +52,7 @@ func (so *SidecarOptions) Run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	klog.V(1).Infof("creating provisioner client")
+	klog.Infof("creating provisioner client")
 	provisionerClient := osspec.NewProvisionerClient(grpcConn)
 
 	klog.Infof("discovering driver name")

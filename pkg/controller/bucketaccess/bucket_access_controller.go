@@ -116,7 +116,7 @@ func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAc
 	req := osspec.ProvisionerGrantBucketAccessRequest{
 		Principal:     obj.Spec.Principal,
 		AccessPolicy:  obj.Spec.PolicyActionsConfigMapData,
-		BucketContext: obj.Spec.Parameters,
+		BucketContext: bal.getParams(obj),
 	}
 
 	switch bucket.Spec.Protocol.Name {
@@ -206,7 +206,7 @@ func (bal *bucketAccessListener) Delete(ctx context.Context, obj *v1alpha1.Bucke
 
 	req := osspec.ProvisionerRevokeBucketAccessRequest{
 		Principal:     obj.Spec.Principal,
-		BucketContext: obj.Spec.Parameters,
+		BucketContext: bal.getParams(obj),
 	}
 
 	switch bucket.Spec.Protocol.Name {
@@ -276,4 +276,12 @@ func (bal *bucketAccessListener) updatePrincipal(ctx context.Context, name strin
 		return err
 	})
 	return err
+}
+
+func (bal *bucketAccessListener) getParams(obj *v1alpha1.BucketAccess) map[string]string {
+	params := map[string]string{}
+	if obj.Spec.Parameters != nil {
+		params = obj.Spec.Parameters
+	}
+	return params
 }

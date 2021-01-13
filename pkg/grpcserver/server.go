@@ -29,7 +29,7 @@ import (
 
 	osi "github.com/kubernetes-sigs/container-object-storage-interface-spec"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // Defines Non blocking GRPC server interfaces

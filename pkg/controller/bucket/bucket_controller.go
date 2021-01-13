@@ -35,7 +35,7 @@ import (
 
 	osspec "github.com/kubernetes-sigs/container-object-storage-interface-spec"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"golang.org/x/time/rate"
 )
@@ -93,7 +93,7 @@ func (bl *bucketListener) InitializeBucketClient(bc bucketclientset.Interface) {
 
 // Add will call the provisioner and add a bucket
 func (bl *bucketListener) Add(ctx context.Context, obj *v1alpha1.Bucket) error {
-	klog.V(1).Infof("bucketListener: add called for bucket %s", obj.Name)
+	klog.Infof("bucketListener: add called for bucket %s", obj.Name)
 
 	// Verify this bucket is for this provisioner
 	if !strings.EqualFold(obj.Spec.Provisioner, bl.provisionerName) {
@@ -133,13 +133,13 @@ func (bl *bucketListener) Add(ctx context.Context, obj *v1alpha1.Bucket) error {
 
 // Update does nothing
 func (bl *bucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) error {
-	klog.V(1).Infof("bucketListener: update called for bucket %s", old.Name)
+	klog.Infof("bucketListener: update called for bucket %s", old.Name)
 	return nil
 }
 
 // Delete will call the provisioner and delete a bucket
 func (bl *bucketListener) Delete(ctx context.Context, obj *v1alpha1.Bucket) error {
-	klog.V(1).Infof("bucketListener: delete called for bucket %s", obj.Name)
+	klog.Infof("bucketListener: delete called for bucket %s", obj.Name)
 
 	// Verify this bucket is for this provisioner
 	if !strings.EqualFold(obj.Spec.Provisioner, bl.provisionerName) {
@@ -179,7 +179,7 @@ func (bl *bucketListener) Delete(ctx context.Context, obj *v1alpha1.Bucket) erro
 		_, err = bl.bucketClient.ObjectstorageV1alpha1().Buckets().UpdateStatus(ctx, obj, metav1.UpdateOptions{})
 		return err
 	}
-	klog.V(1).Infof("provisioner returned delete bucket response %v", rsp)
+	klog.Infof("provisioner returned delete bucket response %v", rsp)
 
 	// update bucket availability to false
 	return bl.updateStatus(ctx, obj.Name, "Bucket Deleted", false)

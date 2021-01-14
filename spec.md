@@ -132,7 +132,7 @@ package cosi.v1alpha1;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "cosi";
+option go_package = "sigs.k8s.io/container-object-storage-interface-spec;cosi";
 
 extend google.protobuf.EnumOptions {
     // Indicates that this enum is OPTIONAL and part of an experimental
@@ -180,11 +180,13 @@ extend google.protobuf.ServiceOptions {
     bool alpha_service = 1060;
 }
 
-service Provisioner {
+service Identity {
     // This call is meant to retrieve the unique provisioner Identity.
     // This identity will have to be set in BucketRequest.Provisioner field in order to invoke this specific provisioner.
     rpc ProvisionerGetInfo (ProvisionerGetInfoRequest) returns (ProvisionerGetInfoResponse) {}
+}
 
+service Provisioner {
     // This call is made to create the bucket in the backend.
     // This call is idempotent
     //    1. If a bucket that matches both name and parameters already exists, then OK (success) must be returned.
@@ -203,12 +205,85 @@ service Provisioner {
     rpc ProvisionerRevokeBucketAccess (ProvisionerRevokeBucketAccessRequest) returns (ProvisionerRevokeBucketAccessResponse);
 }
 
+enum ProtocolName {
+    UnknownProtocol = 0;
+    // S3, AWS S3 protocol
+    S3 = 1;
+    // AZURE, Microsoft Azure protocol
+    AZURE = 2;
+    // GCS, Google GCS protocol
+    GCS = 3;
+}
+
+// S3SignatureVersion is the version of the signing algorithm for all s3 requests
+enum S3SignatureVersion {
+    UnknownSignature = 0;
+    // S3V2, Signature version v2
+    S3V2 = 1;
+    // S3V4, Signature version v4
+    S3V4 = 2;
+}
+
+enum AnonymousBucketAccessMode {
+    UnknownBucketAccessMode = 0;
+    // Default, disallow uncredentialed access to the backend storage.
+    Private = 1;
+    // Read only, uncredentialed users can call ListBucket and GetObject.
+    ReadOnly = 2;
+    // Write only, uncredentialed users can only call PutObject.
+    WriteOnly = 3;
+    // Read/Write, uncredentialed users can read objects as well as PutObject.
+    ReadWrite = 4;
+}
+
+message S3Parameters {
+    // endpoint denotes the URL of the S3 server
+    string endpoint = 1;
+    // bucket_name denotes the name of the bucket in the storage backend
+    string bucket_name = 2;
+    // region denotes the geographical region where the S3 server is running
+    string region = 3;
+    // signature_version denotes the signature version for signing all s3 requests
+    S3SignatureVersion signature_version = 4;
+}
+
+message AzureBlobParameters {
+    // container_name is the name of the azure container
+    string container_name = 1;
+    // storage_account is the id of the azure storage account
+    string storage_account = 2;
+}
+
+message GCSParameters {
+    // bucket_name denotes the name of the bucket in the storage backend
+    string bucket_name = 1;
+    // private_key_name denotes the name of the private key in the storage backend
+    string private_key_name = 2;
+    // project_id denotes the name of the project id in the storage backend
+    string project_id = 3;
+    // service_account denotes the name of the service account in the storage backend
+    string service_account = 4;
+}
+
+message Protocol {
+    // ProtocolName is the name of the protocol
+    ProtocolName name = 1;
+    // version is the name of the protocol version
+    string version = 2;
+
+    oneof type {
+        S3Parameters s3 = 3;
+        AzureBlobParameters azureBlob = 4;
+        GCSParameters gcs = 5;
+    }
+}
+
 message ProvisionerGetInfoRequest {
     // Intentionally left blank
 }
 
 message ProvisionerGetInfoResponse {    
-     // This field is REQUIRED
+    // This field is REQUIRED
     // The name MUST follow domain name notation format
     // (https://tools.ietf.org/html/rfc1035#section-2.3.1). It SHOULD
     // include the plugin's host company name and the plugin name,
@@ -221,24 +296,14 @@ message ProvisionerGetInfoResponse {
 
 message ProvisionerCreateBucketRequest {    
     // This field is REQUIRED
-    // Bucket name.
-    string bucket_name = 1;
+    // Protocol specific information required by the call is passed in as key,value pairs.
+    Protocol protocol = 1;
 
     // This field is OPTIONAL
-    // Protocol specific information required by the call is passed in as key,value pairs.
-    map<string,string> bucket_context = 2;
+    // The caller should treat the values in parameters as opaque. 
+    // The receiver is responsible for parsing and validating the values.
+    map<string,string> parameters = 2;
 
-    enum AnonymousBucketAccessMode {
-        // Default, disallow uncredentialed access to the backend storage.
-	BUCKET_PRIVATE = 0;
-        // Read only, uncredentialed users can call ListBucket and GetObject.
-	BUCKET_READ_ONLY = 1;
-        // Write only, uncredentialed users can only call PutObject.
-	BUCKET_WRITE_ONLY = 2;
-        // Read/Write, same as ro with the addition of PutObject being allowed.
-	BUCKET_READ_WRITE = 3;
-    }
-    
     // This field is OPTIONAL
     // Allow uncredentialed access to bucket.
     AnonymousBucketAccessMode anonymous_bucket_access_mode = 3;
@@ -250,31 +315,33 @@ message ProvisionerCreateBucketResponse {
 
 message ProvisionerDeleteBucketRequest {
     // This field is REQUIRED
-    // Bucket name.
-    string bucket_name = 1;
-    
+    // Protocol specific information required by the call is passed in as key,value pairs.
+    Protocol protocol = 1;
+
     // This field is OPTIONAL
     // Protocol specific information required by the call is passed in as key,value pairs.
-    map<string,string> bucket_context = 2;
+    // The caller should treat the values in parameters as opaque. 
+    // The receiver is responsible for parsing and validating the values.
+    map<string,string> parameters = 2;
 }
 
 message ProvisionerDeleteBucketResponse {
-     // Intentionally left blank
+    // Intentionally left blank
 }
 
 message ProvisionerGrantBucketAccessRequest {
     // This field is REQUIRED
-    // Bucket name.
-    string bucket_name = 1;
-    
+    // Protocol specific information required by the call is passed in as key,value pairs.
+    Protocol protocol = 1;
+
     // This field is OPTIONAL
     // Protocol specific information required by the call is passed in as key,value pairs.
-    map<string,string> bucket_context = 2;
+    map<string,string> parameters = 2;
 
     // This field is OPTIONAL
     // Principal for which access is requested
     string principal = 3;
-    
+
     // This field is REQUIRED
     // Requested Access policy, ex: {"Effect":"Allow","Action":"s3:PutObject","Resource":"arn:aws:s3:::profilepics/*"}
     string access_policy = 4;
@@ -285,11 +352,11 @@ message ProvisionerGrantBucketAccessResponse {
     // This is the account that is being provided access. This will
     // be required later to revoke access. 
     string principal = 1;
-    
+
     // This field is OPTIONAL
     // Contents of the credential file, ex: aws access key id and secret, etc.
     string credentials_file_contents = 2;
-    
+
     // This field is OPTIONAL
     // Path where the credential file will be mounted.
     string credentials_file_path = 3;
@@ -297,12 +364,12 @@ message ProvisionerGrantBucketAccessResponse {
  
 message ProvisionerRevokeBucketAccessRequest {
     // This field is REQUIRED
-    // Bucket name.
-    string bucket_name = 1;
-    
+    // Protocol specific information required by the call is passed in as key,value pairs.
+    Protocol protocol = 1;
+
     // This field is OPTIONAL
     // Protocol specific information required by the call is passed in as key,value pairs.
-    map<string,string> bucket_context = 2;
+    map<string,string> parameters = 2;
 
     // This field is REQUIRED
     // This is the account that is being revoked access.

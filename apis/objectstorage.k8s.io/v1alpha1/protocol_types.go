@@ -24,16 +24,11 @@ const (
 	ProtocolNameGCS   ProtocolName = "gcs"
 )
 
-type RequestedProtocol struct {
+type Protocol struct {
 	// +kubebuilder:validation:Enum:={s3,azureBlob,gcs}
 	Name ProtocolName `json:"name"`
 	// +optional
 	Version string `json:"version,omitempty"`
-}
-
-type Protocol struct {
-	// +required
-	RequestedProtocol `json:"requestedProtocol"`
 	// +optional
 	S3 *S3Protocol `json:"s3,omitempty"`
 	// +optional

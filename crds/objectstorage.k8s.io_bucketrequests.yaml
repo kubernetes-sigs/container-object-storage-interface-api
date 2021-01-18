@@ -40,21 +40,6 @@ spec:
                 type: string
               bucketPrefix:
                 type: string
-              protocol:
-                properties:
-                  name:
-                    enum:
-                    - s3
-                    - azureBlob
-                    - gcs
-                    type: string
-                  version:
-                    type: string
-                required:
-                - name
-                type: object
-            required:
-            - protocol
             type: object
           status:
             properties:

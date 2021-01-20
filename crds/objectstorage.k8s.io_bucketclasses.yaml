@@ -56,7 +56,50 @@ spec:
               type: string
             type: object
           protocol:
-            type: string
+            properties:
+              azureBlob:
+                properties:
+                  containerName:
+                    type: string
+                  storageAccount:
+                    type: string
+                type: object
+              gcs:
+                properties:
+                  bucketName:
+                    type: string
+                  privateKeyName:
+                    type: string
+                  projectID:
+                    type: string
+                  serviceAccount:
+                    type: string
+                type: object
+              name:
+                enum:
+                - s3
+                - azureBlob
+                - gcs
+                type: string
+              s3:
+                properties:
+                  bucketName:
+                    type: string
+                  endpoint:
+                    type: string
+                  region:
+                    type: string
+                  signatureVersion:
+                    enum:
+                    - s3v2
+                    - s3v4
+                    type: string
+                type: object
+              version:
+                type: string
+            required:
+            - name
+            type: object
           provisioner:
             type: string
           retentionPolicy:

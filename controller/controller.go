@@ -172,7 +172,7 @@ func NewObjectStorageControllerWithClientset(identity string, leaderLockName str
 // Run - runs the controller. Note that ctx must be cancellable i.e. ctx.Done() should not return nil
 func (c *ObjectStorageController) Run(ctx context.Context) error {
 	if !c.initialized {
-		fmt.Errorf("Uninitialized controller. Atleast 1 listener should be added")
+		return fmt.Errorf("Uninitialized controller. Atleast 1 listener should be added")
 	}
 
 	ns := func() string {

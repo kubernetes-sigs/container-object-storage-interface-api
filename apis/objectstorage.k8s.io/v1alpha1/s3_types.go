@@ -26,7 +26,6 @@ const (
 )
 
 type S3Protocol struct {
-	Version    string `json:"version,omitempty"`
 	Endpoint   string `json:"endpoint,omitempty"`
 	BucketName string `json:"bucketName,omitempty"`
 	Region     string `json:"region,omitempty"`

@@ -135,19 +135,12 @@ spec:
                       serviceAccount:
                         type: string
                     type: object
-                  requestedProtocol:
-                    properties:
-                      name:
-                        enum:
-                        - s3
-                        - azureBlob
-                        - gcs
-                        type: string
-                      version:
-                        type: string
-                    required:
-                    - name
-                    type: object
+                  name:
+                    enum:
+                    - s3
+                    - azureBlob
+                    - gcs
+                    type: string
                   s3:
                     properties:
                       bucketName:
@@ -161,11 +154,11 @@ spec:
                         - s3v2
                         - s3v4
                         type: string
-                      version:
-                        type: string
                     type: object
+                  version:
+                    type: string
                 required:
-                - requestedProtocol
+                - name
                 type: object
               provisioner:
                 type: string

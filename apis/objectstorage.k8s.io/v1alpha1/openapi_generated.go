@@ -53,7 +53,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketStatus":              schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketStatus(ref),
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.GCSProtocol":               schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_GCSProtocol(ref),
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol":                  schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_Protocol(ref),
-		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.RequestedProtocol":         schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_RequestedProtocol(ref),
 		"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.S3Protocol":                schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_S3Protocol(ref),
 	}
 }
@@ -647,8 +646,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"protocol": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Ref: ref("github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol"),
 						},
 					},
 					"anonymousAccessMode": {
@@ -687,7 +685,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AnonymousAccessMode", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AnonymousAccessMode", "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -896,17 +894,9 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Format: "",
 						},
 					},
-					"protocol": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.RequestedProtocol"),
-						},
-					},
 				},
-				Required: []string{"protocol"},
 			},
 		},
-		Dependencies: []string{
-			"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.RequestedProtocol"},
 	}
 }
 
@@ -1080,9 +1070,16 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"requestedProtocol": {
+					"name": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.RequestedProtocol"),
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
 						},
 					},
 					"s3": {
@@ -1101,36 +1098,11 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 						},
 					},
 				},
-				Required: []string{"requestedProtocol"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AzureProtocol", "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.GCSProtocol", "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.RequestedProtocol", "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.S3Protocol"},
-	}
-}
-
-func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_RequestedProtocol(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"version": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-				},
 				Required: []string{"name"},
 			},
 		},
+		Dependencies: []string{
+			"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AzureProtocol", "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.GCSProtocol", "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.S3Protocol"},
 	}
 }
 
@@ -1140,12 +1112,6 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"version": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 					"endpoint": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},

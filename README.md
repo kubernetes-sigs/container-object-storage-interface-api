@@ -1,43 +1,69 @@
-COSI repos and images:
+![version](https://img.shields.io/badge/status-pre--alpha-lightgrey)
 
-[Spec](https://github.com/kubernetes-sigs/container-object-storage-interface-spec)  \
-[API](https://github.com/kubernetes-sigs/container-object-storage-interface-api) \
-[Controller](https://github.com/kubernetes-sigs/container-object-storage-interface-controller) <br/>
-&emsp; - [images: cosi-controller](https://quay.io/repository/containerobjectstorage/objectstorage-controller?tab=tags) \
- [Provisioner Sidecar](https://github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar) <br /> 
- &emsp; -  images: cosi-provisioner \
- [CSI Adapter](https://github.com/kubernetes-sigs/container-object-storage-interface-csi-adapter) <br /> 
- &emsp; - images: cosi-node-adapter 
+# Container Object Storage Interface Spec
 
-COSI deprecated repos:   
+This repository hosts the gRPC API for the Container Object Storage Interface (COSI) standard. The interfaces defined in the [gRPC specification](cosi.proto) are meant to be the common interface for object storage provisioning and management across various object storage vendors.
 
+For more information about the COSI effort, visit our [documentation](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/index.md).
 
+## Why another standard?
 
-[Spec](https://github.com/container-object-storage-interface/spec) \
-[API](https://github.com/container-object-storage-interface/api) \
-[Manager (i.e. Controller)](https://github.com/container-object-storage-interface/cosi-controller-manager) \
-[Provisioner Sidecar](https://github.com/container-object-storage-interface/cosi-provisioner-sidecar) \
-[Ephemeral CSI Driver](https://github.com/container-object-storage-interface/ephemeral-csi-driver) 
+Kubernetes abstracts file/block storage via the CSI standard. The primitives for file/block storage do not extend well to object storage. Here is the **_extremely_** concise and incomplete list of reasons why:
 
+ - Unit of provisioned storage - Bucket instead of filesystem mount or block device.
+ - Access is over the network instead of local POSIX calls.
+ - No common protocol for consumption across various implementations of object storage. 
+ - Management policies and primitives - for instance, mounting and unmounting do not apply to object storage.
 
+The existing primitives in CSI do not apply to objectstorage. Thus the need for a new standard to automate the management of objectstorage.
 
-# Container Object Storage Specification
+## Developer Guide
 
-Kubernetes specific Container Object Storage Interface (COSI) components.
+All API definitions **_MUST_** satisfy the following requirements:
+
+<!-- - Must be backwards compatible -->
+ - Must be in-sync with the API definitions in [sigs.k8s.io/container-object-storage-interface-api](https://github.com/kubernetes-sigs/container-object-storage-interface-api)
+
+### Build and Test
+
+1. `cosi.proto` is generated from the specification defined in `spec.md`
+
+2. In order to update the API, make changes to `spec.md`. Then, generate `cosi.proto` using:
+
+```sh
+# generates cosi.proto
+make generate
+```
+
+3. Clean and Build
+
+```sh
+# cleans up old build files
+make clobber
+# builds the go bindings
+make
+```
+
+4. Do it all in 1 step:
+
+```
+# generates cosi.proto and builds the go bindings
+make all
+```
+
+## References
+
+ - [Documentation](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/index.md)
+ - [Deployment Guide](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/deployment-guide.md) 
+ - [Weekly Meetings](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/meetings.md)
+ - [Roadmap](https://github.com/orgs/kubernetes-sigs/projects/8)
 
 ## Community, discussion, contribution, and support
 
-If you are new to a SIG Storage project, check out this [contributing guide](https://github.com/kubernetes/community/blob/master/sig-storage/CONTRIBUTING.md) 
-and the [community page](https://github.com/kubernetes/community/tree/master/sig-storage). 
-
-If you are new to the SIG Storage COSI project, check out the [spec](https://github.com/kubernetes-sigs/container-object-storage-interface-spec/blob/master/spec.md), [KEP](https://github.com/kubernetes/enhancements/tree/master/keps/sig-storage/1979-object-storage-support), and [project board](https://github.com/orgs/kubernetes-sigs/projects/).
-
-Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
-
 You can reach the maintainers of this project at:
 
-- [Slack](https://kubernetes.slack.com/messages/sig-storage-cosi)
-- [Mailing List](https://groups.google.com/g/container-object-storage-interface-wg?pli=1)
+ - [#sig-storage-cosi](https://kubernetes.slack.com/messages/sig-storage-cosi) slack channel 
+ - [container-object-storage-interface](https://groups.google.com/g/container-object-storage-interface-wg?pli=1) mailing list
 
 ### Code of conduct
 

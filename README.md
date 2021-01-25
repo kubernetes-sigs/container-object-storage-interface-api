@@ -1,42 +1,72 @@
-COSI repos and images:
+![version](https://img.shields.io/badge/status-pre--alpha-lightgrey) ![apiVersion](https://img.shields.io/badge/apiVersion-v1alpha1-lightgreen)
 
-[Spec](https://github.com/kubernetes-sigs/container-object-storage-interface-spec)  \
-[API](https://github.com/kubernetes-sigs/container-object-storage-interface-api) \
-[Controller](https://github.com/kubernetes-sigs/container-object-storage-interface-controller) <br/>
-&emsp; - [images: cosi-controller](https://quay.io/repository/containerobjectstorage/objectstorage-controller?tab=tags) \
- [Provisioner Sidecar](https://github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar) <br /> 
- &emsp; -  images: cosi-provisioner \
- [CSI Adapter](https://github.com/kubernetes-sigs/container-object-storage-interface-csi-adapter) <br /> 
- &emsp; - images: cosi-node-adapter 
 
- <br />
+# Container Object Storage Interface Spec
+
+This repository hosts the API defintion of the Custom Resource Definitions (CRD) used for the Container Object Storage Interface (COSI) project. The provisioned unit of storage is a `Bucket`. The following CRDs are defined for managing the lifecycle of Buckets:
+
+ - BucketRequest - Represents a request to provision a Bucket
+ - BucketClass - Represents a class of Buckets with similar characteristics
+ - Bucket - Represents a Bucket or its equivalent in the storage backend
  
-COSI deprecated repos:
+ The following CRDs are defined for managing the lifecycle of workloads accessing the Bucket: 
+ 
+ - BucketAccessRequest - Represents a request to access a Bucket
+ - BucketAccessClass - Represents a class of accesors with similar access requirements
+ - BucketAccess - Represents a access token or service account in the storage backend 
 
-[Spec](https://github.com/container-object-storage-interface/spec) \
-[API](https://github.com/container-object-storage-interface/api) \
-[Manager (i.e. Controller)](https://github.com/container-object-storage-interface/cosi-controller-manager) \
-[Provisioner Sidecar](https://github.com/container-object-storage-interface/cosi-provisioner-sidecar) \
-[Ephemeral CSI Driver](https://github.com/container-object-storage-interface/ephemeral-csi-driver) 
+**NOTE**: All of the APIs are defined under the API group `objectstorage.k8s.io`.
 
+For more information about COSI, visit our [documentation](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/index.md).
 
-# Container Object Storage Interface (COSI) API
+## Developer Guide
 
-API definitions for Container Object Storage.
+All API definitions are in [`apis/objectstorage.k8s.io/`](./apis/objectstorage.k8s.io/). All API changes **_MUST_** satisfy the following requirements:
+
+ - Must be backwards compatible
+ - Must be in-sync with the API definitions in [sigs.k8s.io/container-object-storage-interface-spec](https://github.com/kubernetes-sigs/container-object-storage-interface-spec)
+ 
+### Build and Test
+
+1. Test and Build the project
+
+```
+make all
+```
+
+2. Generate CRDs
+
+```
+make codegen
+```
+
+## Adding new fields to protocols
+
+1. Create a new issue raising a RFC for the changes following this format:
+
+Title: [RFC] Changes to protocol xyz 
+> **Info**:
+> 1. Protocol: 
+> 2. Fields Added:
+> 3. Why is this change neccessary?
+>    ...(describe why here)...
+> 4. Which other COSI projects are affected by this change?
+> 5. Upgrade plan 
+>    (ignore if it doesn't apply)
+
+## References
+
+ - [Documentation](docs/index.md)
+ - [Deployment Guide](docs/deployment-guide.md) 
+ - [Weekly Meetings](docs/meetings.md)
+ - [Roadmap](https://github.com/orgs/kubernetes-sigs/projects/8)
 
 ## Community, discussion, contribution, and support
 
-If you are new to a SIG Storage project, check out this [contributing guide](https://github.com/kubernetes/community/blob/master/sig-storage/CONTRIBUTING.md) 
-and the [community page](https://github.com/kubernetes/community/tree/master/sig-storage). 
-
-If you are new to the SIG Storage COSI project, check out the [spec](https://github.com/kubernetes-sigs/container-object-storage-interface-spec/blob/master/spec.md), [KEP](https://github.com/kubernetes/enhancements/tree/master/keps/sig-storage/1979-object-storage-support), and [project board](https://github.com/orgs/kubernetes-sigs/projects/).
-
-Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
-
 You can reach the maintainers of this project at:
 
-- [Slack](https://kubernetes.slack.com/messages/sig-storage-cosi)
-- [Mailing List](https://groups.google.com/g/container-object-storage-interface-wg?pli=1)
+ - [#sig-storage-cosi](https://kubernetes.slack.com/messages/sig-storage-cosi) slack channel 
+ - [container-object-storage-interface](https://groups.google.com/g/container-object-storage-interface-wg?pli=1) mailing list
 
 ### Code of conduct
 

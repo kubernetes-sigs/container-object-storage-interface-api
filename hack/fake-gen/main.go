@@ -8,14 +8,12 @@ Requires package, and packagePath to be specified
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"strings"
-	"text/tabwriter"
 
+	. "github.com/dave/jennifer/jen"
 	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
@@ -35,17 +33,6 @@ type Method struct {
 	Name string
 	Input string
 	Output string
-}
-
-func (runner *GoFake) PrintParameters(w io.Writer) {
-	const padding = 3
-	tw := tabwriter.NewWriter(w, 0, 0, padding, ' ', tabwriter.TabIndent)
-	fmt.Fprintf(tw, "Parameters:\n")
-	for k, v := range runner.Parameters {
-		fmt.Fprintf(tw, "%s:\t%s\n", k, v)
-	}
-	fmt.Fprintln(tw, "")
-	tw.Flush()
 }
 
 func cleanInput(val string) string {
@@ -85,44 +72,48 @@ func (runner *GoFake) getLocationMessage() map[string][]*FakeService {
 	return ret
 }
 
-func (runner *GoFake) WriteImports(buf *bytes.Buffer, imports... string) {
-	for _, i := range imports {
-		buf.WriteString(fmt.Sprintf("\t\"%s\"\n", i))
-	}
-}
-
 func (runner *GoFake) CreateFakeFile(filename string, fakeSVC []*FakeService) error {
 	var outfileName string
 	var content string
 	outfileName = strings.Replace(filename, ".proto", ".pb.fake.go", -1)
 	var mdFile plugin.CodeGeneratorResponse_File
 	mdFile.Name = &outfileName
-	var buf bytes.Buffer
 
-	pkg := runner.Parameters["package"]
 	pkgPath := runner.Parameters["packagePath"]
 
-	buf.WriteString("package fake\n\n")
-	buf.WriteString("import (\n")
-	runner.WriteImports(&buf, "context", "google.golang.org/grpc")
-	buf.WriteString(fmt.Sprintf("\t%s \"%s\"\n", pkg, pkgPath))
-	buf.WriteString(")\n\n")
+	f := NewFile("fake")
 	for _, fakeSVC := range fakeSVC {
-		buf.WriteString(fmt.Sprintf("type Fake%s struct {\n", fakeSVC.Name))
-		for _, mtd := range fakeSVC.Methods {
-			buf.WriteString(fmt.Sprintf("\tFake%s func(ctx context.Context, in *%s.%s, opts ...grpc.CallOption) (*%s.%s, error)\n",
-				mtd.Name, pkg, mtd.Input, pkg, mtd.Output))
+		s := f.Type().Id(fmt.Sprintf("Fake%s", fakeSVC.Name))
+		fakeMethds := make([]Code, len(fakeSVC.Methods))
+		for i, mtd := range fakeSVC.Methods {
+			fakeMethds[i] = Id(fmt.Sprintf("Fake%s", mtd.Name)).Func().Params(
+				Id("ctx").Qual("context", "Context"),
+				Id("in").Op("*").Qual(pkgPath, mtd.Input),
+				Id("opts").Op("...").Qual("google.golang.org/grpc", "CallOption"),
+			).Op("(").List(
+				Op("*").Qual(pkgPath, mtd.Output),
+				Error(),
+			).Op(")")
 		}
-		buf.WriteString("}\n\n")
+		s.Struct(fakeMethds...)
 		for _, mtd := range fakeSVC.Methods {
-			buf.WriteString(fmt.Sprintf("func (f *Fake%s) %s(ctx context.Context, in *%s.%s, opts ...grpc.CallOption) (*%s.%s, error) {\n",
-				fakeSVC.Name, mtd.Name, pkg, mtd.Input, pkg, mtd.Output))
-			buf.WriteString(fmt.Sprintf("\treturn f.Fake%s(ctx, in, opts...)\n",
-				mtd.Name))
-			buf.WriteString("}\n\n")
+			f.Func().Params(Id("f").Id(fmt.Sprintf("*Fake%s", fakeSVC.Name))).Id(mtd.Name).Params(
+				Id("ctx").Qual("context", "Context"),
+				Id("in").Op("*").Qual(pkgPath, mtd.Input),
+				Id("opts").Op("...").Qual("google.golang.org/grpc", "CallOption"),
+			).Op("(").List(
+				Op("*").Qual(pkgPath, mtd.Output),
+				Error(),
+			).Op(")").Block(
+				Return(Id("f").Dot(fmt.Sprintf("Fake%s", mtd.Name)).Call(
+					Id("ctx"),
+					Id("in"),
+					Id("opts").Op("..."),
+				)),
+			)
 		}
 	}
-	content = buf.String()
+	content = fmt.Sprintf("%#v", f)
 	mdFile.Content = &content
 	runner.Response.File = append(runner.Response.File, &mdFile)
 	return nil
@@ -180,8 +171,6 @@ func main() {
 			exampleRunner.Parameters[kv[0]] = kv[1]
 		}
 	}
-	// Print the parameters for example
-	exampleRunner.PrintParameters(os.Stderr)
 
 	err = exampleRunner.generateCode()
 	if err != nil {

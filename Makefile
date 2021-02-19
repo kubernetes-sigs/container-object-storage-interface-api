@@ -173,7 +173,7 @@ $(COSI_GO_TMP): GO_OUT := $(GO_OUT):"$(HERE)/$(COSI_BUILD)"
 $(COSI_GO_TMP): GO_JSON_OUT := emit_defaults
 $(COSI_GO_TMP): GO_JSON_OUT := $(GO_JSON_OUT):"$(HERE)/$(COSI_BUILD)"
 $(COSI_GO_TMP): GO_FAKE_OUT := emit_defaults
-$(COSI_GO_TMP): GO_FAKE_OUT := $(GO_FAKE_OUT),package=cosi,packagePath=sigs.k8s.io/container-object-storage-interface-spec
+$(COSI_GO_TMP): GO_FAKE_OUT := $(GO_FAKE_OUT),packagePath=sigs.k8s.io/container-object-storage-interface-spec
 $(COSI_GO_TMP): GO_FAKE_OUT := $(GO_FAKE_OUT):"$(HERE)/$(COSI_BUILD)"/fake
 $(COSI_GO_TMP): INCLUDE := -I$(GOPATH)/src -I$(HERE)/$(PROTOC_TMP_DIR)/include
 $(COSI_GO_TMP): $(COSI_PROTO) | $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_JSON) $(PROTOC_GEN_GO_FAKE)

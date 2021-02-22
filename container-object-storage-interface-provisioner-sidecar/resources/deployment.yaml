@@ -35,25 +35,16 @@ spec:
       containers:
       - name: objectstorage-sample-driver
         image: quay.io/containerobjectstorage/objectstorage-sample-driver:latest
-        resources:
-          limits:
-            cpu: 1
-            memory: 1Gi
-          requests:
-            cpu: 100m
-            memory: 100Mi
+        args:
+          - "--listen-address=$(LISTEN_ADDRESS)"
+          - "--s3-endpoint=$(S3_ENDPOINT)"
+          - "--access-key=$(ACCESS_KEY)"
+          - "--secret-key=$(SECRET_KEY)"
         envFrom:
         - secretRef:
             name: objectstorage-provisioner
       - name: objectstorage-provisioner-sidecar
         image: quay.io/containerobjectstorage/objectstorage-sidecar:latest
-        resources:
-          limits:
-            cpu: 1
-            memory: 1Gi
-          requests:
-            cpu: 100m
-            memory: 100Mi
         env:
         - name: CONNECT_ADDRESS
           valueFrom:

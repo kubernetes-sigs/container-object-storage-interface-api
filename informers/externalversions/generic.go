@@ -65,6 +65,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectstorage().V1alpha1().BucketClasses().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("bucketrequests"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectstorage().V1alpha1().BucketRequests().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("cosidrivers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectstorage().V1alpha1().COSIDrivers().Informer()}, nil
 
 	}
 

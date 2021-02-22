@@ -6,14 +6,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: (devel)
   creationTimestamp: null
-  name: bucketrequests.objectstorage.k8s.io
+  name: cosidrivers.objectstorage.k8s.io
 spec:
   group: objectstorage.k8s.io
   names:
-    kind: BucketRequest
-    listKind: BucketRequestList
-    plural: bucketrequests
-    singular: bucketrequest
+    kind: COSIDriver
+    listKind: COSIDriverList
+    plural: cosidrivers
+    singular: cosidriver
   scope: Namespaced
   versions:
   - name: v1alpha1
@@ -34,19 +34,13 @@ spec:
             type: object
           spec:
             properties:
-              bucketClassName:
-                type: string
-              bucketInstanceName:
-                type: string
-              bucketPrefix:
+              provisioner:
                 type: string
             type: object
           status:
             properties:
-              bucketAvailable:
+              registered:
                 type: boolean
-              message:
-                type: string
             type: object
         type: object
     served: true

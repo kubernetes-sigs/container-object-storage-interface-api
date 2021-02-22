@@ -29,3 +29,5 @@ type BucketAccessRequestExpansion interface{}
 type BucketClassExpansion interface{}
 
 type BucketRequestExpansion interface{}
+
+type COSIDriverExpansion interface{}

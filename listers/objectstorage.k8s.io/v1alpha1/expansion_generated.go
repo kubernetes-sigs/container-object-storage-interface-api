@@ -49,3 +49,11 @@ type BucketRequestListerExpansion interface{}
 // BucketRequestNamespaceListerExpansion allows custom methods to be added to
 // BucketRequestNamespaceLister.
 type BucketRequestNamespaceListerExpansion interface{}
+
+// COSIDriverListerExpansion allows custom methods to be added to
+// COSIDriverLister.
+type COSIDriverListerExpansion interface{}
+
+// COSIDriverNamespaceListerExpansion allows custom methods to be added to
+// COSIDriverNamespaceLister.
+type COSIDriverNamespaceListerExpansion interface{}

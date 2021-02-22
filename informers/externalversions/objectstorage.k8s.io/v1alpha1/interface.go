@@ -36,6 +36,8 @@ type Interface interface {
 	BucketClasses() BucketClassInformer
 	// BucketRequests returns a BucketRequestInformer.
 	BucketRequests() BucketRequestInformer
+	// COSIDrivers returns a COSIDriverInformer.
+	COSIDrivers() COSIDriverInformer
 }
 
 type version struct {
@@ -77,4 +79,9 @@ func (v *version) BucketClasses() BucketClassInformer {
 // BucketRequests returns a BucketRequestInformer.
 func (v *version) BucketRequests() BucketRequestInformer {
 	return &bucketRequestInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// COSIDrivers returns a COSIDriverInformer.
+func (v *version) COSIDrivers() COSIDriverInformer {
+	return &cOSIDriverInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

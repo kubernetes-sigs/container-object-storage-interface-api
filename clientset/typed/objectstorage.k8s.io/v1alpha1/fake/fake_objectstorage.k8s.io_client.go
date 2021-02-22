@@ -52,6 +52,10 @@ func (c *FakeObjectstorageV1alpha1) BucketRequests(namespace string) v1alpha1.Bu
 	return &FakeBucketRequests{c, namespace}
 }
 
+func (c *FakeObjectstorageV1alpha1) COSIDrivers(namespace string) v1alpha1.COSIDriverInterface {
+	return &FakeCOSIDrivers{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeObjectstorageV1alpha1) RESTClient() rest.Interface {

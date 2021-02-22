@@ -26,13 +26,10 @@ import (
 )
 
 // BucketLister helps list Buckets.
-// All objects returned here must be treated as read-only.
 type BucketLister interface {
 	// List lists all Buckets in the indexer.
-	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.Bucket, err error)
 	// Get retrieves the Bucket from the index for a given name.
-	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.Bucket, error)
 	BucketListerExpansion
 }

@@ -277,6 +277,40 @@ type BucketAccessRequestList struct {
 	Items           []BucketAccessRequest `json:"items"`
 }
 
+
+type COSIDriverSpec struct {
+	// +optional
+	Provisioner string `json:"provisioner,omitempty"`
+}
+
+type COSIDriverStatus struct {
+	// +optional
+	Registered bool `json:"registered"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
+
+type COSIDriver struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              COSIDriverSpec `json:"spec,omitempty"`
+	// +optional
+	Status COSIDriverStatus `json:"status"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type COSIDriverList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []COSIDriver `json:"items"`
+}
+
 func init() {
 	SchemeBuilder.Register(&Bucket{}, &BucketList{})
 	SchemeBuilder.Register(&BucketRequest{}, &BucketRequestList{})
@@ -285,4 +319,6 @@ func init() {
 	SchemeBuilder.Register(&BucketAccess{}, &BucketAccessList{})
 	SchemeBuilder.Register(&BucketAccessRequest{}, &BucketAccessRequestList{})
 	SchemeBuilder.Register(&BucketAccessClass{}, &BucketAccessClassList{})
+
+	SchemeBuilder.Register(&COSIDriver{}, &COSIDriverList{})
 }

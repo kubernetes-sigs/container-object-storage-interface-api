@@ -107,7 +107,6 @@ $(GENPROTO_BUILD_GO):
 	(cd $(GOPATH)/src/$(GENPROTO_GO_PKG) && go get -v -d $$(go list -f '{{ .ImportPath }}' ./...))
 
 
-
 ########################################################################
 ##                          GRPC-GO                                   ##
 ########################################################################
@@ -126,6 +125,16 @@ $(GRPC_BUILD_GO):
 	(cd $(GOPATH)/src/$(GRPC_GO_PKG) && go get -v -d $$(go list -f '{{ .ImportPath }}' ./...) && \
 		go build -o "$@" $(GRPC_GO_PKG))
 
+
+########################################################################
+##                          PROTOC-GEN-GO-FAKE                        ##
+########################################################################
+
+# This is the recipe for getting and installing the grpc go
+PROTOC_GEN_GO_FAKE_SRC := ./hack/fake-gen
+PROTOC_GEN_GO_FAKE := protoc-gen-gofake
+$(PROTOC_GEN_GO_FAKE):
+	go build -o $(PROTOC_GEN_GO_FAKE) $(PROTOC_GEN_GO_FAKE_SRC)
 
 
 ########################################################################
@@ -148,9 +157,11 @@ COSI_PKG_SUB := .
 COSI_BUILD := $(COSI_PKG_SUB)/.build
 COSI_GO := $(COSI_PKG_SUB)/cosi.pb.go
 COSI_GO_JSON := $(COSI_PKG_SUB)/cosi.pb.json.go
+COSI_GO_FAKE := $(COSI_PKG_SUB)/fake/cosi.pb.fake.go
 COSI_A := cosi.a
 COSI_GO_TMP := $(COSI_BUILD)/$(COSI_PKG_ROOT)/cosi.pb.go
 COSI_GO_JSON_TMP := $(COSI_BUILD)/$(COSI_PKG_ROOT)/cosi.pb.json.go
+COSI_GO_FAKE_TMP := $(COSI_BUILD)/fake/$(COSI_PKG_ROOT)/cosi.pb.fake.go
 
 # This recipe generates the go language bindings to a temp area.
 $(COSI_GO_TMP): HERE := $(shell pwd)
@@ -161,11 +172,15 @@ $(COSI_GO_TMP): GO_OUT := $(GO_OUT),Mgoogle/protobuf/wrappers.proto=$(PTYPES_PKG
 $(COSI_GO_TMP): GO_OUT := $(GO_OUT):"$(HERE)/$(COSI_BUILD)"
 $(COSI_GO_TMP): GO_JSON_OUT := emit_defaults
 $(COSI_GO_TMP): GO_JSON_OUT := $(GO_JSON_OUT):"$(HERE)/$(COSI_BUILD)"
+$(COSI_GO_TMP): GO_FAKE_OUT := emit_defaults
+$(COSI_GO_TMP): GO_FAKE_OUT := $(GO_FAKE_OUT),packagePath=sigs.k8s.io/container-object-storage-interface-spec
+$(COSI_GO_TMP): GO_FAKE_OUT := $(GO_FAKE_OUT):"$(HERE)/$(COSI_BUILD)"/fake
 $(COSI_GO_TMP): INCLUDE := -I$(GOPATH)/src -I$(HERE)/$(PROTOC_TMP_DIR)/include
-$(COSI_GO_TMP): $(COSI_PROTO) | $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_JSON)
+$(COSI_GO_TMP): $(COSI_PROTO) | $(PROTOC) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_JSON) $(PROTOC_GEN_GO_FAKE)
 	@mkdir -p "$(@D)"
+	@mkdir -p "$(COSI_BUILD)/fake"
 	(cd "$(GOPATH)/src" && \
-		$(HERE)/$(PROTOC) $(INCLUDE) --go_out=$(GO_OUT) --go-json_out=$(GO_JSON_OUT) "$(COSI_PKG_ROOT)/$(<F)")
+		$(HERE)/$(PROTOC) $(INCLUDE) --go_out=$(GO_OUT) --go-json_out=$(GO_JSON_OUT) --gofake_out=$(GO_FAKE_OUT) "$(COSI_PKG_ROOT)/$(<F)")
 
 # The temp language bindings are compared to the ones that are
 # versioned. If they are different then it means the language
@@ -189,12 +204,23 @@ else
 	diff "$@" "$?" > /dev/null 2>&1 || cp -f "$?" "$@"
 endif
 
+# The temp language bindings are compared to the ones that are
+# versioned. If they are different then it means the language
+# bindings were not updated prior to being committed.
+$(COSI_GO_FAKE): $(COSI_GO_FAKE_TMP)
+ifeq (true,$(TRAVIS))
+	diff "$@" "$?"
+else
+	@mkdir -p "$(@D)"
+	diff "$@" "$?" > /dev/null 2>&1 || cp -f "$?" "$@"
+endif
+
 # This recipe builds the Go archive from the sources in three steps:
 #
 #   1. Go get any missing dependencies.
 #   2. Cache the packages.
 #   3. Build the archive file.
-$(COSI_A): $(COSI_GO) $(COSI_GO_JSON) $(GENPROTO_BUILD_GO) $(GRPC_BUILD_GO)
+$(COSI_A): $(COSI_GO) $(COSI_GO_JSON) $(COSI_GO_FAKE) $(GENPROTO_BUILD_GO) $(GRPC_BUILD_GO)
 	go get -v -d ./...
 	go install ./$(COSI_PKG_SUB)
 	go build -o "$@" ./$(COSI_PKG_SUB)
@@ -210,6 +236,6 @@ clean:
 	rm -rf "$(COSI_PROTO)" "$(COSI_A)" "$(COSI_GO)" "$(COSI_GO_JSON)" "$(COSI_BUILD)"
 
 clobber: clean
-	rm -fr "$(PROTOC)" "$(PROTOC_TMP_DIR)" "$(PROTOC_GEN_GO)" "$(PROTOC_GEN_GO_JSON)"
+	rm -fr "$(PROTOC)" "$(PROTOC_TMP_DIR)" "$(PROTOC_GEN_GO)" "$(PROTOC_GEN_GO_JSON)" "$(PROTOC_GEN_GO_FAKE)"
 
 .PHONY: clean clobber $(GRPC_BUILD_GO) $(GENPROTO_BUILD_GO)

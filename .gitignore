@@ -3,9 +3,7 @@
 .build
 *.swp
 cosi.proto.tmp
-protoc
-protoc-gen-go
-protoc-gen-go-json
+protoc*
 cosi.a
 .protoc
 .idea

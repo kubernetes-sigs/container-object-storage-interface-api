@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset"
-	objectstoragev1alpha1 "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset/typed/objectstorage.k8s.io/v1alpha1"
-	fakeobjectstoragev1alpha1 "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset/typed/objectstorage.k8s.io/v1alpha1/fake"
+	clientset "sigs.k8s.io/container-object-storage-interface-api/clientset"
+	objectstoragev1alpha1 "sigs.k8s.io/container-object-storage-interface-api/clientset/typed/objectstorage.k8s.io/v1alpha1"
+	fakeobjectstoragev1alpha1 "sigs.k8s.io/container-object-storage-interface-api/clientset/typed/objectstorage.k8s.io/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

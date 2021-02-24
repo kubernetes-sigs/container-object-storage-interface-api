@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	clientset "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset"
-	internalinterfaces "github.com/kubernetes-sigs/container-object-storage-interface-api/informers/externalversions/internalinterfaces"
-	objectstoragek8sio "github.com/kubernetes-sigs/container-object-storage-interface-api/informers/externalversions/objectstorage.k8s.io"
+	clientset "sigs.k8s.io/container-object-storage-interface-api/clientset"
+	internalinterfaces "sigs.k8s.io/container-object-storage-interface-api/informers/externalversions/internalinterfaces"
+	objectstoragek8sio "sigs.k8s.io/container-object-storage-interface-api/informers/externalversions/objectstorage.k8s.io"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

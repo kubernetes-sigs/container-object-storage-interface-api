@@ -3,7 +3,6 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: objectstorage-provisioner-role
-  namespace: objectstorage-provisioner-ns
   labels:
     app.kubernetes.io/part-of: container-object-storage-interface
     app.kubernetes.io/component: provisioner
@@ -27,7 +26,6 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: objectstorage-provisioner-role-binding
-  namespace: objectstorage-provisioner-ns
   labels:
     app.kubernetes.io/part-of: container-object-storage-interface
     app.kubernetes.io/component: provisioner
@@ -36,7 +34,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: objectstorage-provisioner-sa
-    namespace: objectstorage-provisioner-ns
+    namespace: default # must set to default. see https://github.com/kubernetes-sigs/kustomize/issues/1377#issuecomment-694731163
 roleRef:
   kind: ClusterRole
   name: objectstorage-provisioner-role

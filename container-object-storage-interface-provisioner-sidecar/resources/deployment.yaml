@@ -23,6 +23,7 @@ spec:
       app.kubernetes.io/part-of: container-object-storage-interface
       app.kubernetes.io/component: provisioner
       app.kubernetes.io/name: container-object-storage-interface-provisioner
+      app.kubernetes.io/version: main
   template:
     metadata:
       labels:
@@ -45,6 +46,8 @@ spec:
             name: objectstorage-provisioner
       - name: objectstorage-provisioner-sidecar
         image: quay.io/containerobjectstorage/objectstorage-sidecar:latest
+        args:
+          - "--connect-address=$(CONNECT_ADDRESS)"
         env:
         - name: CONNECT_ADDRESS
           valueFrom:

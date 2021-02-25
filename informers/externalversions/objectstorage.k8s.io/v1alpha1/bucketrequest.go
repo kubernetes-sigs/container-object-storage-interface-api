@@ -22,14 +22,14 @@ import (
 	"context"
 	time "time"
 
-	objectstoragek8siov1alpha1 "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	clientset "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset"
-	internalinterfaces "github.com/kubernetes-sigs/container-object-storage-interface-api/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/kubernetes-sigs/container-object-storage-interface-api/listers/objectstorage.k8s.io/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
+	objectstoragek8siov1alpha1 "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
+	clientset "sigs.k8s.io/container-object-storage-interface-api/clientset"
+	internalinterfaces "sigs.k8s.io/container-object-storage-interface-api/informers/externalversions/internalinterfaces"
+	v1alpha1 "sigs.k8s.io/container-object-storage-interface-api/listers/objectstorage.k8s.io/v1alpha1"
 )
 
 // BucketRequestInformer provides access to a shared informer and lister for

@@ -19,9 +19,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	"github.com/kubernetes-sigs/container-object-storage-interface-api/clientset/scheme"
 	rest "k8s.io/client-go/rest"
+	v1alpha1 "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-api/clientset/scheme"
 )
 
 type ObjectstorageV1alpha1Interface interface {

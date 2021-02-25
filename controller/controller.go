@@ -13,8 +13,8 @@ import (
 	"golang.org/x/time/rate"
 
 	// objectstorage
-	v1alpha1 "github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	bucketclientset "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset"
+	v1alpha1 "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
+	bucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset"
 
 	// k8s api
 	v1 "k8s.io/api/core/v1"

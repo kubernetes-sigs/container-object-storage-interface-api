@@ -16,12 +16,23 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	"errors"
+
+	osspec "sigs.k8s.io/container-object-storage-interface-spec"
+)
+
 type ProtocolName string
 
 const (
 	ProtocolNameS3    ProtocolName = "s3"
 	ProtocolNameAzure ProtocolName = "azureBlob"
 	ProtocolNameGCS   ProtocolName = "gcs"
+
+	MissingS3Protocol = "missing s3 in protocol"
+	MissingAzureProtocol = "missing azure in protocol"
+	MissingGCSProtocol = "missing gcs in protocol"
+	InvalidProtocolName = "invalid protocol name"
 )
 
 type Protocol struct {
@@ -35,4 +46,68 @@ type Protocol struct {
 	AzureBlob *AzureProtocol `json:"azureBlob,omitempty"`
 	// +optional
 	GCS *GCSProtocol `json:"gcs,omitempty"`
+}
+
+func (in *Protocol) ConvertToExternal() (*osspec.Protocol, error) {
+	external := &osspec.Protocol{
+		Version: in.Version,
+	}
+
+	switch in.Name {
+	case ProtocolNameS3:
+		if in.S3 == nil {
+			return nil, errors.New(MissingS3Protocol)
+		}
+		external.Name = osspec.ProtocolName_S3
+		external.Type = in.S3.ConvertToExternal()
+	case ProtocolNameAzure:
+		if in.AzureBlob == nil {
+			return nil, errors.New(MissingAzureProtocol)
+		}
+		external.Name = osspec.ProtocolName_AZURE
+		external.Type = in.AzureBlob.ConvertToExternal()
+	case ProtocolNameGCS:
+		if in.GCS == nil {
+			return nil, errors.New(MissingGCSProtocol)
+		}
+		external.Name = osspec.ProtocolName_GCS
+		external.Type = in.GCS.ConvertToExternal()
+	default:
+		external.Name = osspec.ProtocolName_UnknownProtocol
+		return external, errors.New(InvalidProtocolName)
+
+	}
+
+	return external, nil
+}
+
+func ConvertFromProtocolExternal(external *osspec.Protocol) (*Protocol, error) {
+	in := &Protocol{}
+	in.Version = external.Version
+
+	switch external.Name {
+	case osspec.ProtocolName_S3:
+		if external.GetS3() == nil {
+			return nil, errors.New(MissingS3Protocol)
+		}
+		in.Name = ProtocolNameS3
+		in.S3 = ConvertFromS3External(external.GetS3())
+	case osspec.ProtocolName_AZURE:
+		if external.GetAzureBlob() == nil {
+			return nil, errors.New(MissingAzureProtocol)
+		}
+		in.Name = ProtocolNameAzure
+		in.AzureBlob = ConvertFromAzureExternal(external.GetAzureBlob())
+	case osspec.ProtocolName_GCS:
+		if external.GetGcs() == nil {
+			return nil, errors.New(MissingGCSProtocol)
+		}
+		in.Name = ProtocolNameGCS
+		in.GCS = ConvertFromGCSExternal(external.GetGcs())
+	default:
+		// TODO - Do we to set the protocol Name to specific value here?
+		return nil, errors.New(InvalidProtocolName)
+	}
+
+	return in, nil
 }

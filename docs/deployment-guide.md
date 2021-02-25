@@ -20,16 +20,16 @@ Execute following commands to setup COSI:
 
 ```sh
 # Install CRDs
-kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-api
+kubectl create -k sigs.k8s.io/container-object-storage-interface-api
 
 # Install controller
-kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-controller
+kubectl create -k sigs.k8s.io/container-object-storage-interface-controller
 
 # Sample Provisioner and Sidecar
-kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar
+kubectl create -k sigs.k8s.io/container-object-storage-interface-provisioner-sidecar
 
 # Node Adapter
-kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-csi-adapter
+kubectl create -k sigs.k8s.io/container-object-storage-interface-csi-adapter
 ```
 
 ### CustomResourceDefinitions
@@ -46,30 +46,30 @@ COSI acts on following custom resource definitions (CRDs):
 All [COSI custom resource definitions](../crds) can be installed using [kustomization file](../kustomization.yaml) and `kubectl` with following command:
 
 ```sh
-kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-api
+kubectl create -k sigs.k8s.io/container-object-storage-interface-api
 ```
 
 ### Controller
 
-COSI controller can be setup using the [kustomization file](https://github.com/kubernetes-sigs/container-object-storage-interface-controller/blob/master/kustomization.yaml) from the [container-object-storage-interface-controller](https://github.com/kubernetes-sigs/container-object-storage-interface-controller) repository with following command:
+COSI controller can be setup using the [kustomization file](https://sigs.k8s.io/container-object-storage-interface-controller/blob/master/kustomization.yaml) from the [container-object-storage-interface-controller](https://sigs.k8s.io/container-object-storage-interface-controller) repository with following command:
 
 ```sh
-kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-controller
+kubectl create -k sigs.k8s.io/container-object-storage-interface-controller
 ```
 
 The controller will be deployed in the `default` namespace.
 
 ### Sample Driver & Sidecar
 
-Sample Driver & Sidecar can be setup using the [kustomization file](https://github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar/blob/master/kustomization.yaml) from the [container-object-storage-interface-provisioner-sidecar](https://github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar) repository with following command:
+Sample Driver & Sidecar can be setup using the [kustomization file](https://sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/blob/master/kustomization.yaml) from the [container-object-storage-interface-provisioner-sidecar](https://sigs.k8s.io/container-object-storage-interface-provisioner-sidecar) repository with following command:
 
 ```sh
-kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-provisioner-sidecar
+kubectl create -k sigs.k8s.io/container-object-storage-interface-provisioner-sidecar
 ```
 ### Node Adapter
 
-Node adapter can be setup using the [kustomization file](https://github.com/kubernetes-sigs/container-object-storage-interface-csi-adapter/blob/master/kustomization.yaml) from the [container-object-storage-interface-csi-adapter](https://github.com/kubernetes-sigs/container-object-storage-interface-csi-adapter) repository with following command:
+Node adapter can be setup using the [kustomization file](https://sigs.k8s.io/container-object-storage-interface-csi-adapter/blob/master/kustomization.yaml) from the [container-object-storage-interface-csi-adapter](https://sigs.k8s.io/container-object-storage-interface-csi-adapter) repository with following command:
 
 ```sh
-kubectl create -k github.com/kubernetes-sigs/container-object-storage-interface-csi-adapter
+kubectl create -k sigs.k8s.io/container-object-storage-interface-csi-adapter
 ```

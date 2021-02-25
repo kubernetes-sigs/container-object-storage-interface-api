@@ -36,5 +36,5 @@ The existing primitives in CSI do not apply to objectstorage. Thus the need for 
 ## Other
 
  - [Project Board](https://github.com/orgs/kubernetes-sigs/projects/8)
- - [Weekly Meetings](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/meetings.md)
+ - [Weekly Meetings](https://sigs.k8s.io/container-object-storage-interface-api/tree/master/docs/meetings.md)
  - [Roadmap](https://github.com/orgs/kubernetes-sigs/projects/8)

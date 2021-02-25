@@ -18,9 +18,31 @@ limitations under the License.
 
 package v1alpha1
 
+import osspec "sigs.k8s.io/container-object-storage-interface-spec"
+
 type GCSProtocol struct {
 	BucketName     string `json:"bucketName,omitempty"`
 	PrivateKeyName string `json:"privateKeyName,omitempty"`
 	ProjectID      string `json:"projectID,omitempty"`
 	ServiceAccount string `json:"serviceAccount,omitempty"`
+}
+
+func (gcs *GCSProtocol) ConvertToExternal() *osspec.Protocol_Gcs {
+	return &osspec.Protocol_Gcs{
+		Gcs: &osspec.GCSParameters{
+			BucketName:     gcs.BucketName,
+			PrivateKeyName: gcs.PrivateKeyName,
+			ProjectId:      gcs.ProjectID,
+			ServiceAccount: gcs.ServiceAccount,
+		},
+	}
+}
+
+func ConvertFromGCSExternal(ext *osspec.GCSParameters) *GCSProtocol {
+	return &GCSProtocol{
+		BucketName:     ext.BucketName,
+		PrivateKeyName: ext.PrivateKeyName,
+		ProjectID:      ext.ProjectId,
+		ServiceAccount: ext.ServiceAccount,
+	}
 }

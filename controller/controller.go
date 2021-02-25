@@ -13,7 +13,7 @@ import (
 	"golang.org/x/time/rate"
 
 	// objectstorage
-	v1alpha1 "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
 	bucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset"
 
 	// k8s api
@@ -371,7 +371,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 			Process: func(obj interface{}) error {
 				for _, d := range obj.(cache.Deltas) {
 					switch d.Type {
-					case cache.Sync, cache.Replaced, cache.Added, cache.Updated:
+					case cache.Replaced, cache.Added, cache.Updated:
 						if old, exists, err := indexer.Get(d.Object); err == nil && exists {
 							key, err := cache.MetaNamespaceKeyFunc(d.Object)
 							if err != nil {

@@ -310,19 +310,15 @@ message ProvisionerCreateBucketRequest {
 }
 
 message ProvisionerCreateBucketResponse {
-    // Intentionally left blank
+    // BucketName returned here is expected to be the globally unique 
+	// identifier for the bucket in the object storage provider 
+	string BucketName = 1;
 }
 
 message ProvisionerDeleteBucketRequest {
     // This field is REQUIRED
     // Protocol specific information required by the call is passed in as key,value pairs.
     Protocol protocol = 1;
-
-    // This field is OPTIONAL
-    // Protocol specific information required by the call is passed in as key,value pairs.
-    // The caller should treat the values in parameters as opaque. 
-    // The receiver is responsible for parsing and validating the values.
-    map<string,string> parameters = 2;
 }
 
 message ProvisionerDeleteBucketResponse {
@@ -367,13 +363,9 @@ message ProvisionerRevokeBucketAccessRequest {
     // Protocol specific information required by the call is passed in as key,value pairs.
     Protocol protocol = 1;
 
-    // This field is OPTIONAL
-    // Protocol specific information required by the call is passed in as key,value pairs.
-    map<string,string> parameters = 2;
-
     // This field is REQUIRED
     // This is the account that is being revoked access.
-    string principal = 3;
+    string principal = 2;
 }
 
 message ProvisionerRevokeBucketAccessResponse {

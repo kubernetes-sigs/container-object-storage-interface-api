@@ -21,12 +21,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
 
-	fakebucketclientset "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset/fake"
+	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset/fake"
 
-	osspec "github.com/kubernetes-sigs/container-object-storage-interface-spec"
-	fakespec "github.com/kubernetes-sigs/container-object-storage-interface-spec/fake"
+	osspec "sigs.k8s.io/container-object-storage-interface-spec"
+	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 
 	corev1 "k8s.io/api/core/v1"
 

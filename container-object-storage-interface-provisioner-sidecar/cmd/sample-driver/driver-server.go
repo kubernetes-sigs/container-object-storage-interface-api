@@ -32,7 +32,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	cosi "github.com/kubernetes-sigs/container-object-storage-interface-spec"
+	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 )
 
 var (

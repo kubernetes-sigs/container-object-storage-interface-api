@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/controller/bucketaccess"
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/grpcclient"
 
-	osspec "github.com/kubernetes-sigs/container-object-storage-interface-spec"
+	osspec "sigs.k8s.io/container-object-storage-interface-spec"
 
 	"github.com/spf13/cobra"
 

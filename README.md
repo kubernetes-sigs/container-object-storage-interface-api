@@ -1,12 +1,12 @@
 COSI repos and images:
 
-[Spec](https://github.com/kubernetes-sigs/container-object-storage-interface-spec)  \
-[API](https://github.com/kubernetes-sigs/container-object-storage-interface-api) \
-[Controller](https://github.com/kubernetes-sigs/container-object-storage-interface-controller) <br/>
+[Spec](https://sigs.k8s.io/container-object-storage-interface-spec)  \
+[API](https://sigs.k8s.io/container-object-storage-interface-api) \
+[Controller](https://sigs.k8s.io/container-object-storage-interface-controller) <br/>
 &emsp; - [images: cosi-controller](https://quay.io/repository/containerobjectstorage/objectstorage-controller?tab=tags) \
  [Provisioner Sidecar](https://sigs.k8s.io/container-object-storage-interface-provisioner-sidecar) <br /> 
  &emsp; -  images: cosi-provisioner \
- [CSI Adapter](https://github.com/kubernetes-sigs/container-object-storage-interface-csi-adapter) <br /> 
+ [CSI Adapter](https://sigs.k8s.io/container-object-storage-interface-csi-adapter) <br /> 
  &emsp; - images: cosi-node-adapter 
 
  <br />
@@ -28,7 +28,7 @@ COSI deprecated repos:
 If you are new to a SIG Storage project, check out this [contributing guide](https://github.com/kubernetes/community/blob/master/sig-storage/CONTRIBUTING.md) 
 and the [community page](https://github.com/kubernetes/community/tree/master/sig-storage). 
 
-If you are new to the SIG Storage COSI project, check out the [spec](https://github.com/kubernetes-sigs/container-object-storage-interface-spec/blob/master/spec.md), [KEP](https://github.com/kubernetes/enhancements/tree/master/keps/sig-storage/1979-object-storage-support), and [project board](https://github.com/orgs/kubernetes-sigs/projects/).
+If you are new to the SIG Storage COSI project, check out the [spec](https://sigs.k8s.io/container-object-storage-interface-spec/blob/master/spec.md), [KEP](https://github.com/kubernetes/enhancements/tree/master/keps/sig-storage/1979-object-storage-support), and [project board](https://github.com/orgs/kubernetes-sigs/projects/).
 
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
 

@@ -32,11 +32,11 @@ import (
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	bucketclientset "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset"
-	"github.com/kubernetes-sigs/container-object-storage-interface-api/controller"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
+	bucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset"
+	"sigs.k8s.io/container-object-storage-interface-api/controller"
 
-	osspec "github.com/kubernetes-sigs/container-object-storage-interface-spec"
+	osspec "sigs.k8s.io/container-object-storage-interface-spec"
 
 	"k8s.io/klog/v2"
 

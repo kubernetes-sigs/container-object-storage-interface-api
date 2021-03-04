@@ -20,7 +20,7 @@ reltools: release-tools/build.make
 release-tools/build.make:
 	$(eval CURDIR := $(shell pwd))
 	$(eval TMP := $(shell mktemp -d))
-	$(shell cd ${TMP} && git clone https://github.com/kubernetes-sigs/container-object-storage-interface-spec)
+	$(shell cd ${TMP} && git clone https://sigs.k8s.io/container-object-storage-interface-spec)
 	$(shell cp -r ${TMP}/container-object-storage-interface-spec/release-tools ${CURDIR}/)
 	$(shell rm -rf ${TMP})  
 	ln -s release-tools/travis.yml travis.yml

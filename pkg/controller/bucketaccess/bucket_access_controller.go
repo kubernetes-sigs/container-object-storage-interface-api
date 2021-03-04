@@ -19,6 +19,7 @@ package bucketaccess
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"strings"
 	"time"
 
@@ -114,29 +115,20 @@ func (bal *bucketAccessListener) Add(ctx context.Context, obj *v1alpha1.BucketAc
 	}
 
 	req := osspec.ProvisionerGrantBucketAccessRequest{
-		Principal:     obj.Spec.Principal,
-		AccessPolicy:  obj.Spec.PolicyActionsConfigMapData,
-		BucketContext: bal.getParams(obj),
+		Principal:    obj.Spec.Principal,
+		AccessPolicy: obj.Spec.PolicyActionsConfigMapData,
+		Parameters:   bal.getParams(obj),
 	}
 
-	switch bucket.Spec.Protocol.Name {
-	case v1alpha1.ProtocolNameS3:
-		req.BucketName = bucket.Spec.Protocol.S3.BucketName
-		req.BucketContext["Region"] = bucket.Spec.Protocol.S3.Region
-		req.BucketContext["Version"] = bucket.Spec.Protocol.S3.Version
-		req.BucketContext["SignatureVersion"] = string(bucket.Spec.Protocol.S3.SignatureVersion)
-		req.BucketContext["Endpoint"] = bucket.Spec.Protocol.S3.Endpoint
-	case v1alpha1.ProtocolNameAzure:
-		req.BucketName = bucket.Spec.Protocol.AzureBlob.ContainerName
-		req.BucketContext["StorageAccount"] = bucket.Spec.Protocol.AzureBlob.StorageAccount
-	case v1alpha1.ProtocolNameGCS:
-		req.BucketName = bucket.Spec.Protocol.GCS.BucketName
-		req.BucketContext["ServiceAccount"] = bucket.Spec.Protocol.GCS.ServiceAccount
-		req.BucketContext["PrivateKeyName"] = bucket.Spec.Protocol.GCS.PrivateKeyName
-		req.BucketContext["ProjectID"] = bucket.Spec.Protocol.GCS.ProjectID
-	default:
-		return fmt.Errorf("unknown protocol: %s", bucket.Spec.Protocol.Name)
+	if req.Parameters == nil {
+		req.Parameters = make(map[string]string)
 	}
+
+	proto, err := bucket.Spec.Protocol.ConvertToExternal()
+	if err != nil {
+		return errors.Wrap(err, "failed to parse protocol for API")
+	}
+	req.Protocol = proto
 
 	// TODO set grpc timeout
 	rsp, err := bal.provisionerClient.ProvisionerGrantBucketAccess(ctx, &req)
@@ -205,28 +197,19 @@ func (bal *bucketAccessListener) Delete(ctx context.Context, obj *v1alpha1.Bucke
 	}
 
 	req := osspec.ProvisionerRevokeBucketAccessRequest{
-		Principal:     obj.Spec.Principal,
-		BucketContext: bal.getParams(obj),
+		Principal:  obj.Spec.Principal,
+		Parameters: bal.getParams(obj),
 	}
 
-	switch bucket.Spec.Protocol.Name {
-	case v1alpha1.ProtocolNameS3:
-		req.BucketName = bucket.Spec.Protocol.S3.BucketName
-		req.BucketContext["Region"] = bucket.Spec.Protocol.S3.Region
-		req.BucketContext["Version"] = bucket.Spec.Protocol.S3.Version
-		req.BucketContext["SignatureVersion"] = string(bucket.Spec.Protocol.S3.SignatureVersion)
-		req.BucketContext["Endpoint"] = bucket.Spec.Protocol.S3.Endpoint
-	case v1alpha1.ProtocolNameAzure:
-		req.BucketName = bucket.Spec.Protocol.AzureBlob.ContainerName
-		req.BucketContext["StorageAccount"] = bucket.Spec.Protocol.AzureBlob.StorageAccount
-	case v1alpha1.ProtocolNameGCS:
-		req.BucketName = bucket.Spec.Protocol.GCS.BucketName
-		req.BucketContext["ServiceAccount"] = bucket.Spec.Protocol.GCS.ServiceAccount
-		req.BucketContext["PrivateKeyName"] = bucket.Spec.Protocol.GCS.PrivateKeyName
-		req.BucketContext["ProjectID"] = bucket.Spec.Protocol.GCS.ProjectID
-	default:
-		return fmt.Errorf("unknown protocol: %s", bucket.Spec.Protocol.Name)
+	if req.Parameters == nil {
+		req.Parameters = make(map[string]string)
 	}
+
+	proto, err := bucket.Spec.Protocol.ConvertToExternal()
+	if err != nil {
+		return errors.Wrap(err, "failed to parse protocol for API")
+	}
+	req.Protocol = proto
 
 	// TODO set grpc timeout
 	rsp, err := bal.provisionerClient.ProvisionerRevokeBucketAccess(ctx, &req)

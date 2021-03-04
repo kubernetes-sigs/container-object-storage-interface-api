@@ -63,39 +63,52 @@ func (ds DriverServer) ProvisionerCreateBucket(ctx context.Context, req *cosi.Pr
 		return nil, status.Error(codes.Unavailable, "Driver is missing version")
 	}
 
-	err := ds.S3Client.MakeBucket(req.BucketName, "")
+	s3 := req.Protocol.GetS3()
+	if s3 == nil {
+		return nil, status.Error(codes.Unavailable, "Driver is missing protocol")
+	}
+
+	err := ds.S3Client.MakeBucket(s3.BucketName, "")
 	if err != nil {
 		// Check to see if the bucket already exists
-		exists, errBucketExists := ds.S3Client.BucketExists(req.BucketName)
+		exists, errBucketExists := ds.S3Client.BucketExists(s3.BucketName)
 		if errBucketExists == nil && exists {
-			klog.Info("Backend Bucket already exists", req.BucketName)
+			klog.Info("Backend Bucket already exists", s3.BucketName)
 			return &cosi.ProvisionerCreateBucketResponse{}, nil
 		} else {
 			klog.Error(err)
 			return &cosi.ProvisionerCreateBucketResponse{}, err
 		}
 	}
-	klog.Info("Successfully created Backend Bucket", req.BucketName)
+	klog.Info("Successfully created Backend Bucket", s3.BucketName)
 
 	return &cosi.ProvisionerCreateBucketResponse{}, nil
 }
 
 func (ds *DriverServer) ProvisionerDeleteBucket(ctx context.Context, req *cosi.ProvisionerDeleteBucketRequest) (*cosi.ProvisionerDeleteBucketResponse, error) {
-
-	if err := ds.S3Client.RemoveBucket(req.BucketName); err != nil {
-		klog.Info("failed to delete bucket", req.BucketName)
-		return nil, err
-
+	s3 := req.Protocol.GetS3()
+	if s3 == nil {
+		return nil, status.Error(codes.Unavailable, "Driver is missing protocol")
 	}
+
+	if err := ds.S3Client.RemoveBucket(s3.BucketName); err != nil {
+		klog.Info("failed to delete bucket", s3.BucketName)
+		return nil, err
+	}
+
 	return &cosi.ProvisionerDeleteBucketResponse{}, nil
 }
 
 func (ds *DriverServer) ProvisionerGrantBucketAccess(ctx context.Context, req *cosi.ProvisionerGrantBucketAccessRequest) (*cosi.ProvisionerGrantBucketAccessResponse, error) {
-
 	creds, err := auth.GetNewCredentials()
 	if err != nil {
 		klog.Error("failed to generate new credentails")
 		return nil, err
+	}
+
+	s3 := req.Protocol.GetS3()
+	if s3 == nil {
+		return nil, status.Error(codes.Unavailable, "Driver is missing protocol")
 	}
 
 	if err := ds.S3AdminClient.AddUser(context.Background(), creds.AccessKey, creds.SecretKey); err != nil {
@@ -110,7 +123,7 @@ func (ds *DriverServer) ProvisionerGrantBucketAccess(ctx context.Context, req *c
 			iampolicy.NewStatement(
 				policy.Allow,
 				iampolicy.NewActionSet("s3:*"),
-				iampolicy.NewResourceSet(iampolicy.NewResource(req.GetBucketName()+"/*", "")),
+				iampolicy.NewResourceSet(iampolicy.NewResource(s3.BucketName+"/*", "")),
 				condition.NewFunctions(),
 			)},
 	}

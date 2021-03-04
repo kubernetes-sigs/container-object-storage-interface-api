@@ -54,14 +54,17 @@ func (so *SidecarOptions) Run() {
 
 	klog.Infof("creating provisioner client")
 	provisionerClient := osspec.NewProvisionerClient(grpcConn)
+	identityClient := osspec.NewIdentityClient(grpcConn)
 
 	klog.Infof("discovering driver name")
 	req := osspec.ProvisionerGetInfoRequest{}
-	rsp, err := provisionerClient.ProvisionerGetInfo(ctx, &req)
+	rsp, err := identityClient.ProvisionerGetInfo(ctx, &req)
 	if err != nil {
 		klog.Errorf("error calling ProvisionerGetInfo: %v", err)
 		os.Exit(1)
 	}
+
+	// TODO: go routine with health check to vendor driver
 
 	provisionerName := rsp.Name
 	// TODO: Register provisioner using internal type

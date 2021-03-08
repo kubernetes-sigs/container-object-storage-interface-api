@@ -18,17 +18,50 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	osspec "sigs.k8s.io/container-object-storage-interface-spec"
+)
+
 type S3SignatureVersion string
 
 const (
-	S3SignatureVersionV2 S3SignatureVersion = "S3v2"
-	S3SignatureVersionV4 S3SignatureVersion = "S3v4"
+	S3SignatureVersionV2 S3SignatureVersion = "S3V2"
+	S3SignatureVersionV4 S3SignatureVersion = "S3V4"
 )
 
 type S3Protocol struct {
 	Endpoint   string `json:"endpoint,omitempty"`
 	BucketName string `json:"bucketName,omitempty"`
 	Region     string `json:"region,omitempty"`
-	// +kubebuilder:validation:Enum:={s3v2,s3v4}
+	// +kubebuilder:validation:Enum:={S3V2,S3V4}
 	SignatureVersion S3SignatureVersion `json:"signatureVersion,omitempty"`
+}
+
+func (s3 *S3Protocol) ConvertToExternal() *osspec.Protocol_S3 {
+	sigver, ok := osspec.S3SignatureVersion_value[string(s3.SignatureVersion)]
+	if !ok {
+		// NOTE - 0 here is equivalent to UnknownSignature
+		sigver = 0
+	}
+	return &osspec.Protocol_S3{
+		S3: &osspec.S3Parameters{
+			Endpoint:         s3.Endpoint,
+			BucketName:       s3.BucketName,
+			Region:           s3.Region,
+			SignatureVersion: osspec.S3SignatureVersion(sigver),
+		},
+	}
+}
+
+func ConvertFromS3External(ext *osspec.S3Parameters) *S3Protocol {
+	vers, ok := osspec.S3SignatureVersion_name[int32(ext.SignatureVersion)]
+	if !ok {
+		vers = osspec.S3SignatureVersion_name[0]
+	}
+	return &S3Protocol{
+		BucketName: ext.BucketName,
+		Endpoint: ext.Endpoint,
+		Region: ext.Region,
+		SignatureVersion: S3SignatureVersion(vers),
+	}
 }

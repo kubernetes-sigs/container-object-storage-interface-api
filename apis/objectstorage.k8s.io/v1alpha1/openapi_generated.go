@@ -156,7 +156,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketStatus"},
 	}
 }
 
@@ -199,7 +199,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessStatus"},
 	}
 }
 
@@ -303,7 +303,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessClass", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessClass"},
 	}
 }
 
@@ -349,7 +349,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccess", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccess"},
 	}
 }
 
@@ -392,7 +392,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequestSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequestSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequestStatus"},
 	}
 }
 
@@ -438,7 +438,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequest", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequest"},
 	}
 }
 
@@ -685,7 +685,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AnonymousAccessMode", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AnonymousAccessMode", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol"},
 	}
 }
 
@@ -731,7 +731,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClass", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClass"},
 	}
 }
 
@@ -777,7 +777,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Bucket", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Bucket"},
 	}
 }
 
@@ -820,7 +820,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestStatus"},
 	}
 }
 
@@ -866,7 +866,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequest", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequest"},
 	}
 }
 
@@ -1000,7 +1000,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AnonymousAccessMode", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol", "k8s.io/api/core/v1.ObjectReference"},
+			"k8s.io/api/core/v1.ObjectReference", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.AnonymousAccessMode", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol"},
 	}
 }
 

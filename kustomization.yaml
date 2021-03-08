@@ -7,7 +7,7 @@ commonAnnotations:
   cosi.storage.k8s.io/license: "Apache V2"
   cosi.storage.k8s.io/support: "https://github.com/kubernetes-sigs/container-object-storage-api"
   controller-gen.kubebuilder.io/version: (devel)
-  api-approved.kubernetes.io: https://github.com/kubernetes-sigs/container-object-storage-interface-api/pull/2
+  api-approved.kubernetes.io: https://sigs.k8s.io/container-object-storage-interface-api/pull/2
 
 
 resources:

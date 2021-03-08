@@ -3,3 +3,5 @@
 .build
 *.swp
 release-tools
+vendor
+.idea

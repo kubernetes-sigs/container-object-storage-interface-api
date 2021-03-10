@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	osi "github.com/kubernetes-sigs/container-object-storage-interface-spec"
+	osi "sigs.k8s.io/container-object-storage-interface-spec"
 
 	"k8s.io/klog/v2"
 )

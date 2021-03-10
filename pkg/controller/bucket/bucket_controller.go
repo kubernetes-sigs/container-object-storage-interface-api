@@ -19,6 +19,7 @@ package bucket
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"strings"
 	"time"
 
@@ -29,11 +30,11 @@ import (
 	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	bucketclientset "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset"
-	"github.com/kubernetes-sigs/container-object-storage-interface-api/controller"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
+	bucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset"
+	"sigs.k8s.io/container-object-storage-interface-api/controller"
 
-	osspec "github.com/kubernetes-sigs/container-object-storage-interface-spec"
+	osspec "sigs.k8s.io/container-object-storage-interface-spec"
 
 	"k8s.io/klog/v2"
 
@@ -101,20 +102,28 @@ func (bl *bucketListener) Add(ctx context.Context, obj *v1alpha1.Bucket) error {
 	}
 
 	req := osspec.ProvisionerCreateBucketRequest{
-		BucketName:    obj.Name,
-		BucketContext: bl.getParams(obj),
+		Parameters: bl.getParams(obj),
+	}
+	if req.Parameters == nil {
+		req.Parameters = make(map[string]string)
 	}
 
-	req.BucketContext["ProtocolVersion"] = obj.Spec.Protocol.Version
+	proto, err := obj.Spec.Protocol.ConvertToExternal()
+	if err != nil {
+		return errors.Wrap(err, "failed to parse protocol for API")
+	}
+	req.Protocol = proto
+
+	req.Parameters["ProtocolVersion"] = obj.Spec.Protocol.Version
 
 	if obj.Spec.AnonymousAccessMode.Private {
-		req.AnonymousBucketAccessMode = osspec.ProvisionerCreateBucketRequest_BUCKET_PRIVATE
+		req.AnonymousBucketAccessMode = osspec.AnonymousBucketAccessMode_Private
 	} else if obj.Spec.AnonymousAccessMode.PublicReadOnly {
-		req.AnonymousBucketAccessMode = osspec.ProvisionerCreateBucketRequest_BUCKET_READ_ONLY
+		req.AnonymousBucketAccessMode = osspec.AnonymousBucketAccessMode_ReadOnly
 	} else if obj.Spec.AnonymousAccessMode.PublicReadWrite {
-		req.AnonymousBucketAccessMode = osspec.ProvisionerCreateBucketRequest_BUCKET_WRITE_ONLY
+		req.AnonymousBucketAccessMode = osspec.AnonymousBucketAccessMode_ReadWrite
 	} else if obj.Spec.AnonymousAccessMode.PublicWriteOnly {
-		req.AnonymousBucketAccessMode = osspec.ProvisionerCreateBucketRequest_BUCKET_READ_WRITE
+		req.AnonymousBucketAccessMode = osspec.AnonymousBucketAccessMode_WriteOnly
 	}
 
 	// TODO set grpc timeout
@@ -147,28 +156,19 @@ func (bl *bucketListener) Delete(ctx context.Context, obj *v1alpha1.Bucket) erro
 	}
 
 	req := osspec.ProvisionerDeleteBucketRequest{
-		BucketContext: bl.getParams(obj),
+		Parameters: bl.getParams(obj),
+	}
+	if req.Parameters == nil {
+		req.Parameters = make(map[string]string)
 	}
 
-	switch obj.Spec.Protocol.Name {
-	case v1alpha1.ProtocolNameS3:
-		req.BucketName = obj.Spec.Protocol.S3.BucketName
-		req.BucketContext["Region"] = obj.Spec.Protocol.S3.Region
-		req.BucketContext["SignatureVersion"] = string(obj.Spec.Protocol.S3.SignatureVersion)
-		req.BucketContext["Endpoint"] = obj.Spec.Protocol.S3.Endpoint
-	case v1alpha1.ProtocolNameAzure:
-		req.BucketName = obj.Spec.Protocol.AzureBlob.ContainerName
-		req.BucketContext["StorageAccount"] = obj.Spec.Protocol.AzureBlob.StorageAccount
-	case v1alpha1.ProtocolNameGCS:
-		req.BucketName = obj.Spec.Protocol.GCS.BucketName
-		req.BucketContext["ServiceAccount"] = obj.Spec.Protocol.GCS.ServiceAccount
-		req.BucketContext["PrivateKeyName"] = obj.Spec.Protocol.GCS.PrivateKeyName
-		req.BucketContext["ProjectID"] = obj.Spec.Protocol.GCS.ProjectID
-	default:
-		return fmt.Errorf("unknown protocol: %s", obj.Spec.Protocol.Name)
+	proto, err := obj.Spec.Protocol.ConvertToExternal()
+	if err != nil {
+		return errors.Wrap(err, "failed to parse protocol for API")
 	}
+	req.Protocol = proto
 
-	req.BucketContext["ProtocolVersion"] = obj.Spec.Protocol.Version
+	req.Parameters["ProtocolVersion"] = obj.Spec.Protocol.Version
 
 	// TODO set grpc timeout
 	rsp, err := bl.provisionerClient.ProvisionerDeleteBucket(ctx, &req)

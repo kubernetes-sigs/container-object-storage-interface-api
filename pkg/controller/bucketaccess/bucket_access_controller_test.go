@@ -22,11 +22,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kubernetes-sigs/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	fakebucketclientset "github.com/kubernetes-sigs/container-object-storage-interface-api/clientset/fake"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
+	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset/fake"
 
-	osspec "github.com/kubernetes-sigs/container-object-storage-interface-spec"
-	fakespec "github.com/kubernetes-sigs/container-object-storage-interface-spec/fake"
+	osspec "sigs.k8s.io/container-object-storage-interface-spec"
+	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -79,8 +79,8 @@ func TestInitializeBucketClient(t *testing.T) {
 
 func TestAddWrongProvisioner(t *testing.T) {
 	provisioner := "provisioner1"
-	mpc := struct{ fakespec.MockProvisionerClient }{}
-	mpc.GrantBucketAccess = func(ctx context.Context, in *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
+	mpc := struct{ fakespec.FakeProvisionerClient }{}
+	mpc.FakeProvisionerGrantBucketAccess = func(ctx context.Context, in *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
 		t.Errorf("grpc client called")
 		return nil, nil
 	}
@@ -118,7 +118,7 @@ func TestAdd(t *testing.T) {
 	credsFile := "credsFile"
 	generatedPrincipal := "driverPrincipal"
 	sa := "serviceAccount"
-	mpc := struct{ fakespec.MockProvisionerClient }{}
+	mpc := struct{ fakespec.FakeProvisionerClient }{}
 	extraParamName := "ParamName"
 	extraParamValue := "ParamValue"
 
@@ -136,34 +136,36 @@ func TestAdd(t *testing.T) {
 			setProtocol: func(b *v1alpha1.Bucket) {
 				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
 					Region:           region,
-					Version:          protocolVersion,
 					SignatureVersion: sigVersion,
 					BucketName:       bucketName,
 					Endpoint:         endpoint,
 				}
 			},
 			protocolName: v1alpha1.ProtocolNameS3,
-			grantFunc: func(ctx context.Context, in *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
+			grantFunc: func(ctx context.Context, req *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
+				in := req.Protocol.GetS3()
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.BucketContext["Region"] != region {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
+				if in.Region != region {
+					t.Errorf("expected %s, got %s", region, in.Region)
 				}
-				if in.Principal != principal {
-					t.Errorf("expected %s, got %s", principal, in.Principal)
+				if req.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, req.Principal)
 				}
-				if in.BucketContext["Version"] != protocolVersion {
-					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["Version"])
+				// TODO do we need to check ProtocolVersion here? If so, from where?
+				sigver, ok := osspec.S3SignatureVersion_name[int32(in.SignatureVersion)]
+				if !ok {
+					sigver = osspec.S3SignatureVersion_name[int32(osspec.S3SignatureVersion_UnknownSignature)]
 				}
-				if in.BucketContext["SignatureVersion"] != string(sigVersion) {
-					t.Errorf("expected %s, got %s", sigVersion, in.BucketContext["SignatureVersion"])
+				if sigver != string(sigVersion) {
+					t.Errorf("expected %s, got %s", sigVersion, sigver)
 				}
-				if in.BucketContext["Endpoint"] != endpoint {
-					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
+				if in.Endpoint != endpoint {
+					t.Errorf("expected %s, got %s", endpoint, in.Endpoint)
 				}
-				if in.BucketContext[extraParamName] != extraParamValue {
-					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				if req.Parameters[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, req.Parameters[extraParamName])
 				}
 				return &osspec.ProvisionerGrantBucketAccessResponse{
 					Principal:               principal,
@@ -188,24 +190,25 @@ func TestAdd(t *testing.T) {
 				}
 			},
 			protocolName: v1alpha1.ProtocolNameGCS,
-			grantFunc: func(ctx context.Context, in *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
+			grantFunc: func(ctx context.Context, req *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
+				in := req.Protocol.GetGcs()
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.Principal != principal {
-					t.Errorf("expected %s, got %s", principal, in.Principal)
+				if req.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, req.Principal)
 				}
-				if in.BucketContext["ServiceAccount"] != account {
-					t.Errorf("expected %s, got %s", account, in.BucketContext["ServiceAccount"])
+				if in.ServiceAccount != account {
+					t.Errorf("expected %s, got %s", account, in.ServiceAccount)
 				}
-				if in.BucketContext["PrivateKeyName"] != keyName {
-					t.Errorf("expected %s, got %s", keyName, in.BucketContext["PrivateKeyName"])
+				if in.PrivateKeyName != keyName {
+					t.Errorf("expected %s, got %s", keyName, in.PrivateKeyName)
 				}
-				if in.BucketContext["ProjectID"] != projID {
-					t.Errorf("expected %s, got %s", projID, in.BucketContext["ProjectID"])
+				if in.ProjectId != projID {
+					t.Errorf("expected %s, got %s", projID, in.ProjectId)
 				}
-				if in.BucketContext[extraParamName] != extraParamValue {
-					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				if req.Parameters[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, req.Parameters[extraParamName])
 				}
 				return &osspec.ProvisionerGrantBucketAccessResponse{
 					Principal:               principal,
@@ -228,18 +231,19 @@ func TestAdd(t *testing.T) {
 				}
 			},
 			protocolName: v1alpha1.ProtocolNameAzure,
-			grantFunc: func(ctx context.Context, in *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
-				if in.BucketName != bucketName {
-					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
+			grantFunc: func(ctx context.Context, req *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
+				in := req.Protocol.GetAzureBlob()
+				if in.ContainerName != bucketName {
+					t.Errorf("expected %s, got %s", bucketName, in.ContainerName)
 				}
-				if in.Principal != principal {
-					t.Errorf("expected %s, got %s", principal, in.Principal)
+				if req.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, req.Principal)
 				}
-				if in.BucketContext["StorageAccount"] != account {
-					t.Errorf("expected %s, got %s", account, in.BucketContext["StorageAccount"])
+				if in.StorageAccount != account {
+					t.Errorf("expected %s, got %s", account, in.StorageAccount)
 				}
-				if in.BucketContext[extraParamName] != extraParamValue {
-					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				if req.Parameters[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, req.Parameters[extraParamName])
 				}
 				return &osspec.ProvisionerGrantBucketAccessResponse{
 					Principal:               principal,
@@ -258,7 +262,6 @@ func TestAdd(t *testing.T) {
 			setProtocol: func(b *v1alpha1.Bucket) {
 				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
 					Region:           region,
-					Version:          protocolVersion,
 					SignatureVersion: sigVersion,
 					BucketName:       bucketName,
 					Endpoint:         endpoint,
@@ -283,7 +286,6 @@ func TestAdd(t *testing.T) {
 			setProtocol: func(b *v1alpha1.Bucket) {
 				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
 					Region:           region,
-					Version:          protocolVersion,
 					SignatureVersion: sigVersion,
 					BucketName:       bucketName,
 					Endpoint:         endpoint,
@@ -308,31 +310,33 @@ func TestAdd(t *testing.T) {
 			setProtocol: func(b *v1alpha1.Bucket) {
 				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
 					Region:           region,
-					Version:          protocolVersion,
 					SignatureVersion: sigVersion,
 					BucketName:       bucketName,
 					Endpoint:         endpoint,
 				}
 			},
 			protocolName: v1alpha1.ProtocolNameS3,
-			grantFunc: func(ctx context.Context, in *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
+			grantFunc: func(ctx context.Context, req *osspec.ProvisionerGrantBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerGrantBucketAccessResponse, error) {
+				in := req.Protocol.GetS3()
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.BucketContext["Region"] != region {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
+				if in.Region != region {
+					t.Errorf("expected %s, got %s", region, in.Region)
 				}
-				if in.Principal != principal {
-					t.Errorf("expected %s, got %s", principal, in.Principal)
+				if req.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, req.Principal)
 				}
-				if in.BucketContext["Version"] != protocolVersion {
-					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["Version"])
+				// TODO do we need to check ProtocolVersion here? If so, from where?
+				sigver, ok := osspec.S3SignatureVersion_name[int32(in.SignatureVersion)]
+				if !ok {
+					sigver = osspec.S3SignatureVersion_name[int32(osspec.S3SignatureVersion_UnknownSignature)]
 				}
-				if in.BucketContext["SignatureVersion"] != string(sigVersion) {
-					t.Errorf("expected %s, got %s", sigVersion, in.BucketContext["SignatureVersion"])
+				if sigver != string(sigVersion) {
+					t.Errorf("expected %s, got %s", sigVersion, sigver)
 				}
-				if in.BucketContext["Endpoint"] != endpoint {
-					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
+				if in.Endpoint != endpoint {
+					t.Errorf("expected %s, got %s", endpoint, in.Endpoint)
 				}
 				return &osspec.ProvisionerGrantBucketAccessResponse{
 					Principal:               principal,
@@ -354,9 +358,8 @@ func TestAdd(t *testing.T) {
 			Spec: v1alpha1.BucketSpec{
 				Provisioner: provisioner,
 				Protocol: v1alpha1.Protocol{
-					RequestedProtocol: v1alpha1.RequestedProtocol{
-						Name: tc.protocolName,
-					},
+					Name:    tc.protocolName,
+					Version: protocolVersion,
 				},
 			},
 		}
@@ -380,7 +383,7 @@ func TestAdd(t *testing.T) {
 		tc.setProtocol(&b)
 		client := fakebucketclientset.NewSimpleClientset(&ba, &b)
 		kubeClient := fakekubeclientset.NewSimpleClientset()
-		mpc.GrantBucketAccess = tc.grantFunc
+		mpc.FakeProvisionerGrantBucketAccess = tc.grantFunc
 		bal := bucketAccessListener{
 			provisionerName:    provisioner,
 			provisionerClient:  &mpc,
@@ -423,8 +426,8 @@ func TestAdd(t *testing.T) {
 
 func TestDeleteWrongProvisioner(t *testing.T) {
 	provisioner := "provisioner1"
-	mpc := struct{ fakespec.MockProvisionerClient }{}
-	mpc.RevokeBucketAccess = func(ctx context.Context, in *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+	mpc := struct{ fakespec.FakeProvisionerClient }{}
+	mpc.FakeProvisionerRevokeBucketAccess = func(ctx context.Context, in *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
 		t.Errorf("grpc client called")
 		return nil, nil
 	}
@@ -452,13 +455,13 @@ func TestDelete(t *testing.T) {
 	bucketName := "bucket1"
 	principal := "principal1"
 	protocolVersion := "proto1"
-	sigVersion := v1alpha1.S3SignatureVersion(v1alpha1.S3SignatureVersionV2)
+	sigVersion := v1alpha1.S3SignatureVersionV2
 	account := "account1"
 	keyName := "keyName1"
 	projID := "id1"
 	endpoint := "endpoint1"
 	instanceName := "instance"
-	mpc := struct{ fakespec.MockProvisionerClient }{}
+	mpc := struct{ fakespec.FakeProvisionerClient }{}
 	extraParamName := "ParamName"
 	extraParamValue := "ParamValue"
 
@@ -475,34 +478,36 @@ func TestDelete(t *testing.T) {
 			setProtocol: func(b *v1alpha1.Bucket) {
 				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
 					Region:           region,
-					Version:          protocolVersion,
 					SignatureVersion: sigVersion,
 					BucketName:       bucketName,
 					Endpoint:         endpoint,
 				}
 			},
 			protocolName: v1alpha1.ProtocolNameS3,
-			revokeFunc: func(ctx context.Context, in *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+			revokeFunc: func(ctx context.Context, req *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+				in := req.Protocol.GetS3()
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.BucketContext["Region"] != region {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
+				if in.Region != region {
+					t.Errorf("expected %s, got %s", region, in.Region)
 				}
-				if in.Principal != principal {
-					t.Errorf("expected %s, got %s", principal, in.Principal)
+				if req.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, req.Principal)
 				}
-				if in.BucketContext["Version"] != protocolVersion {
-					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["Version"])
+				// TODO do we need to check ProtocolVersion here? If so, from where?
+				sigver, ok := osspec.S3SignatureVersion_name[int32(in.SignatureVersion)]
+				if !ok {
+					sigver = osspec.S3SignatureVersion_name[int32(osspec.S3SignatureVersion_UnknownSignature)]
 				}
-				if in.BucketContext["SignatureVersion"] != string(sigVersion) {
-					t.Errorf("expected %s, got %s", sigVersion, in.BucketContext["SignatureVersion"])
+				if sigver != string(sigVersion) {
+					t.Errorf("expected %s, got %s", sigVersion, sigver)
 				}
-				if in.BucketContext["Endpoint"] != endpoint {
-					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
+				if in.Endpoint != endpoint {
+					t.Errorf("expected %s, got %s", endpoint, in.Endpoint)
 				}
-				if in.BucketContext[extraParamName] != extraParamValue {
-					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				if req.Parameters[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, req.Parameters[extraParamName])
 				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
@@ -522,24 +527,25 @@ func TestDelete(t *testing.T) {
 				}
 			},
 			protocolName: v1alpha1.ProtocolNameGCS,
-			revokeFunc: func(ctx context.Context, in *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+			revokeFunc: func(ctx context.Context, req *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+				in := req.Protocol.GetGcs()
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.Principal != principal {
-					t.Errorf("expected %s, got %s", principal, in.Principal)
+				if req.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, req.Principal)
 				}
-				if in.BucketContext["ServiceAccount"] != account {
-					t.Errorf("expected %s, got %s", account, in.BucketContext["ServiceAccount"])
+				if in.ServiceAccount != account {
+					t.Errorf("expected %s, got %s", account, in.ServiceAccount)
 				}
-				if in.BucketContext["PrivateKeyName"] != keyName {
-					t.Errorf("expected %s, got %s", keyName, in.BucketContext["PrivateKeyName"])
+				if in.PrivateKeyName != keyName {
+					t.Errorf("expected %s, got %s", keyName, in.PrivateKeyName)
 				}
-				if in.BucketContext["ProjectID"] != projID {
-					t.Errorf("expected %s, got %s", projID, in.BucketContext["ProjectID"])
+				if in.ProjectId != projID {
+					t.Errorf("expected %s, got %s", projID, in.ProjectId)
 				}
-				if in.BucketContext[extraParamName] != extraParamValue {
-					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				if req.Parameters[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, req.Parameters[extraParamName])
 				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
@@ -557,18 +563,19 @@ func TestDelete(t *testing.T) {
 				}
 			},
 			protocolName: v1alpha1.ProtocolNameAzure,
-			revokeFunc: func(ctx context.Context, in *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
-				if in.BucketName != bucketName {
-					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
+			revokeFunc: func(ctx context.Context, req *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+				in := req.Protocol.GetAzureBlob()
+				if in.ContainerName != bucketName {
+					t.Errorf("expected %s, got %s", bucketName, in.ContainerName)
 				}
-				if in.Principal != principal {
-					t.Errorf("expected %s, got %s", principal, in.Principal)
+				if req.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, req.Principal)
 				}
-				if in.BucketContext["StorageAccount"] != account {
-					t.Errorf("expected %s, got %s", account, in.BucketContext["StorageAccount"])
+				if in.StorageAccount != account {
+					t.Errorf("expected %s, got %s", account, in.StorageAccount)
 				}
-				if in.BucketContext[extraParamName] != extraParamValue {
-					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				if req.Parameters[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, req.Parameters[extraParamName])
 				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
@@ -582,34 +589,36 @@ func TestDelete(t *testing.T) {
 			setProtocol: func(b *v1alpha1.Bucket) {
 				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
 					Region:           region,
-					Version:          protocolVersion,
 					SignatureVersion: sigVersion,
 					BucketName:       bucketName,
 					Endpoint:         endpoint,
 				}
 			},
 			protocolName: v1alpha1.ProtocolNameS3,
-			revokeFunc: func(ctx context.Context, in *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+			revokeFunc: func(ctx context.Context, req *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+				in := req.Protocol.GetS3()
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.BucketContext["Region"] != region {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
+				if in.Region != region {
+					t.Errorf("expected %s, got %s", region, in.Region)
 				}
-				if in.Principal != principal {
-					t.Errorf("expected %s, got %s", principal, in.Principal)
+				if req.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, req.Principal)
 				}
-				if in.BucketContext["Version"] != protocolVersion {
-					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["Version"])
+				// TODO do we need to check ProtocolVersion here? If so, from where?
+				sigver, ok := osspec.S3SignatureVersion_name[int32(in.SignatureVersion)]
+				if !ok {
+					sigver = osspec.S3SignatureVersion_name[int32(osspec.S3SignatureVersion_UnknownSignature)]
 				}
-				if in.BucketContext["SignatureVersion"] != string(sigVersion) {
-					t.Errorf("expected %s, got %s", sigVersion, in.BucketContext["SignatureVersion"])
+				if sigver != string(sigVersion) {
+					t.Errorf("expected %s, got %s", sigVersion, sigver)
 				}
-				if in.BucketContext["Endpoint"] != endpoint {
-					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
+				if in.Endpoint != endpoint {
+					t.Errorf("expected %s, got %s", endpoint, in.Endpoint)
 				}
-				if in.BucketContext[extraParamName] != extraParamValue {
-					t.Errorf("expected %s, got %s", extraParamValue, in.BucketContext[extraParamName])
+				if req.Parameters[extraParamName] != extraParamValue {
+					t.Errorf("expected %s, got %s", extraParamValue, req.Parameters[extraParamName])
 				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
@@ -623,31 +632,33 @@ func TestDelete(t *testing.T) {
 			setProtocol: func(b *v1alpha1.Bucket) {
 				b.Spec.Protocol.S3 = &v1alpha1.S3Protocol{
 					Region:           region,
-					Version:          protocolVersion,
 					SignatureVersion: sigVersion,
 					BucketName:       bucketName,
 					Endpoint:         endpoint,
 				}
 			},
 			protocolName: v1alpha1.ProtocolNameS3,
-			revokeFunc: func(ctx context.Context, in *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+			revokeFunc: func(ctx context.Context, req *osspec.ProvisionerRevokeBucketAccessRequest, opts ...grpc.CallOption) (*osspec.ProvisionerRevokeBucketAccessResponse, error) {
+				in := req.Protocol.GetS3()
 				if in.BucketName != bucketName {
 					t.Errorf("expected %s, got %s", bucketName, in.BucketName)
 				}
-				if in.BucketContext["Region"] != region {
-					t.Errorf("expected %s, got %s", region, in.BucketContext["Region"])
+				if in.Region != region {
+					t.Errorf("expected %s, got %s", region, in.Region)
 				}
-				if in.Principal != principal {
-					t.Errorf("expected %s, got %s", principal, in.Principal)
+				if req.Principal != principal {
+					t.Errorf("expected %s, got %s", principal, req.Principal)
 				}
-				if in.BucketContext["Version"] != protocolVersion {
-					t.Errorf("expected %s, got %s", protocolVersion, in.BucketContext["Version"])
+				// TODO do we need to check ProtocolVersion here? If so, from where?
+				sigver, ok := osspec.S3SignatureVersion_name[int32(in.SignatureVersion)]
+				if !ok {
+					sigver = osspec.S3SignatureVersion_name[int32(osspec.S3SignatureVersion_UnknownSignature)]
 				}
-				if in.BucketContext["SignatureVersion"] != string(sigVersion) {
-					t.Errorf("expected %s, got %s", sigVersion, in.BucketContext["SignatureVersion"])
+				if sigver != string(sigVersion) {
+					t.Errorf("expected %s, got %s", sigVersion, sigver)
 				}
-				if in.BucketContext["Endpoint"] != endpoint {
-					t.Errorf("expected %s, got %s", endpoint, in.BucketContext["Endpoint"])
+				if in.Endpoint != endpoint {
+					t.Errorf("expected %s, got %s", endpoint, in.Endpoint)
 				}
 				return &osspec.ProvisionerRevokeBucketAccessResponse{}, nil
 			},
@@ -664,9 +675,8 @@ func TestDelete(t *testing.T) {
 			Spec: v1alpha1.BucketSpec{
 				Provisioner: provisioner,
 				Protocol: v1alpha1.Protocol{
-					RequestedProtocol: v1alpha1.RequestedProtocol{
-						Name: tc.protocolName,
-					},
+					Name:    tc.protocolName,
+					Version: protocolVersion,
 				},
 			},
 		}
@@ -702,7 +712,7 @@ func TestDelete(t *testing.T) {
 		tc.setProtocol(&b)
 		client := fakebucketclientset.NewSimpleClientset(&ba, &b)
 		kubeClient := fakekubeclientset.NewSimpleClientset(&secret)
-		mpc.RevokeBucketAccess = tc.revokeFunc
+		mpc.FakeProvisionerRevokeBucketAccess = tc.revokeFunc
 		bal := bucketAccessListener{
 			provisionerName:    provisioner,
 			provisionerClient:  &mpc,

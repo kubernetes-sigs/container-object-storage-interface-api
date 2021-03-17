@@ -266,15 +266,10 @@ message GCSParameters {
 }
 
 message Protocol {
-    // ProtocolName is the name of the protocol
-    ProtocolName name = 1;
-    // version is the name of the protocol version
-    string version = 2;
-
     oneof type {
-        S3Parameters s3 = 3;
-        AzureBlobParameters azureBlob = 4;
-        GCSParameters gcs = 5;
+        S3Parameters s3 = 1;
+        AzureBlobParameters azureBlob = 2;
+        GCSParameters gcs = 3;
     }
 }
 
@@ -296,29 +291,30 @@ message ProvisionerGetInfoResponse {
 
 message ProvisionerCreateBucketRequest {    
     // This field is REQUIRED
+    // name specifies the name of the bucket that should be created.
+    string name = 1;
+
+	// This field is REQUIRED
     // Protocol specific information required by the call is passed in as key,value pairs.
-    Protocol protocol = 1;
+    Protocol protocol = 2;
 
     // This field is OPTIONAL
     // The caller should treat the values in parameters as opaque. 
     // The receiver is responsible for parsing and validating the values.
-    map<string,string> parameters = 2;
-
-    // This field is OPTIONAL
-    // Allow uncredentialed access to bucket.
-    AnonymousBucketAccessMode anonymous_bucket_access_mode = 3;
+    map<string,string> parameters = 3;
 }
 
 message ProvisionerCreateBucketResponse {
-    // BucketName returned here is expected to be the globally unique 
+    // bucketID returned here is expected to be the globally unique 
 	// identifier for the bucket in the object storage provider 
-	string BucketName = 1;
+	string bucketID = 1;
 }
 
 message ProvisionerDeleteBucketRequest {
-    // This field is REQUIRED
-    // Protocol specific information required by the call is passed in as key,value pairs.
-    Protocol protocol = 1;
+	// This field is REQUIRED
+	// bucketID is a globally unique identifier for the bucket
+	// in the object storage provider 
+	string bucketID = 1;
 }
 
 message ProvisionerDeleteBucketResponse {
@@ -327,27 +323,31 @@ message ProvisionerDeleteBucketResponse {
 
 message ProvisionerGrantBucketAccessRequest {
     // This field is REQUIRED
-    // Protocol specific information required by the call is passed in as key,value pairs.
-    Protocol protocol = 1;
+	// BucketID is a globally unique identifier for the bucket
+	// in the object storage provider 
+	string bucketID = 1;
 
-    // This field is OPTIONAL
-    // Protocol specific information required by the call is passed in as key,value pairs.
-    map<string,string> parameters = 2;
-
-    // This field is OPTIONAL
-    // Principal for which access is requested
-    string principal = 3;
+	// This field is REQUIRED
+	// accountName is a identifier for object storage provider 
+	// to ensure that multiple requests for the same account
+	// result in only one access token being created
+	string accountName = 2;
 
     // This field is REQUIRED
     // Requested Access policy, ex: {"Effect":"Allow","Action":"s3:PutObject","Resource":"arn:aws:s3:::profilepics/*"}
-    string access_policy = 4;
+    string access_policy = 3;
+
+    // This field is OPTIONAL
+    // The caller should treat the values in parameters as opaque. 
+    // The receiver is responsible for parsing and validating the values.
+    map<string,string> parameters = 4;
 }
 
 message ProvisionerGrantBucketAccessResponse {
     // This field is OPTIONAL
-    // This is the account that is being provided access. This will
+    // This is the accountID that is being provided access. This will
     // be required later to revoke access. 
-    string principal = 1;
+    string accountID = 1;
 
     // This field is OPTIONAL
     // Contents of the credential file, ex: aws access key id and secret, etc.
@@ -360,12 +360,13 @@ message ProvisionerGrantBucketAccessResponse {
  
 message ProvisionerRevokeBucketAccessRequest {
     // This field is REQUIRED
-    // Protocol specific information required by the call is passed in as key,value pairs.
-    Protocol protocol = 1;
+    // BucketName is a globally unique identifier for the bucket
+	// in the object storage provider.
+	string bucketID = 1;
 
     // This field is REQUIRED
-    // This is the account that is being revoked access.
-    string principal = 2;
+    // This is the accountID that is having its access revoked.
+    string accountID = 2;
 }
 
 message ProvisionerRevokeBucketAccessResponse {
@@ -481,17 +482,6 @@ message ProvisionerCreateBucketRequest {
     // This field is OPTIONAL
     // Protocol specific information required by the call is passed in as key,value pairs.
     map<string,string> bucket_context = 2;
-
-    enum AnonymousBucketAccessMode {
-	BUCKET_PRIVATE = 0;
-	BUCKET_READ_ONLY = 1;
-	BUCKET_WRITE_ONLY = 2;
-	BUCKET_READ_WRITE = 3;
-    }
-    
-    // This field is OPTIONAL
-    // Allow uncredentialed access to bucket.
-    AnonymousBucketAccessMode anonymous_bucket_access_mode = 3;
 }
 
 message ProvisionerCreateBucketResponse {

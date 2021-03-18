@@ -35,33 +35,13 @@ import (
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 )
 
-var (
-	PROVISIONER_NAME = "sample-provisioner.objectstorage.k8s.io"
-	VERSION          = "dev"
-)
-
 type DriverServer struct {
-	Name, Version string
 	S3Client      *minio.Client
 	S3AdminClient *madmin.AdminClient
 }
 
-func (ds *DriverServer) ProvisionerGetInfo(context.Context, *cosi.ProvisionerGetInfoRequest) (*cosi.ProvisionerGetInfoResponse, error) {
-	rsp := &cosi.ProvisionerGetInfoResponse{}
-	rsp.Name = fmt.Sprintf("%s-%s", ds.Name, ds.Version)
-	return rsp, nil
-}
-
 func (ds DriverServer) ProvisionerCreateBucket(ctx context.Context, req *cosi.ProvisionerCreateBucketRequest) (*cosi.ProvisionerCreateBucketResponse, error) {
 	klog.Infof("Using minio to create Backend Bucket")
-
-	if ds.Name == "" {
-		return nil, status.Error(codes.Unavailable, "Driver name not configured")
-	}
-
-	if ds.Version == "" {
-		return nil, status.Error(codes.Unavailable, "Driver is missing version")
-	}
 
 	s3 := req.Protocol.GetS3()
 	if s3 == nil {

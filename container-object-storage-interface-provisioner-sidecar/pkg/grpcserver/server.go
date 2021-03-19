@@ -35,7 +35,7 @@ import (
 // Defines Non blocking GRPC server interfaces
 type NonBlockingGRPCServer interface {
 	// Start services at the endpoint
-	Start(endpoint string, cds osi.ProvisionerServer)
+	Start(endpoint string, cds osi.ProvisionerServer, ids osi.IdentityServer)
 	// Waits for the service to stop
 	Wait()
 	// Stops the service gracefully
@@ -76,11 +76,11 @@ func ParseEndpoint(ep string) (string, string, error) {
 	return "", "", fmt.Errorf("Invalid endpoint: %v", ep)
 }
 
-func (s *nonBlockingGRPCServer) Start(endpoint string, cds osi.ProvisionerServer) {
+func (s *nonBlockingGRPCServer) Start(endpoint string, cds osi.ProvisionerServer, ids osi.IdentityServer) {
 
 	s.wg.Add(1)
 
-	go s.serve(endpoint, cds)
+	go s.serve(endpoint, cds, ids)
 
 	return
 }
@@ -97,7 +97,7 @@ func (s *nonBlockingGRPCServer) ForceStop() {
 	s.server.Stop()
 }
 
-func (s *nonBlockingGRPCServer) serve(endpoint string, driver osi.ProvisionerServer) {
+func (s *nonBlockingGRPCServer) serve(endpoint string, driver osi.ProvisionerServer, identity osi.IdentityServer) {
 
 	proto, addr, err := ParseEndpoint(endpoint)
 	if err != nil {
@@ -127,6 +127,9 @@ func (s *nonBlockingGRPCServer) serve(endpoint string, driver osi.ProvisionerSer
 	klog.Infof("Registering CosiControllerServer")
 	if driver != nil {
 		osi.RegisterProvisionerServer(server, driver)
+	}
+	if identity != nil {
+		osi.RegisterIdentityServer(server, identity)
 	}
 
 	klog.Infof("Listening for connections on address: %#v", listener.Addr())

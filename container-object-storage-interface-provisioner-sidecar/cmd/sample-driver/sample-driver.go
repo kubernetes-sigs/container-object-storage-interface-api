@@ -29,7 +29,6 @@ import (
 	"github.com/minio/minio/pkg/madmin"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/grpcserver"
@@ -119,9 +118,10 @@ func run(args []string, endpoint string) error {
 	if err != nil {
 		klog.Fatalln(err)
 	}
-	cds := DriverServer{Name: PROVISIONER_NAME, Version: VERSION, S3Client: minioClient, S3AdminClient: minioAdminClient}
+	cds := DriverServer{S3Client: minioClient, S3AdminClient: minioAdminClient}
+	ids := IdentityServer{Name: PROVISIONER_NAME, Version: VERSION}
 	s := grpcserver.NewNonBlockingGRPCServer()
-	s.Start(endpoint, &cds)
+	s.Start(endpoint, &cds, &ids)
 	s.Wait()
 	return nil
 }

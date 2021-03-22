@@ -103,7 +103,7 @@ type ObjectStorageController struct {
 
 	lockerLock sync.Mutex
 	locker     map[types.UID]*sync.Mutex
-	opMap      map[types.UID]interface{}
+	opMap      *sync.Map
 }
 
 func NewDefaultObjectStorageController(identity string, leaderLockName string, threads int) (*ObjectStorageController, error) {
@@ -162,7 +162,7 @@ func NewObjectStorageControllerWithClientset(identity string, leaderLockName str
 		RenewDeadline: 15 * time.Second,
 		RetryPeriod:   5 * time.Second,
 
-		opMap: map[types.UID]interface{}{},
+		opMap: &sync.Map{},
 	}, nil
 }
 
@@ -253,17 +253,18 @@ func (c *ObjectStorageController) processNextItem(ctx context.Context) bool {
 
 	uuid := uuidInterface.(types.UID)
 	var err error
-	// With the lock below in place, we can safely tell the queue that we are done
-	// processing this item. The lock will ensure that multiple items of the same
-	// name and kind do not get processed simultaneously
+
 	defer c.queue.Done(uuid)
+
+	op, ok := c.opMap.Load(uuid)
+	if !ok {
+		panic("unreachable code")
+	}
 
 	// Ensure that multiple operations on different versions of the same object
 	// do not happen in parallel
 	c.OpLock(uuid)
 	defer c.OpUnlock(uuid)
-
-	op := c.opMap[uuid]
 
 	switch o := op.(type) {
 	case addOp:
@@ -332,12 +333,12 @@ func (c *ObjectStorageController) GetOpLock(op types.UID) *sync.Mutex {
 }
 
 // handleErr checks if an error happened and makes sure we will retry later.
-func (c *ObjectStorageController) handleErr(err error, op interface{}) {
+func (c *ObjectStorageController) handleErr(err error, uuid types.UID) {
 	if err == nil {
-		c.queue.Forget(op)
+		c.opMap.Delete(uuid)
 		return
 	}
-	c.queue.AddRateLimited(op)
+	c.queue.AddRateLimited(uuid)
 }
 
 func (c *ObjectStorageController) runController(ctx context.Context) {
@@ -349,7 +350,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 		cfg := &cache.Config{
 			Queue: cache.NewDeltaFIFOWithOptions(cache.DeltaFIFOOptions{
 				KnownObjects:          indexer,
-				EmitDeltaTypeReplaced: true,
+				EmitDeltaTypeReplaced: false,
 			}),
 			ListerWatcher:    lw,
 			ObjectType:       objType,
@@ -370,15 +371,14 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 							}
 
 							uuid := d.Object.(metav1.Object).GetUID()
-							c.OpLock(uuid)
-							defer c.OpUnlock(uuid)
-							c.opMap[uuid] = updateOp{
+
+							c.opMap.Store(uuid, updateOp{
 								OldObject:  old,
 								NewObject:  d.Object,
 								UpdateFunc: &update,
 								Key:        key,
 								Indexer:    indexer,
-							}
+							})
 							c.queue.Add(uuid)
 						} else {
 							key, err := cache.MetaNamespaceKeyFunc(d.Object)
@@ -387,20 +387,17 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 							}
 
 							uuid := d.Object.(metav1.Object).GetUID()
-							c.OpLock(uuid)
-							defer c.OpUnlock(uuid)
-							
-							// If an update to the k8s object happens before add has succeeded
-							if op, ok := c.opMap[uuid]; ok {
-								if _, ok := op.(updateOp); ok {
-									return fmt.Errorf("cannot add already added object: %s", key)
-								}
-							}
-							c.opMap[uuid] = addOp{
+
+							if op, ok := c.opMap.LoadOrStore(uuid, addOp{
 								Object:  d.Object,
 								AddFunc: &add,
 								Key:     key,
 								Indexer: indexer,
+							}); ok { // If an update to the k8s object happens before add has succeeded
+								if _, ok := op.(updateOp); ok {
+									err := fmt.Errorf("cannot add already added object: %s", key)
+									return err
+								}
 							}
 							c.queue.Add(uuid)
 						}
@@ -411,14 +408,12 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 						}
 
 						uuid := d.Object.(metav1.Object).GetUID()
-						c.OpLock(uuid)
-						defer c.OpUnlock(uuid)
-						c.opMap[uuid] = deleteOp{
+						c.opMap.Store(uuid, deleteOp{
 							Object:     d.Object,
 							DeleteFunc: &delete,
 							Key:        key,
 							Indexer:    indexer,
-						}
+						})
 						c.queue.Add(uuid)
 					}
 				}

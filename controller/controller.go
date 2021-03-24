@@ -30,8 +30,8 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog/v2"
 
-	"github.com/golang/glog"
 	"github.com/spf13/viper"
 )
 
@@ -223,14 +223,14 @@ func (c *ObjectStorageController) Run(ctx context.Context) error {
 		RetryPeriod:     c.RetryPeriod,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
-				glog.V(2).Info("became leader, starting")
+				klog.V(2).InfoS("became leader, starting controller")
 				c.runController(ctx)
 			},
 			OnStoppedLeading: func() {
-				glog.Infof("stopped leading")
+				klog.InfoS("stopped leading")
 			},
 			OnNewLeader: func(identity string) {
-				glog.V(3).Infof("new leader detected, current leader: %s", identity)
+				klog.V(3).InfoS("new leader detected", "name", identity)
 			},
 		},
 	}
@@ -269,36 +269,21 @@ func (c *ObjectStorageController) processNextItem(ctx context.Context) bool {
 	switch o := op.(type) {
 	case addOp:
 		add := *o.AddFunc
-		objMeta := o.Object.(metav1.Object)
-		name := objMeta.GetName()
-		ns := objMeta.GetNamespace()
 		err = add(ctx, o.Object)
 		if err == nil {
 			o.Indexer.Add(o.Object)
-		} else {
-			glog.Errorf("Error adding %s %s: %v", ns, name, err)
 		}
 	case updateOp:
 		update := *o.UpdateFunc
-		objMeta := o.OldObject.(metav1.Object)
-		name := objMeta.GetName()
-		ns := objMeta.GetNamespace()
 		err = update(ctx, o.OldObject, o.NewObject)
 		if err == nil {
 			o.Indexer.Update(o.NewObject)
-		} else {
-			glog.Errorf("Error updating %s %s: %v", ns, name, err)
 		}
 	case deleteOp:
 		delete := *o.DeleteFunc
-		objMeta := o.Object.(metav1.Object)
-		name := objMeta.GetName()
-		ns := objMeta.GetNamespace()
 		err = delete(ctx, o.Object)
 		if err == nil {
 			o.Indexer.Delete(o.Object)
-		} else {
-			glog.Errorf("Error deleting %s %s: %v", ns, name, err)
 		}
 	default:
 		panic("unknown item in queue")
@@ -425,7 +410,6 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 		defer utilruntime.HandleCrash()
 		defer c.queue.ShutDown()
 
-		glog.V(1).Infof("Starting %s controller", name)
 		go ctrlr.Run(ctx.Done())
 
 		if !cache.WaitForCacheSync(ctx.Done(), ctrlr.HasSynced) {
@@ -438,7 +422,6 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 		}
 
 		<-ctx.Done()
-		glog.V(3).Infof("Stopping %s controller", name)
 	}
 
 	if c.BucketListener != nil {

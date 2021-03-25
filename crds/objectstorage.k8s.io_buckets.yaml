@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: (devel)
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: buckets.objectstorage.k8s.io
 spec:
@@ -39,18 +39,9 @@ spec:
                   type: string
                 type: array
                 x-kubernetes-list-type: atomic
-              anonymousAccessMode:
-                properties:
-                  private:
-                    type: boolean
-                  publicReadOnly:
-                    type: boolean
-                  publicReadWrite:
-                    type: boolean
-                  publicWriteOnly:
-                    type: boolean
-                type: object
               bucketClassName:
+                type: string
+              bucketID:
                 type: string
               bucketRequest:
                 description: 'ObjectReference contains enough information to let you
@@ -111,6 +102,9 @@ spec:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
                 type: object
+              deletionPolicy:
+                default: retain
+                type: string
               parameters:
                 additionalProperties:
                   type: string
@@ -135,12 +129,6 @@ spec:
                       serviceAccount:
                         type: string
                     type: object
-                  name:
-                    enum:
-                    - s3
-                    - azureBlob
-                    - gcs
-                    type: string
                   s3:
                     properties:
                       bucketName:
@@ -155,19 +143,12 @@ spec:
                         - S3V4
                         type: string
                     type: object
-                  version:
-                    type: string
-                required:
-                - name
                 type: object
               provisioner:
                 type: string
-              retentionPolicy:
-                default: retain
-                type: string
             required:
+            - deletionPolicy
             - protocol
-            - retentionPolicy
             type: object
           status:
             properties:

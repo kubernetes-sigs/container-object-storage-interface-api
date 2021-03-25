@@ -26,8 +26,10 @@ import (
 )
 
 // BucketAccessRequestLister helps list BucketAccessRequests.
+// All objects returned here must be treated as read-only.
 type BucketAccessRequestLister interface {
 	// List lists all BucketAccessRequests in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.BucketAccessRequest, err error)
 	// BucketAccessRequests returns an object that can list and get BucketAccessRequests.
 	BucketAccessRequests(namespace string) BucketAccessRequestNamespaceLister
@@ -58,10 +60,13 @@ func (s *bucketAccessRequestLister) BucketAccessRequests(namespace string) Bucke
 }
 
 // BucketAccessRequestNamespaceLister helps list and get BucketAccessRequests.
+// All objects returned here must be treated as read-only.
 type BucketAccessRequestNamespaceLister interface {
 	// List lists all BucketAccessRequests in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.BucketAccessRequest, err error)
 	// Get retrieves the BucketAccessRequest from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.BucketAccessRequest, error)
 	BucketAccessRequestNamespaceListerExpansion
 }

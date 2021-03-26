@@ -34,6 +34,8 @@ spec:
             type: object
           spec:
             properties:
+              accountID:
+                type: string
               bucketAccessRequest:
                 description: 'ObjectReference contains enough information to let you
                   inspect or modify the referred object. --- New uses of this type
@@ -102,8 +104,6 @@ spec:
                   type: string
                 type: object
               policyActionsConfigMapData:
-                type: string
-              principal:
                 type: string
               serviceAccount:
                 description: 'ObjectReference contains enough information to let you

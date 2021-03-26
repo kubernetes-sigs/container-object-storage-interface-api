@@ -519,7 +519,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Format: "",
 						},
 					},
-					"principal": {
+					"accountID": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",

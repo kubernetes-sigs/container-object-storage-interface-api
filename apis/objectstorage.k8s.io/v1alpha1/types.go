@@ -245,7 +245,7 @@ type BucketAccessSpec struct {
 	PolicyActionsConfigMapData string `json:"policyActionsConfigMapData,omitempty"`
 
 	// +optional
-	Principal string `json:"principal,omitempty"`
+	AccountID string `json:"accountID,omitempty"`
 
 	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`

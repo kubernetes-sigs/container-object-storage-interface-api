@@ -36,8 +36,6 @@ spec:
             properties:
               bucketClassName:
                 type: string
-              bucketInstanceName:
-                type: string
               bucketPrefix:
                 type: string
             type: object
@@ -45,6 +43,8 @@ spec:
             properties:
               bucketAvailable:
                 type: boolean
+              bucketName:
+                type: string
               message:
                 type: string
             type: object

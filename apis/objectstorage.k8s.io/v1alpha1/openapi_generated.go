@@ -430,9 +430,14 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"bucketRequestName": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"bucketName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
 						},
 					},
 					"bucketAccessClassName": {
@@ -442,14 +447,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Format:  "",
 						},
 					},
-					"bucketAccessName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 				},
-				Required: []string{"bucketRequestName", "bucketAccessClassName"},
+				Required: []string{"bucketAccessClassName"},
 			},
 		},
 	}
@@ -474,6 +473,12 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Format:  "",
 						},
 					},
+					"bucketAccessName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},
@@ -486,7 +491,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"bucketInstanceName": {
+					"bucketName": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
@@ -856,12 +861,6 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"bucketInstanceName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 					"bucketPrefix": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -897,6 +896,12 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Default: false,
 							Type:    []string{"boolean"},
 							Format:  "",
+						},
+					},
+					"bucketName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
 						},
 					},
 				},

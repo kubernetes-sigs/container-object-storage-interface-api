@@ -231,9 +231,6 @@ type BucketAccess struct {
 
 type BucketAccessSpec struct {
 	// +optional
-	Provisioner string `json:"provisioner,omitempty"`
-
-	// +optional
 	BucketInstanceName string `json:"bucketInstanceName,omitempty"`
 
 	// +optional

@@ -105,8 +105,6 @@ spec:
                 type: string
               principal:
                 type: string
-              provisioner:
-                type: string
               serviceAccount:
                 description: 'ObjectReference contains enough information to let you
                   inspect or modify the referred object. --- New uses of this type

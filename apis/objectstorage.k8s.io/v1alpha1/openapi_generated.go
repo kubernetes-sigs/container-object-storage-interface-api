@@ -486,12 +486,6 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"provisioner": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 					"bucketInstanceName": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},

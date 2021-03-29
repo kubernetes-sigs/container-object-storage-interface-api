@@ -10,7 +10,7 @@ import (
 )
 
 // MarshalJSON implements json.Marshaler
-func (msg *S3Parameters) MarshalJSON() ([]byte, error) {
+func (msg *S3) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	err := (&jsonpb.Marshaler{
 		EnumsAsInts:  false,
@@ -21,14 +21,14 @@ func (msg *S3Parameters) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *S3Parameters) UnmarshalJSON(b []byte) error {
+func (msg *S3) UnmarshalJSON(b []byte) error {
 	return (&jsonpb.Unmarshaler{
 		AllowUnknownFields: false,
 	}).Unmarshal(bytes.NewReader(b), msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *AzureBlobParameters) MarshalJSON() ([]byte, error) {
+func (msg *AzureBlob) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	err := (&jsonpb.Marshaler{
 		EnumsAsInts:  false,
@@ -39,14 +39,14 @@ func (msg *AzureBlobParameters) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *AzureBlobParameters) UnmarshalJSON(b []byte) error {
+func (msg *AzureBlob) UnmarshalJSON(b []byte) error {
 	return (&jsonpb.Unmarshaler{
 		AllowUnknownFields: false,
 	}).Unmarshal(bytes.NewReader(b), msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *GCSParameters) MarshalJSON() ([]byte, error) {
+func (msg *GCS) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	err := (&jsonpb.Marshaler{
 		EnumsAsInts:  false,
@@ -57,7 +57,7 @@ func (msg *GCSParameters) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *GCSParameters) UnmarshalJSON(b []byte) error {
+func (msg *GCS) UnmarshalJSON(b []byte) error {
 	return (&jsonpb.Unmarshaler{
 		AllowUnknownFields: false,
 	}).Unmarshal(bytes.NewReader(b), msg)

@@ -36,7 +36,7 @@ spec:
             properties:
               bucketAccessClassName:
                 type: string
-              bucketAccessName:
+              bucketName:
                 type: string
               bucketRequestName:
                 type: string
@@ -44,12 +44,13 @@ spec:
                 type: string
             required:
             - bucketAccessClassName
-            - bucketRequestName
             type: object
           status:
             properties:
               accessGranted:
                 type: boolean
+              bucketAccessName:
+                type: string
               message:
                 type: string
             type: object

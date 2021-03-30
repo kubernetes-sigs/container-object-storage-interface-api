@@ -118,9 +118,6 @@ type BucketRequest struct {
 
 type BucketRequestSpec struct {
 	// +optional
-	BucketInstanceName string `json:"bucketInstanceName,omitempty"`
-
-	// +optional
 	BucketPrefix string `json:"bucketPrefix,omitempty"`
 
 	// +optional
@@ -133,6 +130,9 @@ type BucketRequestStatus struct {
 
 	// +optional
 	BucketAvailable bool `json:"bucketAvailable"`
+
+	// +optional
+	BucketName string `json:"bucketName,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -231,7 +231,7 @@ type BucketAccess struct {
 
 type BucketAccessSpec struct {
 	// +optional
-	BucketInstanceName string `json:"bucketInstanceName,omitempty"`
+	BucketName string `json:"bucketName,omitempty"`
 
 	// +optional
 	BucketAccessRequest *corev1.ObjectReference `json:"bucketAccessRequest,omitempty"`
@@ -245,7 +245,7 @@ type BucketAccessSpec struct {
 	PolicyActionsConfigMapData string `json:"policyActionsConfigMapData,omitempty"`
 
 	// +optional
-	Principal string `json:"principal,omitempty"`
+	AccountID string `json:"accountID,omitempty"`
 
 	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`
@@ -288,13 +288,12 @@ type BucketAccessRequest struct {
 type BucketAccessRequestSpec struct {
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
-
-	BucketRequestName string `json:"bucketRequestName"`
+	// +optional
+	BucketRequestName string `json:"bucketRequestName,omitempty"`
+	// +optional
+	BucketName string `json:"bucketName,omitempty"`
 
 	BucketAccessClassName string `json:"bucketAccessClassName"`
-
-	// +optional
-	BucketAccessName string `json:"bucketAccessName,omitempty"`
 }
 
 type BucketAccessRequestStatus struct {
@@ -303,6 +302,9 @@ type BucketAccessRequestStatus struct {
 
 	// +optional
 	AccessGranted bool `json:"accessGranted"`
+
+	// +optional
+	BucketAccessName string `json:"bucketAccessName,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

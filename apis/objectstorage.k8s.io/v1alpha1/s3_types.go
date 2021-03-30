@@ -44,7 +44,7 @@ func (s3 *S3Protocol) ConvertToExternal() *osspec.Protocol_S3 {
 		sigver = 0
 	}
 	return &osspec.Protocol_S3{
-		S3: &osspec.S3Parameters{
+		S3: &osspec.S3{
 			Endpoint:         s3.Endpoint,
 			BucketName:       s3.BucketName,
 			Region:           s3.Region,
@@ -53,7 +53,7 @@ func (s3 *S3Protocol) ConvertToExternal() *osspec.Protocol_S3 {
 	}
 }
 
-func ConvertFromS3External(ext *osspec.S3Parameters) *S3Protocol {
+func ConvertFromS3External(ext *osspec.S3) *S3Protocol {
 	vers, ok := osspec.S3SignatureVersion_name[int32(ext.SignatureVersion)]
 	if !ok {
 		vers = osspec.S3SignatureVersion_name[0]

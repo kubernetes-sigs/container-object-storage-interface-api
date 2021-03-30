@@ -27,14 +27,14 @@ type AzureProtocol struct {
 
 func (azure *AzureProtocol) ConvertToExternal() *osspec.Protocol_AzureBlob {
 	return &osspec.Protocol_AzureBlob{
-		AzureBlob: &osspec.AzureBlobParameters{
+		AzureBlob: &osspec.AzureBlob{
 			ContainerName:  azure.ContainerName,
 			StorageAccount: azure.StorageAccount,
 		},
 	}
 }
 
-func ConvertFromAzureExternal(ext *osspec.AzureBlobParameters) *AzureProtocol {
+func ConvertFromAzureExternal(ext *osspec.AzureBlob) *AzureProtocol {
 	return &AzureProtocol{
 		StorageAccount: ext.StorageAccount,
 		ContainerName: ext.ContainerName,

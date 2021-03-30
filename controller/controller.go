@@ -159,8 +159,8 @@ func NewObjectStorageControllerWithClientset(identity string, leaderLockName str
 		ResyncPeriod: 30 * time.Second,
 		// leader election
 		LeaseDuration: 60 * time.Second,
-		RenewDeadline: 15 * time.Second,
-		RetryPeriod:   5 * time.Second,
+		RenewDeadline: 30 * time.Second,
+		RetryPeriod:   15 * time.Second,
 
 		opMap: &sync.Map{},
 	}, nil

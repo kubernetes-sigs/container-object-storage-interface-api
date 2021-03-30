@@ -34,6 +34,8 @@ spec:
             type: object
           spec:
             properties:
+              accountID:
+                type: string
               bucketAccessRequest:
                 description: 'ObjectReference contains enough information to let you
                   inspect or modify the referred object. --- New uses of this type
@@ -93,7 +95,7 @@ spec:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
                 type: object
-              bucketInstanceName:
+              bucketName:
                 type: string
               mintedSecretName:
                 type: string
@@ -102,8 +104,6 @@ spec:
                   type: string
                 type: object
               policyActionsConfigMapData:
-                type: string
-              principal:
                 type: string
               serviceAccount:
                 description: 'ObjectReference contains enough information to let you

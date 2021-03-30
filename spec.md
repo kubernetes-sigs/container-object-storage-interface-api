@@ -109,7 +109,6 @@ Figure 2: Kubernetes implementation - Interaction of COSI components
 ```
 Figure 3: The lifecycle of a dynamically provisioned bucket, from
 creation to deletion.
-```
 
 The above diagrams illustrate a general expectation with respect to how a COSI system MAY manage the lifecycle of a bucket via the API presented in this specification. 
 Plugins SHOULD expose all RPCs for an interface: Controller plugins SHOULD implement all RPCs for the  service.

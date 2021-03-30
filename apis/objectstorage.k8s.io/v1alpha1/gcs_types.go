@@ -29,7 +29,7 @@ type GCSProtocol struct {
 
 func (gcs *GCSProtocol) ConvertToExternal() *osspec.Protocol_Gcs {
 	return &osspec.Protocol_Gcs{
-		Gcs: &osspec.GCSParameters{
+		Gcs: &osspec.GCS{
 			BucketName:     gcs.BucketName,
 			PrivateKeyName: gcs.PrivateKeyName,
 			ProjectId:      gcs.ProjectID,
@@ -38,7 +38,7 @@ func (gcs *GCSProtocol) ConvertToExternal() *osspec.Protocol_Gcs {
 	}
 }
 
-func ConvertFromGCSExternal(ext *osspec.GCSParameters) *GCSProtocol {
+func ConvertFromGCSExternal(ext *osspec.GCS) *GCSProtocol {
 	return &GCSProtocol{
 		BucketName:     ext.BucketName,
 		PrivateKeyName: ext.PrivateKeyName,

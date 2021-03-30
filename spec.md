@@ -2,9 +2,9 @@
 
 Authors:
 
-* Sidharth Mani  << @wlan0 
-* Jeff Vance << @jeffvance
-* Srini Brahmaroutu << @brahmaroutu
+* Sidharth Mani [@wlan0](https://github.com/wlan0)
+* Jeff Vance [@jeffvance](https://github.com/jeffvance)
+* Srini Brahmaroutu [@brahmaroutu](https://github.com/brahmaroutu)
 
 
 ## Notational Conventions

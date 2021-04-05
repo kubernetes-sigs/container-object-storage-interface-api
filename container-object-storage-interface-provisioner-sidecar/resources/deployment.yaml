@@ -34,11 +34,11 @@ spec:
     spec:
       serviceAccountName: objectstorage-provisioner-sa
       containers:
-      - name: objectstorage-sample-driver
-        image: quay.io/containerobjectstorage/objectstorage-sample-driver:latest
+      - name: minio-cosi-driver
+        image: quay.io/containerobjectstorage/minio-cosi-driver:latest
         args:
-          - "--listen-address=$(LISTEN_ADDRESS)"
-          - "--s3-endpoint=$(S3_ENDPOINT)"
+          - "--driver-addr=$(DRIVER_ADDRESS)"
+          - "--endpoint=$(ENDPOINT)"
           - "--access-key=$(ACCESS_KEY)"
           - "--secret-key=$(SECRET_KEY)"
         envFrom:
@@ -47,10 +47,10 @@ spec:
       - name: objectstorage-provisioner-sidecar
         image: quay.io/containerobjectstorage/objectstorage-sidecar:latest
         args:
-          - "--connect-address=$(CONNECT_ADDRESS)"
-        env:
-        - name: CONNECT_ADDRESS
+          - "--driver-addr=$(DRIVER_ADDRESS)"
+        envFrom:
+        - name: DRIVER_ADDRESS
           valueFrom:
             secretKeyRef:
               name: objectstorage-provisioner
-              key: LISTEN_ADDRESS
+              key: DRIVER_ADDRESS

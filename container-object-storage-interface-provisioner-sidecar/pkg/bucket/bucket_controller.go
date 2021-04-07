@@ -104,8 +104,15 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 			return errors.Wrap(err, "Failed to create bucket")
 		}
 	}
+	if rsp == nil {
+		err := errors.New("ProvisionerCreateBucket returned a nil response")
+		klog.ErrorS(err, "Internal Error")
+		return err
+	}
 
-	bucket.Spec.BucketID = rsp.BucketId
+	if rsp.BucketId != "" {
+		bucket.Spec.BucketID = rsp.BucketId
+	}
 	bucket.Status.Message = "Bucket Provisioned"
 	bucket.Status.BucketAvailable = true
 

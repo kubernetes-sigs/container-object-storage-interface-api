@@ -11,35 +11,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package minio
 
 import (
 	"context"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"k8s.io/klog/v2"
+	"github.com/minio/minio-go/v7"
+	"github.com/pkg/errors"
 )
 
-func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+var ErrBucketAlreadyExists = errors.New("Bucket Already Exists")
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+type MakeBucketOptions minio.MakeBucketOptions
 
-	go func() {
-		sig := <-sigs
-		klog.InfoS("Signal received", "type", sig)
-		cancel()
-
-		<-time.After(30 * time.Second)
-		os.Exit(1)
-	}()
-
-	if err := cmd.ExecuteContext(ctx); err != nil {
-		klog.ErrorS(err, "Exiting on error")
+func (x *C) CreateBucket(ctx context.Context, bucketName string, options MakeBucketOptions) (string, error) {
+	if err := x.client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions(options)); err != nil {
+		errCode := minio.ToErrorResponse(err).Code
+		if errCode == "BucketAlreadyExists" || errCode == "BucketAlreadyOwnedByYou" {
+			return bucketName, ErrBucketAlreadyExists
+		}
+		return "", err
 	}
+	return bucketName, nil
 }

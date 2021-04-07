@@ -11,35 +11,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package internal
 
 import (
 	"context"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"k8s.io/klog/v2"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/cmd/minio-cosi-driver/internal/minio"
 )
 
-func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		sig := <-sigs
-		klog.InfoS("Signal received", "type", sig)
-		cancel()
-
-		<-time.After(30 * time.Second)
-		os.Exit(1)
-	}()
-
-	if err := cmd.ExecuteContext(ctx); err != nil {
-		klog.ErrorS(err, "Exiting on error")
+func NewDriver(ctx context.Context, provisioner, minioHost, accessKey, secretKey string) (*IdentityServer, *ProvisionerServer, error) {
+	mc, err := minio.NewClient(ctx, minioHost, accessKey, secretKey)
+	if err != nil {
+		return nil, nil, err
 	}
+
+	return &IdentityServer{
+			provisioner: provisioner,
+		}, &ProvisionerServer{
+			provisioner: provisioner,
+			mc:          mc,
+		}, nil
 }

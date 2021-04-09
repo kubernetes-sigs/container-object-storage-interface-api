@@ -63,5 +63,16 @@ func (s *COSIProvisionerServer) Run(ctx context.Context) error {
 	cosi.RegisterIdentityServer(server, s.identityServer)
 	cosi.RegisterProvisionerServer(server, s.provisionerServer)
 
-	return server.Serve(listener)
+	errChan := make(chan error)
+	go func() {
+		errChan <- server.Serve(listener)
+	}()
+
+	select {
+	case <-ctx.Done():
+		server.GracefulStop()
+		return ctx.Err()
+	case err := <-errChan:
+		return err
+	}
 }

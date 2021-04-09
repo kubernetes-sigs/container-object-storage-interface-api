@@ -14,9 +14,36 @@ commonLabels:
   app.kubernetes.io/version: main
   app.kubernetes.io/name: container-object-storage-interface-provisioner
 
+configMapGenerator: 
+- name: objectstorage-provisioner-config
+  env: resources/objectstorage-provisioner.properties         
+generatorOptions:         
+  disableNameSuffixHash: true
+  labels:                    
+    generated-by: "kustomize"
+
 resources:
 - resources/ns.yaml
 - resources/sa.yaml
 - resources/rbac.yaml
 - resources/secret.yaml
 - resources/deployment.yaml
+
+configurations:
+ - resources/kustomizeconfig.yaml
+
+vars:
+  - name: IMAGE_ORG
+    objref:
+      name: objectstorage-provisioner-config
+      kind: ConfigMap
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.OBJECTSTORAGE_PROVISIONER_IMAGE_ORG
+  - name: IMAGE_VERSION
+    objref:
+      name: objectstorage-provisioner-config
+      kind: ConfigMap
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.OBJECTSTORAGE_PROVISIONER_IMAGE_VERSION

@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -33,24 +32,28 @@ spec:
         app.kubernetes.io/version: main
     spec:
       serviceAccountName: objectstorage-provisioner-sa
+      volumes:
+      - name: socket
+        emptyDir: {}
       containers:
       - name: minio-cosi-driver
-        image: quay.io/containerobjectstorage/minio-cosi-driver:latest
-        args:
-          - "--driver-addr=$(DRIVER_ADDRESS)"
-          - "--endpoint=$(ENDPOINT)"
-          - "--access-key=$(ACCESS_KEY)"
-          - "--secret-key=$(SECRET_KEY)"
+        image: $(IMAGE_ORG)/minio-cosi-driver:$(IMAGE_VERSION)
         envFrom:
         - secretRef:
             name: objectstorage-provisioner
+        volumeMounts:
+        - mountPath: /var/lib/cosi
+          name: socket
       - name: objectstorage-provisioner-sidecar
-        image: quay.io/containerobjectstorage/objectstorage-sidecar:latest
-        args:
-          - "--driver-addr=$(DRIVER_ADDRESS)"
+        image: $(IMAGE_ORG)/objectstorage-sidecar:$(IMAGE_VERSION)
         envFrom:
-        - name: DRIVER_ADDRESS
+        - secretRef:
+            name: objectstorage-provisioner
+        env:
+        - name: POD_NAMESPACE
           valueFrom:
-            secretKeyRef:
-              name: objectstorage-provisioner
-              key: DRIVER_ADDRESS
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - mountPath: /var/lib/cosi
+          name: socket

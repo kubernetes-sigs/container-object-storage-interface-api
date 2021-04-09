@@ -11,12 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sampledriver
+package minio
 
-func NewDriver(provisioner string) (*IdentityServer, *ProvisionerServer) {
-	return &IdentityServer{
-			provisioner: provisioner,
-		}, &ProvisionerServer{
-			provisioner: provisioner,
-		}
-}
+const (
+	ObjectLocking = "objectlocking.min.io"
+)

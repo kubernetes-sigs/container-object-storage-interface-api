@@ -16,12 +16,14 @@ package main
 import (
 	"context"
 	"flag"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/cmd/minio-cosi-driver/internal"
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/provisioner"
-	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/sampledriver"
 
 	"k8s.io/klog/v2"
 )
@@ -30,6 +32,10 @@ const provisionerName = "minio.objectstorage.k8s.io"
 
 var (
 	driverAddress = "unix:///var/lib/cosi/cosi.sock"
+
+	minioAccessKey = ""
+	minioSecretKey = ""
+	minioHost      = ""
 )
 
 var cmd = &cobra.Command{
@@ -45,6 +51,7 @@ var cmd = &cobra.Command{
 
 func init() {
 	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	flag.Set("alsologtostderr", "true")
 	kflags := flag.NewFlagSet("klog", flag.ExitOnError)
@@ -54,18 +61,52 @@ func init() {
 	persistentFlags.AddGoFlagSet(kflags)
 
 	stringFlag := persistentFlags.StringVarP
+
 	stringFlag(&driverAddress,
 		"driver-addr",
 		"d",
 		driverAddress,
 		"path to unix domain socket where driver should listen")
 
+	stringFlag(&minioHost,
+		"minio-host",
+		"m",
+		minioHost,
+		"endpoint where minio server is listening")
+
+	stringFlag(&minioAccessKey,
+		"minio-access-key",
+		"a",
+		minioAccessKey,
+		"access key for minio")
+
+	stringFlag(&minioSecretKey,
+		"minio-secret-key",
+		"s",
+		minioSecretKey,
+		"secret key for minio")
+
 	viper.BindPFlags(cmd.PersistentFlags())
+	cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		if viper.IsSet(f.Name) && viper.GetString(f.Name) != "" {
+			cmd.PersistentFlags().Set(f.Name, viper.GetString(f.Name))
+		}
+	})
 }
 
 func run(ctx context.Context, args []string) error {
-	identityServer, bucketProvisioner := sampledriver.NewDriver(provisionerName)
-	server, err := provisioner.NewDefaultCOSIProvisionerServer(driverAddress, identityServer, bucketProvisioner)
+	identityServer, bucketProvisioner, err := internal.NewDriver(ctx,
+		provisionerName,
+		minioHost,
+		minioAccessKey,
+		minioSecretKey)
+	if err != nil {
+		return err
+	}
+
+	server, err := provisioner.NewDefaultCOSIProvisionerServer(driverAddress,
+		identityServer,
+		bucketProvisioner)
 	if err != nil {
 		return err
 	}

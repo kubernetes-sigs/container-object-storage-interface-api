@@ -18,25 +18,25 @@ package main
 import (
 	"context"
 	"flag"
+	"strings"
 
 	"sigs.k8s.io/container-object-storage-interface-api/controller"
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/bucket"
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/bucketaccess"
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/provisioner"
+	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"k8s.io/klog/v2"
 )
 
-const DefaultProvisionerName = "provisioner.objectstorage.k8s.io"
-
 var (
-	driverAddress   = "unix:///var/lib/cosi/cosi.sock"
-	provisionerName = ""
-	kubeconfig      = ""
-	debug           = false
+	driverAddress = "unix:///var/lib/cosi/cosi.sock"
+	kubeconfig    = ""
+	debug         = false
 )
 
 var cmd = &cobra.Command{
@@ -52,6 +52,7 @@ var cmd = &cobra.Command{
 
 func init() {
 	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	flag.Set("alsologtostderr", "true")
 	kflags := flag.NewFlagSet("klog", flag.ExitOnError)
@@ -65,36 +66,42 @@ func init() {
 
 	stringFlag(&kubeconfig, "kubeconfig", "", kubeconfig, "path to kubeconfig file")
 	stringFlag(&driverAddress, "driver-addr", "d", driverAddress, "path to unix domain socket where driver is listening")
-	stringFlag(&provisionerName, "provisioner", "p", DefaultProvisionerName, "The name of the provisioner")
 
 	boolFlag(&debug, "debug", "g", debug, "Logs all grpc requests and responses")
 
 	viper.BindPFlags(cmd.PersistentFlags())
+	cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		if viper.IsSet(f.Name) && viper.GetString(f.Name) != "" {
+			cmd.PersistentFlags().Set(f.Name, viper.GetString(f.Name))
+		}
+	})
 }
 
 func run(ctx context.Context, args []string) error {
-	if provisionerName == "" {
-		provisionerName = DefaultProvisionerName
-	}
-
-	ctrl, err := controller.NewDefaultObjectStorageController("cosi", provisionerName, 40)
-	if err != nil {
-		return err
-	}
-
 	klog.V(3).InfoS("Attempting connection to driver", "address", driverAddress)
 	cosiClient, err := provisioner.NewDefaultCOSIProvisionerClient(ctx, driverAddress, debug)
 	if err != nil {
 		return err
 	}
-	klog.V(3).InfoS("Successfully connected to driver")
 
-	ctrl.AddBucketListener(bucket.NewBucketListener(provisionerName, cosiClient))
-
-	bal, err := bucketaccess.NewBucketAccessListener(provisionerName, cosiClient)
+	info, err := cosiClient.ProvisionerGetInfo(ctx, &cosi.ProvisionerGetInfoRequest{})
 	if err != nil {
 		return err
 	}
+	klog.V(3).InfoS("Successfully connected to driver", "name", info.Name)
+
+	ctrl, err := controller.NewDefaultObjectStorageController("cosi", info.Name, 40)
+	if err != nil {
+		return err
+	}
+
+	bl := bucket.NewBucketListener(info.Name, cosiClient)
+	bal, err := bucketaccess.NewBucketAccessListener(info.Name, cosiClient)
+	if err != nil {
+		return err
+	}
+
+	ctrl.AddBucketListener(bl)
 	ctrl.AddBucketAccessListener(bal)
 
 	return ctrl.Run(ctx)

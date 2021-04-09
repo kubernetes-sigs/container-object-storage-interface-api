@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sampledriver
+package internal
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func (id *IdentityServer) ProvisionerGetInfo(ctx context.Context,
 
 	if id.provisioner == "" {
 		klog.ErrorS(errors.New("provisioner name cannot be empty"), "Invalid argument")
-		return nil, status.Error(codes.Unavailable, "Provisioner name not configured")
+		return nil, status.Error(codes.InvalidArgument, "ProvisionerName is empty")
 	}
 
 	return &cosi.ProvisionerGetInfoResponse{

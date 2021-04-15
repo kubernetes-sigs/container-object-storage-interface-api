@@ -28,6 +28,7 @@ resources:
 - resources/rbac.yaml
 - resources/secret.yaml
 - resources/deployment.yaml
+- resources/minio.yaml
 
 configurations:
  - resources/kustomizeconfig.yaml

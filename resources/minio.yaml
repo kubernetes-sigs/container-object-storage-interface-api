@@ -10,9 +10,7 @@ spec:
     protocol: TCP
   selector:
     app: minio
-
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:

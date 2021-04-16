@@ -26,13 +26,10 @@ import (
 )
 
 // BucketAccessClassLister helps list BucketAccessClasses.
-// All objects returned here must be treated as read-only.
 type BucketAccessClassLister interface {
 	// List lists all BucketAccessClasses in the indexer.
-	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.BucketAccessClass, err error)
 	// Get retrieves the BucketAccessClass from the index for a given name.
-	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.BucketAccessClass, error)
 	BucketAccessClassListerExpansion
 }

@@ -102,20 +102,17 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketSpec"),
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketStatus"),
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketStatus"),
 						},
 					},
 				},
@@ -148,20 +145,17 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessSpec"),
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessStatus"),
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessStatus"),
 						},
 					},
 				},
@@ -194,8 +188,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
 					"policyActionsConfigMap": {
@@ -210,9 +203,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
+										Type:   []string{"string"},
+										Format: "",
 									},
 								},
 							},
@@ -248,8 +240,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
 					"items": {
@@ -258,8 +249,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessClass"),
+										Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessClass"),
 									},
 								},
 							},
@@ -296,8 +286,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
 					"items": {
@@ -306,8 +295,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccess"),
+										Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccess"),
 									},
 								},
 							},
@@ -344,20 +332,17 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequestSpec"),
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequestSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequestStatus"),
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequestStatus"),
 						},
 					},
 				},
@@ -390,8 +375,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
 					"items": {
@@ -400,8 +384,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequest"),
+										Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketAccessRequest"),
 									},
 								},
 							},
@@ -442,9 +425,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"bucketAccessClassName": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Type:   []string{"string"},
+							Format: "",
 						},
 					},
 				},
@@ -468,9 +450,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"accessGranted": {
 						SchemaProps: spec.SchemaProps{
-							Default: false,
-							Type:    []string{"boolean"},
-							Format:  "",
+							Type:   []string{"boolean"},
+							Format: "",
 						},
 					},
 					"bucketAccessName": {
@@ -507,19 +488,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Ref: ref("k8s.io/api/core/v1.ObjectReference"),
 						},
 					},
-					"mintedSecretName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 					"policyActionsConfigMapData": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"accountID": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
@@ -532,9 +501,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
+										Type:   []string{"string"},
+										Format: "",
 									},
 								},
 							},
@@ -555,6 +523,18 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"message": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"mintedSecretName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"accountID": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
@@ -594,8 +574,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
 					"provisioner": {
@@ -621,9 +600,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
+										Type:   []string{"string"},
+										Format: "",
 									},
 								},
 							},
@@ -631,8 +609,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"protocol": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol"),
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol"),
 						},
 					},
 					"deletionPolicy": {
@@ -648,9 +625,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
+										Type:   []string{"string"},
+										Format: "",
 									},
 								},
 							},
@@ -687,8 +663,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
 					"items": {
@@ -697,8 +672,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClass"),
+										Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClass"),
 									},
 								},
 							},
@@ -735,8 +709,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
 					"items": {
@@ -745,8 +718,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Bucket"),
+										Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Bucket"),
 									},
 								},
 							},
@@ -783,20 +755,17 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestSpec"),
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestStatus"),
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestStatus"),
 						},
 					},
 				},
@@ -829,8 +798,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
 						},
 					},
 					"items": {
@@ -839,8 +807,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequest"),
+										Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequest"),
 									},
 								},
 							},
@@ -893,9 +860,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"bucketAvailable": {
 						SchemaProps: spec.SchemaProps{
-							Default: false,
-							Type:    []string{"boolean"},
-							Format:  "",
+							Type:   []string{"boolean"},
+							Format: "",
 						},
 					},
 					"bucketName": {
@@ -944,9 +910,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
+										Type:   []string{"string"},
+										Format: "",
 									},
 								},
 							},
@@ -954,14 +919,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"protocol": {
 						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol"),
-						},
-					},
-					"bucketID": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Ref: ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.Protocol"),
 						},
 					},
 					"parameters": {
@@ -971,9 +929,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
+										Type:   []string{"string"},
+										Format: "",
 									},
 								},
 							},
@@ -981,9 +938,8 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					},
 					"deletionPolicy": {
 						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
+							Type:   []string{"string"},
+							Format: "",
 						},
 					},
 				},
@@ -1010,6 +966,12 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					"bucketAvailable": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"bucketID": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
 							Format: "",
 						},
 					},

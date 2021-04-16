@@ -284,6 +284,7 @@ func (c *ObjectStorageController) processNextItem(ctx context.Context) bool {
 		err = delete(ctx, o.Object)
 		if err == nil {
 			o.Indexer.Delete(o.Object)
+			c.opMap.Delete(uuid)
 		}
 	default:
 		panic("unknown item in queue")
@@ -320,7 +321,6 @@ func (c *ObjectStorageController) GetOpLock(op types.UID) *sync.Mutex {
 // handleErr checks if an error happened and makes sure we will retry later.
 func (c *ObjectStorageController) handleErr(err error, uuid types.UID) {
 	if err == nil {
-		c.opMap.Delete(uuid)
 		return
 	}
 	c.queue.AddRateLimited(uuid)

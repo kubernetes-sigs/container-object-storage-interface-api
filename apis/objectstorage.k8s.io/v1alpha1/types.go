@@ -73,9 +73,6 @@ type BucketSpec struct {
 	Protocol Protocol `json:"protocol"`
 
 	// +optional
-	BucketID string `json:"bucketID,omitempty"`
-
-	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`
 
 	// +kubebuilder:default:=retain
@@ -88,6 +85,9 @@ type BucketStatus struct {
 
 	// +optional
 	BucketAvailable bool `json:"bucketAvailable,omitempty"`
+
+	// +optional
+	BucketID string `json:"bucketID,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -239,13 +239,7 @@ type BucketAccessSpec struct {
 	// +optional
 	ServiceAccount *corev1.ObjectReference `json:"serviceAccount,omitempty"`
 
-	// +optional
-	MintedSecretName string `json:"mintedSecretName,omitempty"`
-
 	PolicyActionsConfigMapData string `json:"policyActionsConfigMapData,omitempty"`
-
-	// +optional
-	AccountID string `json:"accountID,omitempty"`
 
 	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`
@@ -254,6 +248,12 @@ type BucketAccessSpec struct {
 type BucketAccessStatus struct {
 	// +optional
 	Message string `json:"message,omitempty"`
+
+	// +optional
+	MintedSecretName string `json:"mintedSecretName,omitempty"`
+
+	// +optional
+	AccountID string `json:"accountID,omitempty"`
 
 	// +optional
 	AccessGranted bool `json:"accessGranted,omitempty"`

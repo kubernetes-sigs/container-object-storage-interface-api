@@ -250,7 +250,7 @@ type BucketAccessStatus struct {
 	Message string `json:"message,omitempty"`
 
 	// +optional
-	MintedSecretName string `json:"mintedSecretName,omitempty"`
+	MintedSecret *corev1.SecretReference `json:"mintedSecret,omitempty"`
 
 	// +optional
 	AccountID string `json:"accountID,omitempty"`

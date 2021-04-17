@@ -34,6 +34,12 @@ spec:
         - /data
         env:
         - name: MINIO_ACCESS_KEY
-          value: minio
+          valueFrom:
+            secretKeyRef:
+              name: objectstorage-provisioner
+              key: MINIO_ACCESS_KEY
         - name: MINIO_SECRET_KEY
-          value: minio123
+          valueFrom:
+            secretKeyRef:
+              name: objectstorage-provisioner
+              key: MINIO_SECRET_KEY

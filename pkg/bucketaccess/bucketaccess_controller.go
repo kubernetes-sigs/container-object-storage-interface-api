@@ -82,7 +82,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		"bucket", bucketName,
 	)
 
-	if bucketAccess.Spec.MintedSecretName != "" {
+	if bucketAccess.Status.MintedSecret != nil {
 		klog.V(5).InfoS("AccessAlreadyGranted",
 			"bucketAccess", bucketAccess.Name,
 			"bucket", bucketName,
@@ -112,7 +112,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		return nil
 	}
 
-	if bucket.Spec.BucketID == "" {
+	if bucket.Status.BucketID == "" {
 		err := errors.New("BucketID cannot be empty")
 		klog.ErrorS(err,
 			"Invalid arguments",
@@ -123,7 +123,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	req := &cosi.ProvisionerGrantBucketAccessRequest{
-		BucketId:     bucket.Spec.BucketID,
+		BucketId:     bucket.Status.BucketID,
 		AccountName:  bucketAccess.Name,
 		AccessPolicy: bucketAccess.Spec.PolicyActionsConfigMapData,
 	}
@@ -177,16 +177,19 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		}
 	}
 
-	bucketAccess.Spec.AccountID = rsp.AccountId
+	bucketAccess.Status.AccountID = rsp.AccountId
+	bucketAccess.Status.MintedSecret = &corev1.SecretReference{
+		Namespace: bal.namespace,
+		Name:      mintedSecretName,
+	}
 	bucketAccess.Status.AccessGranted = true
-	bucketAccess.Spec.MintedSecretName = mintedSecretName
 
 	// if this step fails, then controller will retry with backoff
-	if _, err := bal.BucketAccesses().Update(ctx, bucketAccess, metav1.UpdateOptions{}); err != nil {
-		klog.ErrorS(err, "Failed to update BucketAccess",
+	if _, err := bal.BucketAccesses().UpdateStatus(ctx, bucketAccess, metav1.UpdateOptions{}); err != nil {
+		klog.ErrorS(err, "Failed to update BucketAccess Status",
 			"bucketAccess", bucketAccess.Name,
 			"bucket", bucket.Name)
-		return errors.Wrap(err, "Failed to update BucketAccess")
+		return errors.Wrap(err, "Failed to update BucketAccess Status")
 	}
 
 	return nil
@@ -212,6 +215,18 @@ func (bal *BucketAccessListener) Delete(ctx context.Context, bucketAccess *v1alp
 		"name", bucketAccess.Name,
 		"bucket", bucketAccess.Spec.BucketName,
 	)
+
+	// TODO, check bucketAccess.Spec.DeletionPolicy
+
+	bucketAccess.Status.AccessGranted = false
+
+	// if this step fails, then controller will retry with backoff
+	if _, err := bal.BucketAccesses().UpdateStatus(ctx, bucketAccess, metav1.UpdateOptions{}); err != nil {
+		klog.ErrorS(err, "Failed to update BucketAccess Status",
+			"bucketAccess", bucketAccess.Name)
+		return errors.Wrap(err, "Failed to update BucketAccess Status")
+	}
+
 	return nil
 }
 

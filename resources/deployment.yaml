@@ -38,6 +38,7 @@ spec:
       containers:
       - name: minio-cosi-driver
         image: $(IMAGE_ORG)/minio-cosi-driver:$(IMAGE_VERSION)
+        imagePullPolicy: Always
         envFrom:
         - secretRef:
             name: objectstorage-provisioner
@@ -46,6 +47,7 @@ spec:
           name: socket
       - name: objectstorage-provisioner-sidecar
         image: $(IMAGE_ORG)/objectstorage-sidecar:$(IMAGE_VERSION)
+        imagePullPolicy: Always
         envFrom:
         - secretRef:
             name: objectstorage-provisioner

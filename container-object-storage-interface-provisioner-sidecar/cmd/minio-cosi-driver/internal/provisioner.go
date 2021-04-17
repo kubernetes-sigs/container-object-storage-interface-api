@@ -16,13 +16,14 @@ package internal
 import (
 	"context"
 
-	"k8s.io/klog/v2"
-	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/cmd/minio-cosi-driver/internal/minio"
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
-
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/klog/v2"
+
+	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/cmd/minio-cosi-driver/internal/minio"
 )
 
 type ProvisionerServer struct {
@@ -40,9 +41,6 @@ type ProvisionerServer struct {
 func (s *ProvisionerServer) ProvisionerCreateBucket(ctx context.Context,
 	req *cosi.ProvisionerCreateBucketRequest) (*cosi.ProvisionerCreateBucketResponse, error) {
 
-	bucketName := req.GetName()
-	klog.V(3).InfoS("Create Bucket", "name", bucketName)
-
 	protocol := req.GetProtocol()
 	if protocol == nil {
 		klog.ErrorS(errors.New("Invalid Argument"), "Protocol is nil")
@@ -53,6 +51,9 @@ func (s *ProvisionerServer) ProvisionerCreateBucket(ctx context.Context,
 		klog.ErrorS(errors.New("Invalid Argument"), "S3 protocol is nil")
 		return nil, status.Error(codes.InvalidArgument, "S3 Protocol is nil")
 	}
+
+	bucketName := s3.BucketName
+	klog.V(3).InfoS("Create Bucket", "name", bucketName)
 
 	options := minio.MakeBucketOptions{}
 
@@ -91,7 +92,7 @@ func (s *ProvisionerServer) ProvisionerCreateBucket(ctx context.Context,
 			klog.InfoS("Bucket already exists", "name", bucketName)
 			return &cosi.ProvisionerCreateBucketResponse{
 				BucketId: bucketID,
-			}, status.Error(codes.AlreadyExists, "Bucket already exists")
+			}, nil
 		}
 		klog.ErrorS(err, "Bucket creation failed")
 		return nil, status.Error(codes.Internal, "Bucket creation failed")
@@ -111,7 +112,10 @@ func (s *ProvisionerServer) ProvisionerDeleteBucket(ctx context.Context,
 func (s *ProvisionerServer) ProvisionerGrantBucketAccess(ctx context.Context,
 	req *cosi.ProvisionerGrantBucketAccessRequest) (*cosi.ProvisionerGrantBucketAccessResponse, error) {
 
-	return &cosi.ProvisionerGrantBucketAccessResponse{}, nil
+	return &cosi.ProvisionerGrantBucketAccessResponse{
+		AccountId:               "minio",
+		CredentialsFileContents: "{\"username\":\"minio\", \"password\": \"minio123\"}",
+	}, nil
 }
 
 func (s *ProvisionerServer) ProvisionerRevokeBucketAccess(ctx context.Context,

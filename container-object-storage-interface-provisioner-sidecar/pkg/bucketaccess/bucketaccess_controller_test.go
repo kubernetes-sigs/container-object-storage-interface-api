@@ -21,11 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset/fake"
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
-	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
-
+	"google.golang.org/grpc"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
@@ -33,7 +29,10 @@ import (
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 
-	"google.golang.org/grpc"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
+	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset/fake"
+	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 )
 
 func TestInitializeKubeClient(t *testing.T) {
@@ -97,7 +96,9 @@ func TestAddWrongProvisioner(t *testing.T) {
 		Spec: v1alpha1.BucketSpec{
 			Provisioner: provisioner + "-invalid",
 			Protocol:    v1alpha1.Protocol{},
-			BucketID:    bucketId,
+		},
+		Status: v1alpha1.BucketStatus{
+			BucketID: bucketId,
 		},
 	}
 
@@ -172,7 +173,9 @@ func TestAddBucketAccess(t *testing.T) {
 			Spec: v1alpha1.BucketSpec{
 				Provisioner: provisioner,
 				Protocol:    v1alpha1.Protocol{},
-				BucketID:    bucketId,
+			},
+			Status: v1alpha1.BucketStatus{
+				BucketID: bucketId,
 			},
 		}
 
@@ -211,8 +214,8 @@ func TestAddBucketAccess(t *testing.T) {
 		if updatedBA.Status.AccessGranted != true {
 			t.Errorf("Expected %t, got %t", true, ba.Status.AccessGranted)
 		}
-		if !strings.EqualFold(updatedBA.Spec.AccountID, accountId) {
-			t.Errorf("Expected %s, got %s", accountId, updatedBA.Spec.AccountID)
+		if !strings.EqualFold(updatedBA.Status.AccountID, accountId) {
+			t.Errorf("Expected %s, got %s", accountId, updatedBA.Status.AccountID)
 		}
 
 		secretName := "ba-" + string(ba.UID)

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CMDS=objectstorage-sidecar minio-cosi-driver
+CMDS=objectstorage-sidecar
 
 all: reltools build
 .PHONY: reltools

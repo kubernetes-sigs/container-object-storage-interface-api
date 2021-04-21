@@ -103,6 +103,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 				"bucket", bucket.Name)
 			return errors.Wrap(err, "Failed to create bucket")
 		}
+
 	}
 	if rsp == nil {
 		err := errors.New("ProvisionerCreateBucket returned a nil response")
@@ -111,16 +112,17 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 	}
 
 	if rsp.BucketId != "" {
-		bucket.Spec.BucketID = rsp.BucketId
+		bucket.Status.BucketID = rsp.BucketId
 	}
+
 	bucket.Status.Message = "Bucket Provisioned"
 	bucket.Status.BucketAvailable = true
 
 	// if this step fails, then controller will retry with backoff
-	if _, err := b.Buckets().Update(ctx, bucket, metav1.UpdateOptions{}); err != nil {
-		klog.ErrorS(err, "Failed to update bucket",
+	if _, err := b.Buckets().UpdateStatus(ctx, bucket, metav1.UpdateOptions{}); err != nil {
+		klog.ErrorS(err, "Failed to update bucket status",
 			"bucket", bucket.Name)
-		return errors.Wrap(err, "Failed to update bucket")
+		return errors.Wrap(err, "Failed to update bucket status")
 	}
 
 	return nil
@@ -158,7 +160,7 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 	}
 
 	req := &cosi.ProvisionerDeleteBucketRequest{
-		BucketId: bucket.Spec.BucketID,
+		BucketId: bucket.Status.BucketID,
 	}
 
 	if _, err := b.provisionerClient.ProvisionerDeleteBucket(ctx, req); err != nil {
@@ -170,10 +172,12 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 		}
 	}
 
+	// TODO, check bucket.Spec.DeletionPolicy
+
 	bucket.Status.BucketAvailable = false
 
 	// if this step fails, then controller will retry with backoff
-	if _, err := b.Buckets().Update(ctx, bucket, metav1.UpdateOptions{}); err != nil {
+	if _, err := b.Buckets().UpdateStatus(ctx, bucket, metav1.UpdateOptions{}); err != nil {
 		klog.ErrorS(err, "Failed to update bucket",
 			"bucket", bucket.Name)
 		return errors.Wrap(err, "Failed to update bucket")

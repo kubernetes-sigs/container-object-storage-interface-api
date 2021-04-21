@@ -139,7 +139,7 @@ func TestBucketDeletion(t *testing.T) {
 		{
 			name: "BucketDeletion",
 			setFields: func(b *v1alpha1.Bucket) {
-				b.Spec.BucketID = bucketId
+				b.Status.BucketID = bucketId
 			},
 			deleteFunc: func(ctx context.Context,
 				req *cosi.ProvisionerDeleteBucketRequest,

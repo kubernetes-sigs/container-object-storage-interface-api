@@ -35,11 +35,14 @@ objectstorage-sidecar:latest
 sample-driver:latest
 ```
 
-
 In order to run the tests execute:
 ```bash
 make test
 ```
+
+### Running the Sidecar
+
+To see an example of running the sidecar, take a look at the [COSI Driver Minio](https://github.com/kubernetes-sigs/cosi-driver-minio) sub-project.
 
 ## References
 

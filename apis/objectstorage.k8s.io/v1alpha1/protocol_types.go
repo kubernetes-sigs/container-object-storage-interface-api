@@ -25,10 +25,6 @@ import (
 type ProtocolName string
 
 const (
-	ProtocolNameS3    ProtocolName = "s3"
-	ProtocolNameAzure ProtocolName = "azureBlob"
-	ProtocolNameGCS   ProtocolName = "gcs"
-
 	InvalidProtocol = "invalid protocol"
 )
 

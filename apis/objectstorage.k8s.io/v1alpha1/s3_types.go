@@ -30,8 +30,6 @@ const (
 )
 
 type S3Protocol struct {
-	Endpoint   string `json:"endpoint,omitempty"`
-	BucketName string `json:"bucketName,omitempty"`
 	Region     string `json:"region,omitempty"`
 	// +kubebuilder:validation:Enum:={S3V2,S3V4}
 	SignatureVersion S3SignatureVersion `json:"signatureVersion,omitempty"`
@@ -45,8 +43,6 @@ func (s3 *S3Protocol) ConvertToExternal() *osspec.Protocol_S3 {
 	}
 	return &osspec.Protocol_S3{
 		S3: &osspec.S3{
-			Endpoint:         s3.Endpoint,
-			BucketName:       s3.BucketName,
 			Region:           s3.Region,
 			SignatureVersion: osspec.S3SignatureVersion(sigver),
 		},
@@ -59,8 +55,6 @@ func ConvertFromS3External(ext *osspec.S3) *S3Protocol {
 		vers = osspec.S3SignatureVersion_name[0]
 	}
 	return &S3Protocol{
-		BucketName: ext.BucketName,
-		Endpoint: ext.Endpoint,
 		Region: ext.Region,
 		SignatureVersion: S3SignatureVersion(vers),
 	}

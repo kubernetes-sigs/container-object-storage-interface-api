@@ -77,6 +77,10 @@ type BucketSpec struct {
 
 	// +kubebuilder:default:=retain
 	DeletionPolicy DeletionPolicy `json:"deletionPolicy"`
+
+	// BucketID is used for brownfield creation of buckets
+	// +optional
+	BucketID string `json:"bucketID,omitempty"`
 }
 
 type BucketStatus struct {
@@ -86,6 +90,8 @@ type BucketStatus struct {
 	// +optional
 	BucketAvailable bool `json:"bucketAvailable,omitempty"`
 
+	// BucketID is either filled in based on the brown name of the
+	// bucket, or it is dynamic filled based on the newly provisioned bucket
 	// +optional
 	BucketID string `json:"bucketID,omitempty"`
 }

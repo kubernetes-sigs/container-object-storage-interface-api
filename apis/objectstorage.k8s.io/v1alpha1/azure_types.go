@@ -21,14 +21,12 @@ package v1alpha1
 import osspec "sigs.k8s.io/container-object-storage-interface-spec"
 
 type AzureProtocol struct {
-	ContainerName  string `json:"containerName,omitempty"`
 	StorageAccount string `json:"storageAccount,omitempty"`
 }
 
 func (azure *AzureProtocol) ConvertToExternal() *osspec.Protocol_AzureBlob {
 	return &osspec.Protocol_AzureBlob{
 		AzureBlob: &osspec.AzureBlob{
-			ContainerName:  azure.ContainerName,
 			StorageAccount: azure.StorageAccount,
 		},
 	}
@@ -37,6 +35,5 @@ func (azure *AzureProtocol) ConvertToExternal() *osspec.Protocol_AzureBlob {
 func ConvertFromAzureExternal(ext *osspec.AzureBlob) *AzureProtocol {
 	return &AzureProtocol{
 		StorageAccount: ext.StorageAccount,
-		ContainerName: ext.ContainerName,
 	}
 }

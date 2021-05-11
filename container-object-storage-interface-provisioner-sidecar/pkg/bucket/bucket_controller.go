@@ -28,10 +28,15 @@ import (
 	buckets "sigs.k8s.io/container-object-storage-interface-api/clientset"
 	bucketapi "sigs.k8s.io/container-object-storage-interface-api/clientset/typed/objectstorage.k8s.io/v1alpha1"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	brFinalizer = "cosi.objectstorage.k8s.io/bucketrequest-protection"
 )
 
 // BucketListener manages Bucket objects
@@ -181,6 +186,19 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 		klog.ErrorS(err, "Failed to update bucket",
 			"bucket", bucket.Name)
 		return errors.Wrap(err, "Failed to update bucket")
+	}
+
+	if bucket.Spec.BucketRequest != nil {
+		ref := bucket.Spec.BucketRequest
+		bucketRequest, err := b.bucketClient.ObjectstorageV1alpha1().BucketRequests(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		controllerutil.RemoveFinalizer(bucketRequest, brFinalizer)
+		if _, err := b.bucketClient.ObjectstorageV1alpha1().BucketRequests(bucketRequest.Namespace).Update(ctx, bucketRequest, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
 	}
 
 	return nil

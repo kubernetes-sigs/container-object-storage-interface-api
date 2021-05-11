@@ -18,6 +18,7 @@ package bucketaccess
 import (
 	"context"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -39,8 +40,8 @@ import (
 )
 
 const (
-	CredentialsFilePath     = "CredentialsFilePath"
-	CredentialsFileContents = "CredentialsFileContents"
+	Credentials  = "Credentials"
+	barFinalizer = "cosi.objectstorage.k8s.io/bucketaccessrequest-protection"
 )
 
 // BucketAccessListener manages Bucket objects
@@ -153,8 +154,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		}
 
 		// if secret doesn't exist, create it
-		credentialsFileContents := rsp.CredentialsFileContents
-		credentialsFilePath := rsp.CredentialsFilePath
+		credentials := rsp.Credentials
 
 		if _, err := bal.Secrets(ns).Create(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -162,8 +162,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 				Namespace: ns,
 			},
 			StringData: map[string]string{
-				CredentialsFilePath:     credentialsFilePath,
-				CredentialsFileContents: credentialsFileContents,
+				Credentials: credentials,
 			},
 			Type: corev1.SecretTypeOpaque,
 		}, metav1.CreateOptions{}); err != nil {
@@ -225,6 +224,19 @@ func (bal *BucketAccessListener) Delete(ctx context.Context, bucketAccess *v1alp
 		klog.ErrorS(err, "Failed to update BucketAccess Status",
 			"bucketAccess", bucketAccess.Name)
 		return errors.Wrap(err, "Failed to update BucketAccess Status")
+	}
+
+	if bucketAccess.Spec.BucketAccessRequest != nil {
+		ref := bucketAccess.Spec.BucketAccessRequest
+		bucketAccessRequest, err := bal.bucketClient.ObjectstorageV1alpha1().BucketAccessRequests(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		controllerutil.RemoveFinalizer(bucketAccessRequest, barFinalizer)
+		if _, err := bal.bucketClient.ObjectstorageV1alpha1().BucketAccessRequests(bucketAccessRequest.Namespace).Update(ctx, bucketAccessRequest, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
 	}
 
 	return nil

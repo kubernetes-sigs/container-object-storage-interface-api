@@ -17,6 +17,7 @@ package provisioner
 
 import (
 	"context"
+	"google.golang.org/grpc/backoff"
 	"net/url"
 	"time"
 
@@ -28,16 +29,21 @@ import (
 )
 
 const (
-	maxGrpcBackoff  = 30 * time.Second
+	maxGrpcBackoff  = 5 * 30 * time.Second
 	grpcDialTimeout = 30 * time.Second
 )
 
 func NewDefaultCOSIProvisionerClient(ctx context.Context, address string, debug bool) (*COSIProvisionerClient, error) {
+	backoffConfiguration := backoff.DefaultConfig
+	backoffConfiguration.MaxDelay = maxGrpcBackoff
+
 	dialOpts := []grpc.DialOption{
 		grpc.WithInsecure(), // strictly restricting to local Unix domain socket
-		grpc.WithBackoffMaxDelay(maxGrpcBackoff),
+		grpc.WithConnectParams(grpc.ConnectParams{
+			Backoff:           backoffConfiguration,
+			MinConnectTimeout: grpcDialTimeout,
+		}),
 		grpc.WithBlock(), // block until connection succeeds
-		grpc.WithTimeout(grpcDialTimeout),
 	}
 
 	interceptors := []grpc.UnaryClientInterceptor{}
@@ -65,12 +71,14 @@ func NewCOSIProvisionerClient(ctx context.Context, address string, dialOpts []gr
 		dialOpts = append(dialOpts, grpc.WithChainUnaryInterceptor(interceptor))
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, maxGrpcBackoff)
+	defer cancel()
+
 	conn, err := grpc.DialContext(ctx, address, dialOpts...)
 	if err != nil {
 		klog.ErrorS(err, "Connection failed", "address", address)
 		return nil, err
 	}
-
 	return &COSIProvisionerClient{
 		address:           address,
 		conn:              conn,

@@ -12,7 +12,7 @@ Kubernetes abstracts file/block storage via the CSI standard. The primitives for
 
  - Unit of provisioned storage - Bucket instead of filesystem mount or block device.
  - Access is over the network instead of local POSIX calls.
- - No common protocol for consumption across various implementations of object storage. 
+ - No common protocol for consumption across various implementations of object storage.
  - Management policies and primitives - for instance, mounting and unmounting do not apply to object storage.
 
 The existing primitives in CSI do not apply to objectstorage. Thus the need for a new standard to automate the management of objectstorage.
@@ -53,17 +53,17 @@ make all
 
 ## References
 
- - [Documentation](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/index.md)
- - [Deployment Guide](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/deployment-guide.md) 
- - [Weekly Meetings](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/meetings.md)
- - [Roadmap](https://github.com/orgs/kubernetes-sigs/projects/8)
+- [Documentation](https://container-object-storage-interface.github.io/)
+- [Deployment Guide](https://container-object-storage-interface.github.io/docs/deployment-guide)
+- [Weekly Meetings](https://container-object-storage-interface.github.io/docs/community/weekly-meetings)
+- [Roadmap](https://github.com/orgs/kubernetes-sigs/projects/8)
 
 ## Community, discussion, contribution, and support
 
 You can reach the maintainers of this project at:
 
- - [#sig-storage-cosi](https://kubernetes.slack.com/messages/sig-storage-cosi) slack channel 
- - [container-object-storage-interface](https://groups.google.com/g/container-object-storage-interface-wg?pli=1) mailing list
+- [#sig-storage-cosi](https://kubernetes.slack.com/messages/sig-storage-cosi) slack channel
+- [container-object-storage-interface](https://groups.google.com/g/container-object-storage-interface-wg?pli=1) mailing list
 
 ### Code of conduct
 

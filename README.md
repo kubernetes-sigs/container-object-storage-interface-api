@@ -55,9 +55,9 @@ Title: [RFC] Changes to protocol xyz
 
 ## References
 
- - [Documentation](docs/index.md)
- - [Deployment Guide](docs/deployment-guide.md)
- - [Weekly Meetings](docs/meetings.md)
+ - [Documentation](https://container-object-storage-interface.github.io/)
+ - [Deployment Guide](https://container-object-storage-interface.github.io/docs/deployment-guide)
+ - [Weekly Meetings](https://container-object-storage-interface.github.io/docs/community/weekly-meetings)
  - [Roadmap](https://github.com/orgs/kubernetes-sigs/projects/8)
 
 ## Community, discussion, contribution, and support

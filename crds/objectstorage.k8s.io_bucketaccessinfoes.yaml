@@ -6,15 +6,15 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.5.0
   creationTimestamp: null
-  name: bucketaccessclasses.objectstorage.k8s.io
+  name: bucketaccessinfoes.objectstorage.k8s.io
 spec:
   group: objectstorage.k8s.io
   names:
-    kind: BucketAccessClass
-    listKind: BucketAccessClassList
-    plural: bucketaccessclasses
-    singular: bucketaccessclass
-  scope: Cluster
+    kind: BucketAccessInfo
+    listKind: BucketAccessInfoList
+    plural: bucketaccessinfoes
+    singular: bucketaccessinfo
+  scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
@@ -23,14 +23,38 @@ spec:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
+          azure:
+            properties:
+              containerName:
+                type: string
+              endpoint:
+                type: string
+              secretKey:
+                type: string
+              storageAccountName:
+                type: string
+            type: object
+          gcs:
+            type: object
           kind:
             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
-          parameters:
-            additionalProperties:
-              type: string
+          s3:
+            properties:
+              bucketName:
+                type: string
+              certificates:
+                type: string
+              credentials:
+                type: string
+              endpoint:
+                type: string
+              region:
+                type: string
+              signatureVersion:
+                type: string
             type: object
         type: object
     served: true

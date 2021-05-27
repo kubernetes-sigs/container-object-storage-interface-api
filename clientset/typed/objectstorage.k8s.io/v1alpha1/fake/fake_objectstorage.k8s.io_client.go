@@ -40,6 +40,10 @@ func (c *FakeObjectstorageV1alpha1) BucketAccessClasses() v1alpha1.BucketAccessC
 	return &FakeBucketAccessClasses{c}
 }
 
+func (c *FakeObjectstorageV1alpha1) BucketAccessInfos(namespace string) v1alpha1.BucketAccessInfoInterface {
+	return &FakeBucketAccessInfos{c, namespace}
+}
+
 func (c *FakeObjectstorageV1alpha1) BucketAccessRequests(namespace string) v1alpha1.BucketAccessRequestInterface {
 	return &FakeBucketAccessRequests{c, namespace}
 }

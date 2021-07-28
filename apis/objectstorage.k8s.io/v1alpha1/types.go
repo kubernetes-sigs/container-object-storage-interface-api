@@ -39,6 +39,14 @@ const (
 	DeletionPolicyForceDelete DeletionPolicy = "Force"
 )
 
+type Protocol string
+
+const (
+	S3Protocol    Protocol = "S3"
+	GCSProtocol   Protocol = "GCP"
+	AzureProtocol Protocol = "Azure"
+)
+
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -128,6 +136,8 @@ type BucketRequestSpec struct {
 
 	// +optional
 	BucketClassName string `json:"bucketClassName,omitempty"`
+
+	Protocol Protocol `json:"protocol"`
 }
 
 type BucketRequestStatus struct {
@@ -171,8 +181,6 @@ type BucketClass struct {
 	// +listType=atomic
 	// +optional
 	AllowedNamespaces []string `json:"allowedNamespaces,omitempty"`
-
-	Protocol Protocol `json:"protocol"`
 
 	// +kubebuilder:default:=retain
 	DeletionPolicy DeletionPolicy `json:"deletionPolicy,omitempty"`

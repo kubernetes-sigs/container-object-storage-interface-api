@@ -73,32 +73,7 @@ spec:
                   type: string
                 type: object
               protocol:
-                properties:
-                  azureBlob:
-                    properties:
-                      storageAccount:
-                        type: string
-                    type: object
-                  gcs:
-                    properties:
-                      privateKeyName:
-                        type: string
-                      projectID:
-                        type: string
-                      serviceAccount:
-                        type: string
-                    type: object
-                  s3:
-                    properties:
-                      region:
-                        type: string
-                      signatureVersion:
-                        enum:
-                        - S3V2
-                        - S3V4
-                        type: string
-                    type: object
-                type: object
+                type: string
               provisioner:
                 type: string
             required:

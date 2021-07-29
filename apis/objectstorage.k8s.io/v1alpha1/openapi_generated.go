@@ -170,11 +170,6 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
-					"policyActionsConfigMap": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/api/core/v1.ObjectReference"),
-						},
-					},
 					"parameters": {
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"object"},
@@ -194,7 +189,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -477,12 +472,6 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					"serviceAccount": {
 						SchemaProps: spec.SchemaProps{
 							Ref: ref("k8s.io/api/core/v1.ObjectReference"),
-						},
-					},
-					"policyActionsConfigMapData": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
 						},
 					},
 					"parameters": {

@@ -86,11 +86,6 @@ func (in *BucketAccessClass) DeepCopyInto(out *BucketAccessClass) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	if in.PolicyActionsConfigMap != nil {
-		in, out := &in.PolicyActionsConfigMap, &out.PolicyActionsConfigMap
-		*out = new(v1.ObjectReference)
-		**out = **in
-	}
 	if in.Parameters != nil {
 		in, out := &in.Parameters, &out.Parameters
 		*out = make(map[string]string, len(*in))

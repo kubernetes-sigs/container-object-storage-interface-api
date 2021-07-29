@@ -210,8 +210,6 @@ type BucketAccessClass struct {
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	PolicyActionsConfigMap *corev1.ObjectReference `json:"policyActionsConfigMap,omitempty"`
-
 	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`
 }
@@ -252,8 +250,6 @@ type BucketAccessSpec struct {
 
 	// +optional
 	ServiceAccount *corev1.ObjectReference `json:"serviceAccount,omitempty"`
-
-	PolicyActionsConfigMapData string `json:"policyActionsConfigMapData,omitempty"`
 
 	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`

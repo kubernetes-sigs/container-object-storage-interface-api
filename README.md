@@ -4,7 +4,7 @@
 
 This repository hosts the gRPC API for the Container Object Storage Interface (COSI) standard. The interfaces defined in the [gRPC specification](cosi.proto) are meant to be the common interface for object storage provisioning and management across various object storage vendors.
 
-For more information about the COSI effort, visit our [documentation](https://github.com/kubernetes-sigs/container-object-storage-interface-api/tree/master/docs/index.md).
+For more information about the COSI effort, visit our [documentation](https://container-object-storage-interface.github.io/docs).
 
 ## Why another standard?
 

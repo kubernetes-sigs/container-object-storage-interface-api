@@ -90,7 +90,6 @@ type ObjectStorageController struct {
 	BucketListener              BucketListener
 	BucketRequestListener       BucketRequestListener
 	BucketAccessListener        BucketAccessListener
-	BucketAccessRequestListener BucketAccessRequestListener
 
 	// leader election
 	leaderLock string
@@ -460,20 +459,6 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 			return c.BucketAccessListener.Delete(ctx, obj.(*v1alpha1.BucketAccess))
 		}
 		go controllerFor("BucketAccesses", &v1alpha1.BucketAccess{}, addFunc, updateFunc, deleteFunc)
-	}
-	if c.BucketAccessRequestListener != nil {
-		c.BucketAccessRequestListener.InitializeKubeClient(c.kubeClient)
-		c.BucketAccessRequestListener.InitializeBucketClient(c.bucketClient)
-		addFunc := func(ctx context.Context, obj interface{}) error {
-			return c.BucketAccessRequestListener.Add(ctx, obj.(*v1alpha1.BucketAccessRequest))
-		}
-		updateFunc := func(ctx context.Context, old interface{}, new interface{}) error {
-			return c.BucketAccessRequestListener.Update(ctx, old.(*v1alpha1.BucketAccessRequest), new.(*v1alpha1.BucketAccessRequest))
-		}
-		deleteFunc := func(ctx context.Context, obj interface{}) error {
-			return c.BucketAccessRequestListener.Delete(ctx, obj.(*v1alpha1.BucketAccessRequest))
-		}
-		go controllerFor("BucketAccessRequests", &v1alpha1.BucketAccessRequest{}, addFunc, updateFunc, deleteFunc)
 	}
 
 	<-ctx.Done()

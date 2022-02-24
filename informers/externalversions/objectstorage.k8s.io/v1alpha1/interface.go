@@ -30,8 +30,6 @@ type Interface interface {
 	BucketAccesses() BucketAccessInformer
 	// BucketAccessClasses returns a BucketAccessClassInformer.
 	BucketAccessClasses() BucketAccessClassInformer
-	// BucketAccessRequests returns a BucketAccessRequestInformer.
-	BucketAccessRequests() BucketAccessRequestInformer
 	// BucketClasses returns a BucketClassInformer.
 	BucketClasses() BucketClassInformer
 	// BucketRequests returns a BucketRequestInformer.
@@ -62,11 +60,6 @@ func (v *version) BucketAccesses() BucketAccessInformer {
 // BucketAccessClasses returns a BucketAccessClassInformer.
 func (v *version) BucketAccessClasses() BucketAccessClassInformer {
 	return &bucketAccessClassInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// BucketAccessRequests returns a BucketAccessRequestInformer.
-func (v *version) BucketAccessRequests() BucketAccessRequestInformer {
-	return &bucketAccessRequestInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // BucketClasses returns a BucketClassInformer.

@@ -55,16 +55,3 @@ func (c *ObjectStorageController) AddBucketAccessListener(b BucketAccessListener
 	c.initialized = true
 	c.BucketAccessListener = b
 }
-
-type BucketAccessRequestListener interface {
-	GenericListener
-
-	Add(ctx context.Context, b *v1alpha1.BucketAccessRequest) error
-	Update(ctx context.Context, old *v1alpha1.BucketAccessRequest, new *v1alpha1.BucketAccessRequest) error
-	Delete(ctx context.Context, b *v1alpha1.BucketAccessRequest) error
-}
-
-func (c *ObjectStorageController) AddBucketAccessRequestListener(b BucketAccessRequestListener) {
-	c.initialized = true
-	c.BucketAccessRequestListener = b
-}

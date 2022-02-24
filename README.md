@@ -11,7 +11,6 @@ This repository hosts the API defintion of the Custom Resource Definitions (CRD)
 
  The following CRDs are defined for managing the lifecycle of workloads accessing the Bucket:
 
- - BucketAccessRequest - Represents a request to access a Bucket
  - BucketAccessClass - Represents a class of accessors with similar access requirements
  - BucketAccess - Represents a access token or service account in the storage backend
 

@@ -29,7 +29,6 @@ type ObjectstorageV1alpha1Interface interface {
 	BucketsGetter
 	BucketAccessesGetter
 	BucketAccessClassesGetter
-	BucketAccessRequestsGetter
 	BucketClassesGetter
 	BucketRequestsGetter
 }
@@ -49,10 +48,6 @@ func (c *ObjectstorageV1alpha1Client) BucketAccesses() BucketAccessInterface {
 
 func (c *ObjectstorageV1alpha1Client) BucketAccessClasses() BucketAccessClassInterface {
 	return newBucketAccessClasses(c)
-}
-
-func (c *ObjectstorageV1alpha1Client) BucketAccessRequests(namespace string) BucketAccessRequestInterface {
-	return newBucketAccessRequests(c, namespace)
 }
 
 func (c *ObjectstorageV1alpha1Client) BucketClasses() BucketClassInterface {

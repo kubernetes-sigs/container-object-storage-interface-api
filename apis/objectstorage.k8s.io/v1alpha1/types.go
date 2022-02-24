@@ -27,7 +27,6 @@ func init() {
 	SchemeBuilder.Register(&BucketClass{}, &BucketClassList{})
 
 	SchemeBuilder.Register(&BucketAccess{}, &BucketAccessList{})
-	SchemeBuilder.Register(&BucketAccessRequest{}, &BucketAccessRequestList{})
 	SchemeBuilder.Register(&BucketAccessClass{}, &BucketAccessClassList{})
 }
 
@@ -240,9 +239,6 @@ type BucketAccessSpec struct {
 	BucketName string `json:"bucketName,omitempty"`
 
 	// +optional
-	BucketAccessRequest *corev1.ObjectReference `json:"bucketAccessRequest,omitempty"`
-
-	// +optional
 	ServiceAccount *corev1.ObjectReference `json:"serviceAccount,omitempty"`
 
 	PolicyActionsConfigMapData string `json:"policyActionsConfigMapData,omitempty"`
@@ -271,52 +267,4 @@ type BucketAccessList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BucketAccess `json:"items"`
-}
-
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:storageversion
-// +kubebuilder:subresource:status
-
-type BucketAccessRequest struct {
-	metav1.TypeMeta `json:",inline"`
-
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec BucketAccessRequestSpec `json:"spec,omitempty"`
-
-	// +optional
-	Status BucketAccessRequestStatus `json:"status"`
-}
-
-type BucketAccessRequestSpec struct {
-	// +optional
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
-	// +optional
-	BucketRequestName string `json:"bucketRequestName,omitempty"`
-	// +optional
-	BucketName string `json:"bucketName,omitempty"`
-
-	BucketAccessClassName string `json:"bucketAccessClassName"`
-}
-
-type BucketAccessRequestStatus struct {
-	// +optional
-	Message string `json:"message,omitempty"`
-
-	// +optional
-	AccessGranted bool `json:"accessGranted"`
-
-	// +optional
-	BucketAccessName string `json:"bucketAccessName,omitempty"`
-}
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-type BucketAccessRequestList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []BucketAccessRequest `json:"items"`
 }

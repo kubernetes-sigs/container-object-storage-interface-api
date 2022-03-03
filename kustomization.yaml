@@ -14,5 +14,5 @@ resources:
 - crds/objectstorage.k8s.io_bucketaccesses.yaml
 - crds/objectstorage.k8s.io_bucketaccessclasses.yaml
 - crds/objectstorage.k8s.io_bucketclasses.yaml
-- crds/objectstorage.k8s.io_bucketrequests.yaml
+- crds/objectstorage.k8s.io_bucketclaims.yaml
 - crds/objectstorage.k8s.io_buckets.yaml

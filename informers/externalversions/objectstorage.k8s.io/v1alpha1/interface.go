@@ -32,8 +32,8 @@ type Interface interface {
 	BucketAccessClasses() BucketAccessClassInformer
 	// BucketClasses returns a BucketClassInformer.
 	BucketClasses() BucketClassInformer
-	// BucketRequests returns a BucketRequestInformer.
-	BucketRequests() BucketRequestInformer
+	// BucketClaims returns a BucketClaimInformer.
+	BucketClaims() BucketClaimInformer
 }
 
 type version struct {
@@ -67,7 +67,7 @@ func (v *version) BucketClasses() BucketClassInformer {
 	return &bucketClassInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-// BucketRequests returns a BucketRequestInformer.
-func (v *version) BucketRequests() BucketRequestInformer {
-	return &bucketRequestInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// BucketClaims returns a BucketClaimInformer.
+func (v *version) BucketClaims() BucketClaimInformer {
+	return &bucketClaimInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

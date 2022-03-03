@@ -6,14 +6,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: bucketrequests.objectstorage.k8s.io
+  name: bucketclaims.objectstorage.k8s.io
 spec:
   group: objectstorage.k8s.io
   names:
-    kind: BucketRequest
-    listKind: BucketRequestList
-    plural: bucketrequests
-    singular: bucketrequest
+    kind: BucketClaim
+    listKind: BucketClaimList
+    plural: bucketclaims
+    singular: bucketclaim
   scope: Namespaced
   versions:
   - name: v1alpha1

@@ -44,8 +44,8 @@ func (c *FakeObjectstorageV1alpha1) BucketClasses() v1alpha1.BucketClassInterfac
 	return &FakeBucketClasses{c}
 }
 
-func (c *FakeObjectstorageV1alpha1) BucketRequests(namespace string) v1alpha1.BucketRequestInterface {
-	return &FakeBucketRequests{c, namespace}
+func (c *FakeObjectstorageV1alpha1) BucketClaims(namespace string) v1alpha1.BucketClaimInterface {
+	return &FakeBucketClaims{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

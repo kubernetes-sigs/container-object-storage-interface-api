@@ -40,10 +40,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClass":               schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClass(ref),
 		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClassList":           schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClassList(ref),
 		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketList":                schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketList(ref),
-		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequest":             schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequest(ref),
-		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestList":         schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestList(ref),
-		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestSpec":         schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestSpec(ref),
-		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestStatus":       schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestStatus(ref),
+		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaim":             schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClaim(ref),
+		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaimList":         schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClaimList(ref),
+		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaimSpec":         schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClaimSpec(ref),
+		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaimStatus":       schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClaimStatus(ref),
 		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketSpec":                schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketSpec(ref),
 		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketStatus":              schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketStatus(ref),
 		"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.GCSProtocol":               schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_GCSProtocol(ref),
@@ -584,7 +584,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 	}
 }
 
-func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequest(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClaim(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -613,24 +613,24 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestSpec"),
+							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaimSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestStatus"),
+							Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaimStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequestStatus"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaimSpec", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaimStatus"},
 	}
 }
 
-func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClaimList(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -663,7 +663,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequest"),
+										Ref:     ref("sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaim"),
 									},
 								},
 							},
@@ -674,11 +674,11 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketRequest"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta", "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1.BucketClaim"},
 	}
 }
 
-func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClaimSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -702,7 +702,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 	}
 }
 
-func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketRequestStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alpha1_BucketClaimStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -751,7 +751,7 @@ func schema_container_object_storage_interface_api_apis_objectstoragek8sio_v1alp
 							Format: "",
 						},
 					},
-					"bucketRequest": {
+					"bucketClaim": {
 						SchemaProps: spec.SchemaProps{
 							Ref: ref("k8s.io/api/core/v1.ObjectReference"),
 						},

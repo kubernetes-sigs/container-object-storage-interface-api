@@ -39,12 +39,7 @@ spec:
                   type: string
                 type: array
                 x-kubernetes-list-type: atomic
-              bucketClassName:
-                type: string
-              bucketID:
-                description: BucketID is used for brownfield creation of buckets
-                type: string
-              bucketRequest:
+              bucketClaim:
                 description: 'ObjectReference contains enough information to let you
                   inspect or modify the referred object. --- New uses of this type
                   are discouraged because of difficulty describing its usage when
@@ -103,6 +98,11 @@ spec:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
                 type: object
+              bucketClassName:
+                type: string
+              bucketID:
+                description: BucketID is used for brownfield creation of buckets
+                type: string
               deletionPolicy:
                 default: retain
                 type: string

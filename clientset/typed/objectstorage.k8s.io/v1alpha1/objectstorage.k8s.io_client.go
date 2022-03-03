@@ -30,7 +30,7 @@ type ObjectstorageV1alpha1Interface interface {
 	BucketAccessesGetter
 	BucketAccessClassesGetter
 	BucketClassesGetter
-	BucketRequestsGetter
+	BucketClaimsGetter
 }
 
 // ObjectstorageV1alpha1Client is used to interact with features provided by the objectstorage.k8s.io group.
@@ -54,8 +54,8 @@ func (c *ObjectstorageV1alpha1Client) BucketClasses() BucketClassInterface {
 	return newBucketClasses(c)
 }
 
-func (c *ObjectstorageV1alpha1Client) BucketRequests(namespace string) BucketRequestInterface {
-	return newBucketRequests(c, namespace)
+func (c *ObjectstorageV1alpha1Client) BucketClaims(namespace string) BucketClaimInterface {
+	return newBucketClaims(c, namespace)
 }
 
 // NewForConfig creates a new ObjectstorageV1alpha1Client for the given config.

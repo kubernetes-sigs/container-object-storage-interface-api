@@ -26,4 +26,4 @@ type BucketAccessClassExpansion interface{}
 
 type BucketClassExpansion interface{}
 
-type BucketRequestExpansion interface{}
+type BucketClaimExpansion interface{}

@@ -23,7 +23,7 @@ import (
 
 func init() {
 	SchemeBuilder.Register(&Bucket{}, &BucketList{})
-	SchemeBuilder.Register(&BucketRequest{}, &BucketRequestList{})
+	SchemeBuilder.Register(&BucketClaim{}, &BucketClaimList{})
 	SchemeBuilder.Register(&BucketClass{}, &BucketClassList{})
 
 	SchemeBuilder.Register(&BucketAccess{}, &BucketAccessList{})
@@ -64,7 +64,7 @@ type BucketSpec struct {
 	// +optional
 	BucketClassName string `json:"bucketClassName,omitempty"`
 
-	BucketRequest *corev1.ObjectReference `json:"bucketRequest,omitempty"`
+	BucketClaim *corev1.ObjectReference `json:"bucketClaim,omitempty"`
 
 	// +listType=atomic
 	AllowedNamespaces []string `json:"allowedNamespaces,omitempty"`
@@ -109,19 +109,19 @@ type BucketList struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
-type BucketRequest struct {
+type BucketClaim struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec BucketRequestSpec `json:"spec,omitempty"`
+	Spec BucketClaimSpec `json:"spec,omitempty"`
 
 	// +optional
-	Status BucketRequestStatus `json:"status,omitempty"`
+	Status BucketClaimStatus `json:"status,omitempty"`
 }
 
-type BucketRequestSpec struct {
+type BucketClaimSpec struct {
 	// +optional
 	BucketPrefix string `json:"bucketPrefix,omitempty"`
 
@@ -129,7 +129,7 @@ type BucketRequestSpec struct {
 	BucketClassName string `json:"bucketClassName,omitempty"`
 }
 
-type BucketRequestStatus struct {
+type BucketClaimStatus struct {
 	// +optional
 	Message string `json:"message,omitempty"`
 
@@ -142,10 +142,10 @@ type BucketRequestStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type BucketRequestList struct {
+type BucketClaimList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []BucketRequest `json:"items"`
+	Items           []BucketClaim `json:"items"`
 }
 
 // +genclient

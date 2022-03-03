@@ -5,7 +5,7 @@
 
 This repository hosts the API defintion of the Custom Resource Definitions (CRD) used for the Container Object Storage Interface (COSI) project. The provisioned unit of storage is a `Bucket`. The following CRDs are defined for managing the lifecycle of Buckets:
 
- - BucketRequest - Represents a request to provision a Bucket
+ - BucketClaim - Represents a request to provision a Bucket
  - BucketClass - Represents a class of Buckets with similar characteristics
  - Bucket - Represents a Bucket or its equivalent in the storage backend
 

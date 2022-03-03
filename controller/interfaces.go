@@ -30,17 +30,17 @@ func (c *ObjectStorageController) AddBucketListener(b BucketListener) {
 	c.BucketListener = b
 }
 
-type BucketRequestListener interface {
+type BucketClaimListener interface {
 	GenericListener
 
-	Add(ctx context.Context, b *v1alpha1.BucketRequest) error
-	Update(ctx context.Context, old *v1alpha1.BucketRequest, new *v1alpha1.BucketRequest) error
-	Delete(ctx context.Context, b *v1alpha1.BucketRequest) error
+	Add(ctx context.Context, b *v1alpha1.BucketClaim) error
+	Update(ctx context.Context, old *v1alpha1.BucketClaim, new *v1alpha1.BucketClaim) error
+	Delete(ctx context.Context, b *v1alpha1.BucketClaim) error
 }
 
-func (c *ObjectStorageController) AddBucketRequestListener(b BucketRequestListener) {
+func (c *ObjectStorageController) AddBucketClaimListener(b BucketClaimListener) {
 	c.initialized = true
-	c.BucketRequestListener = b
+	c.BucketClaimListener = b
 }
 
 type BucketAccessListener interface {

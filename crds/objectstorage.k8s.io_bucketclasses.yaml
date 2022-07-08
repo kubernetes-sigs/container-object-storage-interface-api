@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.1
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: bucketclasses.objectstorage.k8s.io
 spec:
@@ -20,11 +19,6 @@ spec:
     schema:
       openAPIV3Schema:
         properties:
-          allowedNamespaces:
-            items:
-              type: string
-            type: array
-            x-kubernetes-list-type: atomic
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
               of an object. Servers should convert recognized schemas to the latest
@@ -32,10 +26,15 @@ spec:
             type: string
           deletionPolicy:
             default: retain
+            description: 'DeletionPolicy is used to specify how COSI should handle
+              deletion of this bucket. There are 2 possible values: - Retain: Indicates
+              that the bucket should not be deleted from the OSP - Delete: Indicates
+              that the bucket should be deleted from the OSP once all the workloads
+              accessing this bucket are done'
             type: string
-          isDefaultBucketClass:
-            default: false
-            type: boolean
+          driverName:
+            description: DriverName is the name of driver associated with this bucket
+            type: string
           kind:
             description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
@@ -46,44 +45,12 @@ spec:
           parameters:
             additionalProperties:
               type: string
+            description: Parameters is an opaque map for passing in configuration
+              to a driver for creating the bucket
             type: object
-          protocol:
-            properties:
-              azureBlob:
-                properties:
-                  storageAccount:
-                    type: string
-                type: object
-              gcs:
-                properties:
-                  privateKeyName:
-                    type: string
-                  projectID:
-                    type: string
-                  serviceAccount:
-                    type: string
-                type: object
-              s3:
-                properties:
-                  region:
-                    type: string
-                  signatureVersion:
-                    enum:
-                    - S3V2
-                    - S3V4
-                    type: string
-                type: object
-            type: object
-          provisioner:
-            type: string
         required:
-        - protocol
+        - deletionPolicy
+        - driverName
         type: object
     served: true
     storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

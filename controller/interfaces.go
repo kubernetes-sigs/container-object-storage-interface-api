@@ -4,8 +4,8 @@ import (
 	"context"
 
 	// storage
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	bucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	bucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned"
 
 	// k8s client
 	kubeclientset "k8s.io/client-go/kubernetes"
@@ -54,4 +54,30 @@ type BucketAccessListener interface {
 func (c *ObjectStorageController) AddBucketAccessListener(b BucketAccessListener) {
 	c.initialized = true
 	c.BucketAccessListener = b
+}
+
+type BucketClassListener interface {
+	GenericListener
+
+	Add(ctx context.Context, b *v1alpha1.BucketClass) error
+	Update(ctx context.Context, old *v1alpha1.BucketClass, new *v1alpha1.BucketClass) error
+	Delete(ctx context.Context, b *v1alpha1.BucketClass) error
+}
+
+func (c *ObjectStorageController) AddBucketClassListener(b BucketClassListener) {
+	c.initialized = true
+	c.BucketClassListener = b
+}
+
+type BucketAccessClassListener interface {
+	GenericListener
+
+	Add(ctx context.Context, b *v1alpha1.BucketAccessClass) error
+	Update(ctx context.Context, old *v1alpha1.BucketAccessClass, new *v1alpha1.BucketAccessClass) error
+	Delete(ctx context.Context, b *v1alpha1.BucketAccessClass) error
+}
+
+func (c *ObjectStorageController) AddBucketAccessClassListener(b BucketAccessClassListener) {
+	c.initialized = true
+	c.BucketAccessClassListener = b
 }

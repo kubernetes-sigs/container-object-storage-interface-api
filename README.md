@@ -19,7 +19,7 @@ This repository hosts the API defintion of the Custom Resource Definitions (CRD)
 For more information about COSI, visit our [documentation](https://container-object-storage-interface.github.io/docs).
 ## Developer Guide
 
-All API definitions are in [`apis/objectstorage.k8s.io/`](./apis/objectstorage.k8s.io/). All API changes **_MUST_** satisfy the following requirements:
+All API definitions are in [`apis/objectstorage.k8s.io/`](./apis/objectstorage/). All API changes **_MUST_** satisfy the following requirements:
 
  - Must be backwards compatible
  - Must be in-sync with the API definitions in [sigs.k8s.io/container-object-storage-interface-spec](https://sigs.k8s.io/container-object-storage-interface-spec)

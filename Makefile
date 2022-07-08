@@ -37,5 +37,6 @@ test:
 unit:
 codegen: 
 	$(shell ./hack/update-codegen.sh) 
+	$(shell ./hack/update-crd.sh)
 
 include release-tools/build.make

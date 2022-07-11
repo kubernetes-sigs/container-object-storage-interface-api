@@ -50,8 +50,8 @@ const (
 type AuthenticationType string
 
 const (
-	AuthenticationTypeIAM AuthenticationType = "IAM"
 	AuthenticationTypeKey AuthenticationType = "Key"
+	AuthenticationTypeIAM AuthenticationType = "IAM"
 )
 
 // +genclient

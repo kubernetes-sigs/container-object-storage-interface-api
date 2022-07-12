@@ -7,4 +7,4 @@ CONTROLLERTOOLS_PKG=${CONTROLLERTOOLS_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./ven
 # find or download controller-gen
 pushd "${CONTROLLERTOOLS_PKG}"
 trap popd exit
-go run -v ./cmd/controller-gen crd:crdVersions=v1 paths="${SCRIPT_ROOT}/apis/..." output:crd:dir="${SCRIPT_ROOT}/crds"
+go run -v ./cmd/controller-gen crd:crdVersions=v1 paths="${SCRIPT_ROOT}/apis/objectstorage/..." output:crd:dir="${SCRIPT_ROOT}/crds"

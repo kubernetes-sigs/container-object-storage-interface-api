@@ -21,7 +21,7 @@ export GOPATH
 
 # Only set PROTOC_VER if it has an empty value.
 ifeq (,$(strip $(PROTOC_VER)))
-PROTOC_VER := 3.9.1
+PROTOC_VER := 3.14.0
 endif
 
 PROTOC_OS := $(shell uname -s)
@@ -36,14 +36,16 @@ endif
 
 PROTOC := ./protoc
 PROTOC_ZIP := protoc-$(PROTOC_VER)-$(PROTOC_OS)-$(PROTOC_ARCH).zip
-PROTOC_URL := https://github.com/google/protobuf/releases/download/v$(PROTOC_VER)/$(PROTOC_ZIP)
+PROTOC_URL := https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VER)/$(PROTOC_ZIP)
 PROTOC_TMP_DIR := .protoc
 PROTOC_TMP_BIN := $(PROTOC_TMP_DIR)/bin/protoc
+PROTOC_TMP_INC := $(PROTOC_TMP_DIR)/include
 
 $(PROTOC):
 	-mkdir -p "$(PROTOC_TMP_DIR)" && \
 	  curl -L $(PROTOC_URL) -o "$(PROTOC_TMP_DIR)/$(PROTOC_ZIP)" && \
-	  unzip "$(PROTOC_TMP_DIR)/$(PROTOC_ZIP)" -d "$(PROTOC_TMP_DIR)" && \
+	  unzip -o "$(PROTOC_TMP_DIR)/$(PROTOC_ZIP)" -d "$(PROTOC_TMP_DIR)" && \
+	  unzip -o "$(PROTOC_TMP_DIR)/$(PROTOC_ZIP)" -d "$(PROTOC_TMP_INC)/*" && \
 	  chmod 0755 "$(PROTOC_TMP_BIN)" && \
 	  cp -f "$(PROTOC_TMP_BIN)" "$@"
 	stat "$@" > /dev/null 2>&1
@@ -77,7 +79,7 @@ $(PROTOC_GEN_GO):
 # for protoc-gen-go
 PROTOC_GEN_GO_JSON_PKG := github.com/mitchellh/protoc-gen-go-json
 PROTOC_GEN_GO_JSON := protoc-gen-go-json
-$(PROTOC_GEN_GO_JSON): PROTOC_GEN_GO_JSON_VERSION := v1.0.0
+$(PROTOC_GEN_GO_JSON): PROTOC_GEN_GO_JSON_VERSION := v1.1.0
 $(PROTOC_GEN_GO_JSON):
 	mkdir -p $(dir $(GOPATH)/src/$(PROTOC_GEN_GO_JSON_PKG))
 	test -d $(GOPATH)/src/$(PROTOC_GEN_GO_JSON_PKG)/.git || git clone https://$(PROTOC_GEN_GO_JSON_PKG) $(GOPATH)/src/$(PROTOC_GEN_GO_JSON_PKG)
@@ -170,7 +172,7 @@ $(COSI_GO_TMP): GO_OUT := plugins=grpc
 $(COSI_GO_TMP): GO_OUT := $(GO_OUT),Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor
 $(COSI_GO_TMP): GO_OUT := $(GO_OUT),Mgoogle/protobuf/wrappers.proto=$(PTYPES_PKG)/wrappers
 $(COSI_GO_TMP): GO_OUT := $(GO_OUT):"$(HERE)/$(COSI_BUILD)"
-$(COSI_GO_TMP): GO_JSON_OUT := emit_defaults
+$(COSI_GO_TMP): GO_JSON_OUT := emit_defaults=true
 $(COSI_GO_TMP): GO_JSON_OUT := $(GO_JSON_OUT):"$(HERE)/$(COSI_BUILD)"
 $(COSI_GO_TMP): GO_FAKE_OUT := emit_defaults
 $(COSI_GO_TMP): GO_FAKE_OUT := $(GO_FAKE_OUT),packagePath=sigs.k8s.io/container-object-storage-interface-spec

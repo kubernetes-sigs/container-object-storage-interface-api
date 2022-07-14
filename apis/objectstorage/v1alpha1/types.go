@@ -28,8 +28,6 @@ func init() {
 
 	SchemeBuilder.Register(&BucketAccess{}, &BucketAccessList{})
 	SchemeBuilder.Register(&BucketAccessClass{}, &BucketAccessClassList{})
-
-	SchemeBuilder.Register(&BucketInfo{}, &BucketInfoList{})
 }
 
 type DeletionPolicy string

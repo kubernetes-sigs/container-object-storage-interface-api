@@ -133,6 +133,11 @@ message Protocol {
     }
 }
 
+message CredentialDetails {
+    // map of the details in the secrets for the protocol string
+    map<string, string> secrets = 1;
+}
+
 message DriverGetInfoRequest {
     // Intentionally left blank
 }
@@ -210,7 +215,7 @@ message DriverGrantBucketAccessResponse {
 
     // This field is REQUIRED
     // Credentials supplied for accessing the bucket ex: aws access key id and secret, etc.
-    string credentials = 2;
+    map<string, CredentialDetails> credentials = 2;
 }
 
 message DriverRevokeBucketAccessRequest {

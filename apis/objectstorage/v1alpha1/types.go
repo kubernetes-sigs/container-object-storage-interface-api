@@ -110,7 +110,7 @@ type BucketSpec struct {
 
 type BucketStatus struct {
 	// BucketReady is a boolean condition to reflect the successful creation
-// of a bucket.
+	// of a bucket.
 	BucketReady bool `json:"bucketReady,omitempty"`
 
 	// BucketID is the unique id of the bucket in the OSP. This field will be

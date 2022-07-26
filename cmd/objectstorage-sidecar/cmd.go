@@ -84,7 +84,7 @@ func run(ctx context.Context, args []string) error {
 		return err
 	}
 
-	info, err := cosiClient.ProvisionerGetInfo(ctx, &cosi.ProvisionerGetInfoRequest{})
+	info, err := cosiClient.DriverGetInfo(ctx, &cosi.DriverGetInfoRequest{})
 	if err != nil {
 		return err
 	}

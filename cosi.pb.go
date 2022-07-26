@@ -1689,7 +1689,7 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type IdentityClient interface {
 	// This call is meant to retrieve the unique provisioner Identity.
-	// This identity will have to be set in BucketRequest.Provisioner field in order to invoke this specific provisioner.
+	// This identity will have to be set in BucketClaim.DriverName field in order to invoke this specific provisioner.
 	DriverGetInfo(ctx context.Context, in *DriverGetInfoRequest, opts ...grpc.CallOption) (*DriverGetInfoResponse, error)
 }
 
@@ -1713,7 +1713,7 @@ func (c *identityClient) DriverGetInfo(ctx context.Context, in *DriverGetInfoReq
 // IdentityServer is the server API for Identity service.
 type IdentityServer interface {
 	// This call is meant to retrieve the unique provisioner Identity.
-	// This identity will have to be set in BucketRequest.Provisioner field in order to invoke this specific provisioner.
+	// This identity will have to be set in BucketClaim.DriverName field in order to invoke this specific provisioner.
 	DriverGetInfo(context.Context, *DriverGetInfoRequest) (*DriverGetInfoResponse, error)
 }
 

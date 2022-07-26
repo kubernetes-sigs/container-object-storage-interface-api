@@ -54,7 +54,7 @@ extend google.protobuf.ServiceOptions {
 
 service Identity {
     // This call is meant to retrieve the unique provisioner Identity.
-    // This identity will have to be set in BucketRequest.Provisioner field in order to invoke this specific provisioner.
+    // This identity will have to be set in BucketClaim.DriverName field in order to invoke this specific provisioner.
     rpc DriverGetInfo (DriverGetInfoRequest) returns (DriverGetInfoResponse) {}
 }
 
@@ -154,7 +154,7 @@ message DriverGetInfoResponse {
     string name = 1;
 }
 
-message DriverCreateBucketRequest {    
+message DriverCreateBucketRequest {
     // This field is REQUIRED
     // name specifies the name of the bucket that should be created.
     string name = 1;

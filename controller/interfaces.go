@@ -4,8 +4,8 @@ import (
 	"context"
 
 	// storage
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	bucketclientset "sigs.k8s.io/container-object-storage-interface-api/clientset"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	bucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned"
 
 	// k8s client
 	kubeclientset "k8s.io/client-go/kubernetes"
@@ -30,17 +30,17 @@ func (c *ObjectStorageController) AddBucketListener(b BucketListener) {
 	c.BucketListener = b
 }
 
-type BucketRequestListener interface {
+type BucketClaimListener interface {
 	GenericListener
 
-	Add(ctx context.Context, b *v1alpha1.BucketRequest) error
-	Update(ctx context.Context, old *v1alpha1.BucketRequest, new *v1alpha1.BucketRequest) error
-	Delete(ctx context.Context, b *v1alpha1.BucketRequest) error
+	Add(ctx context.Context, b *v1alpha1.BucketClaim) error
+	Update(ctx context.Context, old *v1alpha1.BucketClaim, new *v1alpha1.BucketClaim) error
+	Delete(ctx context.Context, b *v1alpha1.BucketClaim) error
 }
 
-func (c *ObjectStorageController) AddBucketRequestListener(b BucketRequestListener) {
+func (c *ObjectStorageController) AddBucketClaimListener(b BucketClaimListener) {
 	c.initialized = true
-	c.BucketRequestListener = b
+	c.BucketClaimListener = b
 }
 
 type BucketAccessListener interface {
@@ -56,15 +56,28 @@ func (c *ObjectStorageController) AddBucketAccessListener(b BucketAccessListener
 	c.BucketAccessListener = b
 }
 
-type BucketAccessRequestListener interface {
+type BucketClassListener interface {
 	GenericListener
 
-	Add(ctx context.Context, b *v1alpha1.BucketAccessRequest) error
-	Update(ctx context.Context, old *v1alpha1.BucketAccessRequest, new *v1alpha1.BucketAccessRequest) error
-	Delete(ctx context.Context, b *v1alpha1.BucketAccessRequest) error
+	Add(ctx context.Context, b *v1alpha1.BucketClass) error
+	Update(ctx context.Context, old *v1alpha1.BucketClass, new *v1alpha1.BucketClass) error
+	Delete(ctx context.Context, b *v1alpha1.BucketClass) error
 }
 
-func (c *ObjectStorageController) AddBucketAccessRequestListener(b BucketAccessRequestListener) {
+func (c *ObjectStorageController) AddBucketClassListener(b BucketClassListener) {
 	c.initialized = true
-	c.BucketAccessRequestListener = b
+	c.BucketClassListener = b
+}
+
+type BucketAccessClassListener interface {
+	GenericListener
+
+	Add(ctx context.Context, b *v1alpha1.BucketAccessClass) error
+	Update(ctx context.Context, old *v1alpha1.BucketAccessClass, new *v1alpha1.BucketAccessClass) error
+	Delete(ctx context.Context, b *v1alpha1.BucketAccessClass) error
+}
+
+func (c *ObjectStorageController) AddBucketAccessClassListener(b BucketAccessClassListener) {
+	c.initialized = true
+	c.BucketAccessClassListener = b
 }

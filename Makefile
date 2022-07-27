@@ -36,6 +36,10 @@ build:
 test:
 unit:
 codegen: 
-	$(shell ./hack/update-codegen.sh) 
+	@echo "Running update-codegen to generate the code..."
+	bash ./hack/update-codegen.sh
+
+	@echo "Running update-crd to generate the crd..."
+	bash ./hack/update-crd.sh
 
 include release-tools/build.make

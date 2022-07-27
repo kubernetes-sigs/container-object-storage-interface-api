@@ -7,13 +7,12 @@ commonAnnotations:
   cosi.storage.k8s.io/license: "Apache V2"
   cosi.storage.k8s.io/support: "https://github.com/kubernetes-sigs/container-object-storage-api"
   controller-gen.kubebuilder.io/version: (devel)
-  api-approved.kubernetes.io: unapproved
+  api-approved.kubernetes.io: approved
 
 
 resources:
 - crds/objectstorage.k8s.io_bucketaccesses.yaml
 - crds/objectstorage.k8s.io_bucketaccessclasses.yaml
-- crds/objectstorage.k8s.io_bucketaccessrequests.yaml
 - crds/objectstorage.k8s.io_bucketclasses.yaml
-- crds/objectstorage.k8s.io_bucketrequests.yaml
+- crds/objectstorage.k8s.io_bucketclaims.yaml
 - crds/objectstorage.k8s.io_buckets.yaml

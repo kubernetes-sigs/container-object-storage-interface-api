@@ -47,26 +47,23 @@ const (
 // BucketAccessListener manages Bucket objects
 type BucketAccessListener struct {
 	provisionerClient cosi.ProvisionerClient
-	provisionerName   string
+	driverName   string
 
 	kubeClient   kube.Interface
 	bucketClient buckets.Interface
 	kubeVersion  *utilversion.Version
-
-	namespace string
 }
 
 // NewBucketAccessListener returns a resource handler for BucketAccess objects
-func NewBucketAccessListener(provisionerName string, client cosi.ProvisionerClient) (*BucketAccessListener, error) {
+func NewBucketAccessListener(driverName string, client cosi.ProvisionerClient) (*BucketAccessListener, error) {
 	ns := os.Getenv("POD_NAMESPACE")
 	if ns == "" {
 		return nil, errors.New("POD_NAMESPACE env var cannot be empty")
 	}
 
 	return &BucketAccessListener{
-		provisionerName:   provisionerName,
+		driverName:   driverName,
 		provisionerClient: client,
-		namespace:         ns,
 	}, nil
 }
 
@@ -77,60 +74,96 @@ func NewBucketAccessListener(provisionerName string, client cosi.ProvisionerClie
 func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1alpha1.BucketAccess) error {
 	bucketAccess := inputBucketAccess.DeepCopy()
 
-	bucketName := bucketAccess.Spec.BucketName
+	bucketClaimName := bucketAccess.Spec.BucketClaimName
 	klog.V(3).InfoS("Add BucketAccess",
 		"name", bucketAccess.Name,
-		"bucket", bucketName,
+		"bucketClaim", bucketClaimName,
 	)
 
-	if bucketAccess.Status.MintedSecret != nil {
-		klog.V(5).InfoS("AccessAlreadyGranted",
-			"bucketAccess", bucketAccess.Name,
-			"bucket", bucketName,
-		)
-		return nil
+	bucketAccessClassName := bucketAccess.Spec.BucketAccessClassName
+	klog.V(3).InfoS("Add BucketAccess",
+		"name", bucketAccess.Name,
+		"BucketAccessClassName", bucketAccessClassName,
+	)
+
+	secretCredName := bucketAccess.Spec.CredentialsSecretName
+	if secretCredName == nil {
+		return errors.New("CredentialsSecretName not defined in the BucketAccess")
 	}
 
-	bucket, err := bal.Buckets().Get(ctx, bucketName, metav1.GetOptions{})
+	authType := cosi.AuthenticationType_UnknownAuthenticationType
+	if bucketAccess.Spec.AuthenticationType == v1alpha1.AuthenticationTypeKey {
+		authType = cosi.AuthenticationType_Key
+	} else if bucketAccess.Spec.AuthenticationType == v1alpha1.AuthenticationTypeIAM {
+		authType = cosi.AuthenticationType_IAM
+	}
+
+	if authType == cosi.AuthenticationType_IAM && bucketAccess.Spec.ServiceAccountName == "" {
+		return errors.New("Must define ServiceAccountName when AuthenticationType is IAM")
+	}
+
+	namespace := bucketAccess.Namespace
+	bucketClaim, err := bal.BucketClaims(namespace).Get(ctx, bucketClaimName, metav1.GetOptions{})
 	if err != nil {
-		klog.ErrorS(err, "Failed to fetch bucket", "bucket", bucketName)
-		return errors.Wrap(err, "Failed to fetch bucket")
+		klog.ErrorS(err, "Failed to fetch bucketClaim", "bucketClaim", bucketClaimName)
+		return errors.Wrap(err, "Failed to fetch bucketClaim")
 	}
 
-	if !strings.EqualFold(bucket.Spec.Provisioner, bal.provisionerName) {
-		klog.V(5).InfoS("Skipping bucketaccess for provisiner",
-			"bucketAccess", bucketAccess.Name,
-			"provisioner", bucket.Spec.Provisioner,
-		)
-		return nil
-	}
 
-	if bucketAccess.Status.AccessGranted {
-		klog.V(5).InfoS("AccessAlreadyGranted",
-			"bucketaccess", bucketAccess.Name,
-			"bucket", bucket.Name,
-		)
-		return nil
-	}
-
-	if bucket.Status.BucketID == "" {
-		err := errors.New("BucketID cannot be empty")
+	if bucketClaim.Status.BucketName == "" || bucketClaim.Status.BucketReady != true {
+		err := errors.New("BucketName cannot be empty or BucketNotReady")
 		klog.ErrorS(err,
 			"Invalid arguments",
-			"bucket", bucket.Name,
+			"bucketClaim", bucketClaim.Name,
 			"bucketAccess", bucketAccess.Name,
 		)
 		return errors.Wrap(err, "Invalid arguments")
 	}
 
-	req := &cosi.ProvisionerGrantBucketAccessRequest{
+	bucketAccessClass, err := bal.BucketAccessClasses().Get(ctx, bucketAccessClassName, metav1.GetOptions{})
+	if err != nil {
+		klog.ErrorS(err, "Failed to fetch bucketAccessClass", "bucketAccessClass", bucketAccessClassName)
+		return errors.Wrap(err, "Failed to fetch BucketAccessClass")
+	}
+
+	if !strings.EqualFold(bucketAccessClass.DriverName, bal.driverName) {
+		klog.V(5).InfoS("Skipping bucketaccess for provisiner",
+			"bucketAccess", bucketAccess.Name,
+			"driver", bucketAccessClass.DriverName,
+		)
+		return nil
+	}
+
+
+	if bucketAccess.Status.AccessGranted == true {
+		klog.V(5).InfoS("AccessAlreadyGranted",
+			"bucketAccess", bucketAccess.Name,
+			"bucketClaim", bucketClaimName,
+		)
+		return nil
+	}
+
+	bucket, err := bal.Buckets().Get(ctx, bucketClaim.Status.BucketName, metav1.GetOptions{})
+	if err != nil {
+		klog.ErrorS(err, "Failed to fetch bucket", "bucket", bucketClaim.Status.BucketName)
+		return errors.Wrap(err, "Failed to fetch bucket")
+	}
+
+	if bucket.Status.BucketStatus != true || bucket.Status.BucketID == "" {
+		return errors.New("BucketAccess can't be granted to bucket not in Ready state and without a bucketID")
+	}
+
+	accountName := "ba-" + bucketAccess.UID
+
+	req := &cosi.DriverGrantBucketAccessRequest{
 		BucketId:     bucket.Status.BucketID,
-		AccountName:  bucketAccess.Name,
-		AccessPolicy: bucketAccess.Spec.PolicyActionsConfigMapData,
+		AccountName:  accountName,
+		AuthenticationType: authType,
+		Parameters: bucketAccessClass.Parameters,
 	}
 
 	// This needs to be idempotent
-	rsp, err := bal.provisionerClient.ProvisionerGrantBucketAccess(ctx, req)
+	rsp, err := bal.provisionerClient.DriverGrantBucketAccess(ctx, req)
 	if err != nil {
 		if status.Code(err) != codes.AlreadyExists {
 			klog.ErrorS(err,
@@ -142,9 +175,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		}
 
 	}
-	ns := bal.namespace
-	mintedSecretName := "ba-" + string(bucketAccess.UID)
-	if _, err := bal.Secrets(ns).Get(ctx, mintedSecretName, metav1.GetOptions{}); err != nil {
+
+	if _, err := bal.Secrets(namespace).Get(ctx, secretCredName, metav1.GetOptions{}); err != nil {
 		if !kubeerrors.IsNotFound(err) {
 			klog.ErrorS(err,
 				"Failed to create secrets",
@@ -156,10 +188,10 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		// if secret doesn't exist, create it
 		credentials := rsp.Credentials
 
-		if _, err := bal.Secrets(ns).Create(ctx, &corev1.Secret{
+		if _, err := bal.Secrets(namespace).Create(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      mintedSecretName,
-				Namespace: ns,
+				Name:      secretCredName,
+				Namespace: namespace,
 			},
 			StringData: map[string]string{
 				Credentials: credentials,
@@ -179,7 +211,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	bucketAccess.Status.AccountID = rsp.AccountId
 	bucketAccess.Status.MintedSecret = &corev1.SecretReference{
 		Namespace: bal.namespace,
-		Name:      mintedSecretName,
+		Name:      secretCredName,
 	}
 	bucketAccess.Status.AccessGranted = true
 
@@ -259,6 +291,20 @@ func (b *BucketAccessListener) BucketAccesses() bucketapi.BucketAccessInterface 
 func (b *BucketAccessListener) Buckets() bucketapi.BucketInterface {
 	if b.bucketClient != nil {
 		return b.bucketClient.ObjectstorageV1alpha1().Buckets()
+	}
+	panic("uninitialized listener")
+}
+
+func (b *BucketAccessListener) BucketClaims(namespace string) bucketapi.BucketClaimInterface {
+	if b.bucketClient != nil {
+		return b.bucketClient.ObjectstorageV1alpha1().BucketClaims(namespace)
+	}
+	panic("uninitialized listener")
+}
+
+func (b *BucketAccessListener) BucketAccessClasses() bucketapi.BucketClaimInterface {
+	if b.bucketClient != nil {
+		return b.bucketClient.ObjectstorageV1alpha1().BucketAccessClasses()
 	}
 	panic("uninitialized listener")
 }

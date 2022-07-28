@@ -29,6 +29,7 @@ import (
 	kubecorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/klog/v2"
 
+	cosiapi "sigs.k8s.io/container-object-storage-interface-api/apis"
 	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
 	buckets "sigs.k8s.io/container-object-storage-interface-api/clientset"
 	bucketapi "sigs.k8s.io/container-object-storage-interface-api/clientset/typed/objectstorage.k8s.io/v1alpha1"
@@ -176,6 +177,24 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	}
 
+	bucketInfo := cosiapi.BucketInfo {
+		ObjectMeta: metav1.ObjectMeta {
+			name: ,
+		},
+		BucketInfoSpec: cosiapi.BucketInfoSpec {
+			BucketName: ,
+			AuthenticationType: ,
+			Endpoint: ,
+			Region: ,
+			Protocol: ,
+		}
+	}
+
+	srtingData, err := json.Marshal(bucketInfo)
+	if err != nil {
+		return errors.New("Error converting bucketinfo into secret")
+	}
+
 	if _, err := bal.Secrets(namespace).Get(ctx, secretCredName, metav1.GetOptions{}); err != nil {
 		if !kubeerrors.IsNotFound(err) {
 			klog.ErrorS(err,
@@ -185,16 +204,13 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 			return errors.Wrap(err, "failed to fetch secrets")
 		}
 
-		// if secret doesn't exist, create it
-		credentials := rsp.Credentials
-
 		if _, err := bal.Secrets(namespace).Create(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretCredName,
 				Namespace: namespace,
 			},
 			StringData: map[string]string{
-				Credentials: credentials,
+				BucketInfo: string(stringData),
 			},
 			Type: corev1.SecretTypeOpaque,
 		}, metav1.CreateOptions{}); err != nil {

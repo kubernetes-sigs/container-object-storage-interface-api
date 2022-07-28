@@ -120,6 +120,21 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		return errors.Wrap(err, "Failed to update bucket status")
 	}
 
+	// Now we update the BucketReady status of BucketClaim
+	if bucket.Spec.BucketClaim != nil {
+		ref := bucket.Spec.BucketClaim
+		bucketClaim, err := b.BucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		bucketClaim.Status.BucketReady = true
+
+		if _, err := b.BucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -183,13 +198,13 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 
 	if bucket.Spec.BucketClaim != nil {
 		ref := bucket.Spec.BucketClaim
-		bucketClaim, err := b.bucketClient.ObjectstorageV1alpha1().BucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+		bucketClaim, err := b.BucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
 		controllerutil.RemoveFinalizer(bucketClaim, brFinalizer)
-		if _, err := b.bucketClient.ObjectstorageV1alpha1().BucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
+		if _, err := b.BucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
@@ -202,6 +217,14 @@ func (b *BucketListener) Buckets() bucketapi.BucketInterface {
 		return b.bucketClient.ObjectstorageV1alpha1().Buckets()
 	}
 	panic("uninitialized listener")
+}
+
+func (b *BucketListener) BucketClaims(namespace string) bucketapi.BucketClaimInterface {
+	if b.bucketClient != nil {
+		return b.bucketClient.ObjectstorageV1alpha1().BucketClaims(namespace)
+	}
+
+	panic ("uninitialized listener")
 }
 
 // InitializeKubeClient initializes the kubernetes client

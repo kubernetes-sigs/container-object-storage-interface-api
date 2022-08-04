@@ -4,259 +4,245 @@
 package cosi
 
 import (
-	"bytes"
-
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // MarshalJSON implements json.Marshaler
 func (msg *S3) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
 func (msg *S3) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
 func (msg *AzureBlob) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
 func (msg *AzureBlob) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
 func (msg *GCS) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
 func (msg *GCS) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
 func (msg *Protocol) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
 func (msg *Protocol) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerGetInfoRequest) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *CredentialDetails) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerGetInfoRequest) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *CredentialDetails) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerGetInfoResponse) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *DriverGetInfoRequest) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerGetInfoResponse) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *DriverGetInfoRequest) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerCreateBucketRequest) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *DriverGetInfoResponse) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerCreateBucketRequest) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *DriverGetInfoResponse) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerCreateBucketResponse) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *DriverCreateBucketRequest) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerCreateBucketResponse) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *DriverCreateBucketRequest) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerDeleteBucketRequest) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *DriverCreateBucketResponse) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerDeleteBucketRequest) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *DriverCreateBucketResponse) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerDeleteBucketResponse) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *DriverDeleteBucketRequest) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerDeleteBucketResponse) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *DriverDeleteBucketRequest) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerGrantBucketAccessRequest) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *DriverDeleteBucketResponse) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerGrantBucketAccessRequest) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *DriverDeleteBucketResponse) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerGrantBucketAccessResponse) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *DriverGrantBucketAccessRequest) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerGrantBucketAccessResponse) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *DriverGrantBucketAccessRequest) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerRevokeBucketAccessRequest) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *DriverGrantBucketAccessResponse) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerRevokeBucketAccessRequest) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *DriverGrantBucketAccessResponse) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }
 
 // MarshalJSON implements json.Marshaler
-func (msg *ProvisionerRevokeBucketAccessResponse) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	err := (&jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: true,
-		OrigName:     false,
-	}).Marshal(&buf, msg)
-	return buf.Bytes(), err
+func (msg *DriverRevokeBucketAccessRequest) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
 }
 
 // UnmarshalJSON implements json.Unmarshaler
-func (msg *ProvisionerRevokeBucketAccessResponse) UnmarshalJSON(b []byte) error {
-	return (&jsonpb.Unmarshaler{
-		AllowUnknownFields: false,
-	}).Unmarshal(bytes.NewReader(b), msg)
+func (msg *DriverRevokeBucketAccessRequest) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
+}
+
+// MarshalJSON implements json.Marshaler
+func (msg *DriverRevokeBucketAccessResponse) MarshalJSON() ([]byte, error) {
+	return protojson.MarshalOptions{
+		UseEnumNumbers:  false,
+		EmitUnpopulated: true,
+		UseProtoNames:   false,
+	}.Marshal(msg)
+}
+
+// UnmarshalJSON implements json.Unmarshaler
+func (msg *DriverRevokeBucketAccessResponse) UnmarshalJSON(b []byte) error {
+	return protojson.UnmarshalOptions{
+		DiscardUnknown: false,
+	}.Unmarshal(b, msg)
 }

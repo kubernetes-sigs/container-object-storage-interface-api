@@ -27,16 +27,13 @@ import (
 	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
 	buckets "sigs.k8s.io/container-object-storage-interface-api/clientset"
 	bucketapi "sigs.k8s.io/container-object-storage-interface-api/clientset/typed/objectstorage.k8s.io/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/const"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	bcFinalizer = "cosi.objectstorage.k8s.io/bucketclaim-protection"
 )
 
 // BucketListener manages Bucket objects
@@ -155,7 +152,7 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 	klog.V(3).InfoS("Update Bucket",
 		"name", old.Name)
 
-	if !new.GetDeletionTimestamp.IsZero() {
+	if !new.GetDeletionTimestamp().IsZero() {
 		if len(new.ObjectMeta.Finalizers) > 0 {
 			bucketClaimNs := new.Spec.BucketClaim.Namespace
 			bucketClaimName := new.Spec.BucketClaim.Name
@@ -219,7 +216,7 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 			return err
 		}
 
-		if controllerutil.RemoveFinalizer(bucketClaim, bcFinalizer) {
+		if controllerutil.RemoveFinalizer(bucketClaim, const.BcFinalizer) {
 			if _, err := b.BucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
 				return err
 			}

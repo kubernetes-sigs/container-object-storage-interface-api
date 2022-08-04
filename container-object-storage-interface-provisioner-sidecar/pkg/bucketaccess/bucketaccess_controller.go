@@ -33,17 +33,12 @@ import (
 	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
 	buckets "sigs.k8s.io/container-object-storage-interface-api/clientset"
 	bucketapi "sigs.k8s.io/container-object-storage-interface-api/clientset/typed/objectstorage.k8s.io/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/const"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	accountNamePrefix = "ba-"
-	baFinalizer = "cosi.objectstorage.k8s.io/bucketaccess-protection-"
-	secretFinalizer = "cosi.objectstorage.k8s.io/secret-protection"
 )
 
 // BucketAccessListener manages Bucket objects
@@ -155,7 +150,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		return errors.New("BucketAccess can't be granted to bucket not in Ready state and without a bucketID")
 	}
 
-	accountName := accountNamePrefix + string(bucketAccess.UID)
+	accountName := const.AccountNamePrefix + string(bucketAccess.UID)
 
 	req := &cosi.DriverGrantBucketAccessRequest{
 		BucketId:     bucket.Status.BucketID,
@@ -214,7 +209,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretCredName,
 				Namespace: namespace,
-				Finalizers: []string{secretFinalizer},
+				Finalizers: []string{const.SecretFinalizer},
 			},
 			StringData: map[string]string{
 				BucketInfo: string(stringData),
@@ -231,7 +226,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		}
 	}
 
-	bucketFinalizer := baFinalizer + string(bucketAccess.ObjectMeta.UID)
+	bucketFinalizer := const.BaFinalizer + string(bucketAccess.ObjectMeta.UID)
 	finalizers := bucket.ObjectMeta.Finalizers
 	finalizers = append(finalizers, bucketFinalizer)
 	bucket.ObjectMeta.Finalizers = finalizers
@@ -281,7 +276,7 @@ func (bal *BucketAccessListener) Delete(ctx context.Context, bucketAccess *v1alp
 		return err
 	}
 
-	if controllerutil.RemoveFinalizer(secret, secretFinalizer) {
+	if controllerutil.RemoveFinalizer(secret, const.SecretFinalizer) {
 		_, err = bal.Secrets(bucketAccess.ObjectMeta.Namespace).Update(ctx, credSecretName, metav1.UpdateOptions{})
 		if err != nil {
 			return err
@@ -299,7 +294,7 @@ func (bal *BucketAccessListener) Delete(ctx context.Context, bucketAccess *v1alp
 		return err
 	}
 
-	bucketFinalizer := baFinalizer + string(bucketAccess.ObjectMeta.UID)
+	bucketFinalizer := const.BaFinalizer + string(bucketAccess.ObjectMeta.UID)
 	if controllerutil.RemoveFinalizer(bucketFinalizer) {
 		_, err = bal.Buckets().Update(ctx, bucket, metav1.UpdateOptions{})
 		if err != nil {

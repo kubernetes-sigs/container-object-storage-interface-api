@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	brFinalizer = "cosi.objectstorage.k8s.io/bucketclaim-protection"
+	bcFinalizer = "cosi.objectstorage.k8s.io/bucketclaim-protection"
 )
 
 // BucketListener manages Bucket objects
@@ -67,72 +67,81 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 	bucket := inputBucket.DeepCopy()
 
 	klog.V(3).InfoS("Add Bucket",
-		"name", bucket.Name,
+		"name", bucket.ObjectMeta.Name,
 		"bucketclass", bucket.Spec.BucketClassName,
 	)
 
 	if !strings.EqualFold(bucket.Spec.DriverName, b.driverName) {
 		klog.V(5).InfoS("Skipping bucket for driver",
-			"bucket", bucket.Name,
+			"bucket", bucket.ObjectMeta.Name,
 			"driver", bucket.Spec.DriverName,
 		)
 		return nil
 	}
 
-	if bucket.Status.BucketAvailable {
+	if bucket.Status.BucketReady {
 		klog.V(5).InfoS("BucketExists",
-			"bucket", bucket.Name,
+			"bucket", bucket.ObjectMeta.Name,
 			"driver", bucket.Spec.DriverName,
 		)
+
 		return nil
 	}
 
-	req := &cosi.DriverCreateBucketRequest{
-		Parameters: bucket.Spec.Parameters,
-		Name:       bucket.Name,
-	}
-
-	rsp, err := b.provisionerClient.DriverCreateBucket(ctx, req)
-	if err != nil {
-		if status.Code(err) != codes.AlreadyExists {
-			klog.ErrorS(err, "Failed to create bucket",
-				"bucket", bucket.Name)
-			return errors.Wrap(err, "Failed to create bucket")
+	if bucket.Spec.ExistingBucketID != nil {
+		bucket.Status.BucketReady = true
+		bucket.Status.BucketID = bucket.Spec.ExistingBucketID
+	} else {
+		req := &cosi.DriverCreateBucketRequest{
+			Parameters: bucket.Spec.Parameters,
+			Name:       bucket.ObjectMeta.Name,
 		}
 
-	}
-	if rsp == nil {
-		err := errors.New("DriverCreateBucket returned a nil response")
-		klog.ErrorS(err, "Internal Error")
-		return err
-	}
+		rsp, err := b.provisionerClient.DriverCreateBucket(ctx, req)
+		if err != nil {
+			if status.Code(err) != codes.AlreadyExists {
+				klog.ErrorS(err, "Failed to create bucket",
+					"bucket", bucket.ObjectMeta.Name)
+				return errors.Wrap(err, "Failed to create bucket")
+			}
 
-	if rsp.BucketId != "" {
-		bucket.Status.BucketID = rsp.BucketId
-	}
+		}
 
-	bucket.Status.BucketReady = true
+		if rsp == nil {
+			err = errors.New("DriverCreateBucket returned a nil response")
+			klog.ErrorS(err, "Internal Error")
+			return err
+		}
+
+		if rsp.BucketId != "" {
+			bucket.Status.BucketID = rsp.BucketId
+			bucket.Status.BucketReady = true
+		} else {
+			err = errors.New("DriverCreateBucket returned an empty bucketID")
+			return err
+		}
+
+
+		// Now we update the BucketReady status of BucketClaim
+		if bucket.Spec.BucketClaim != nil {
+			ref := bucket.Spec.BucketClaim
+			bucketClaim, err := b.BucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+
+			bucketClaim.Status.BucketReady = true
+			if _, err = b.BucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
+				return err
+			}
+		}
+	}
 
 	// if this step fails, then controller will retry with backoff
-	if _, err := b.Buckets().UpdateStatus(ctx, bucket, metav1.UpdateOptions{}); err != nil {
+	if _, err = b.Buckets().UpdateStatus(ctx, bucket, metav1.UpdateOptions{}); err != nil {
 		klog.ErrorS(err, "Failed to update bucket status",
-			"bucket", bucket.Name)
+			"bucket", bucket.ObjectMeta.Name)
 		return errors.Wrap(err, "Failed to update bucket status")
-	}
-
-	// Now we update the BucketReady status of BucketClaim
-	if bucket.Spec.BucketClaim != nil {
-		ref := bucket.Spec.BucketClaim
-		bucketClaim, err := b.BucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		bucketClaim.Status.BucketReady = true
-
-		if _, err := b.BucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -146,6 +155,23 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 	klog.V(3).InfoS("Update Bucket",
 		"name", old.Name)
 
+	if !new.GetDeletionTimestamp.IsZero() {
+		if len(new.ObjectMeta.Finalizers) > 0 {
+			bucketClaimNs := new.Spec.BucketClaim.Namespace
+			bucketClaimName := new.Spec.BucketClaim.Name
+			bucketAccessList, err := b.BucketAccesses(bucketClaimNs).List(ctx, ListOptions{})
+
+			for _, bucketAccess := range bucketAccessList.Items {
+				if strings.EqualFold(bucketAccess.Spec.BucketClaimName, bucketClaimName) {
+					err = b.BucketAccesses(bucketClaimNs).Delete(ctx, bucketAccess.Name, metav1.DeleteOptions{})
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -157,13 +183,13 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 	bucket := inputBucket.DeepCopy()
 
 	klog.V(3).InfoS("Delete Bucket",
-		"name", bucket.Name,
+		"name", bucket.ObjectMeta.Name,
 		"bucketclass", bucket.Spec.BucketClassName,
 	)
 
 	if !strings.EqualFold(bucket.Spec.DriverName, b.driverName) {
 		klog.V(5).InfoS("Skipping bucket for provisiner",
-			"bucket", bucket.Name,
+			"bucket", bucket.ObjectMeta.Name,
 			"driver", bucket.Spec.DriverName,
 		)
 		return nil
@@ -179,21 +205,11 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 		if _, err := b.provisionerClient.DriverDeleteBucket(ctx, req); err != nil {
 			if status.Code(err) != codes.NotFound {
 				klog.ErrorS(err, "Failed to delete bucket",
-					"bucket", bucket.Name,
+					"bucket", bucket.ObjectMeta.Name,
 				)
 				return err
 			}
 		}
-	}
-
-	bucket.Status.BucketAvailable = false
-	bucket.Status.BucketID = ""
-
-	// if this step fails, then controller will retry with backoff
-	if _, err := b.Buckets().UpdateStatus(ctx, bucket, metav1.UpdateOptions{}); err != nil {
-		klog.ErrorS(err, "Failed to update bucket",
-			"bucket", bucket.Name)
-		return errors.Wrap(err, "Failed to update bucket")
 	}
 
 	if bucket.Spec.BucketClaim != nil {
@@ -203,9 +219,10 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 			return err
 		}
 
-		controllerutil.RemoveFinalizer(bucketClaim, brFinalizer)
-		if _, err := b.BucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
-			return err
+		if controllerutil.RemoveFinalizer(bucketClaim, bcFinalizer) {
+			if _, err := b.BucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -225,6 +242,14 @@ func (b *BucketListener) BucketClaims(namespace string) bucketapi.BucketClaimInt
 	}
 
 	panic ("uninitialized listener")
+}
+
+
+func (b *BucketListener) BucketAccesses(namespace string) bucketapi.BucketAccessInterface {
+	if b.bucketClient != nil {
+		return b.bucketClient.ObjectstorageV1alpha1().BucketAccesses(namespace)
+	}
+	panic("uninitialized listener")
 }
 
 // InitializeKubeClient initializes the kubernetes client

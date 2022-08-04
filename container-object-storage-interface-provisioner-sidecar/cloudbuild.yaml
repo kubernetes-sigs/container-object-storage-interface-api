@@ -5,5 +5,7 @@ options:
 steps:
 - name: "gcr.io/k8s-testimages/gcb-docker-gcloud:v20200824-5d057db"
   entrypoint: make
-  args:
-  - build
+  args: ['build']
+- name: "gcr.io/k8s-testimages/gcb-docker-gcloud:v20200824-5d057db"
+  entrypoint: make
+  args: ['push']

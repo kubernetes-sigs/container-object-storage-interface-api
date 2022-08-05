@@ -18,8 +18,8 @@ limitations under the License.
 package cosiapi
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/container-object-storage-api/apis/objectstorage/v1alpha1"
 )
 
 type SecretS3 struct {
@@ -52,7 +52,7 @@ type BucketInfoSpec struct {
 	// It can be one of
 	// KEY - access, secret tokens based authentication
 	// IAM - implicit authentication of pods to the OSP based on service account mappings
-	AuthenticationType AuthenticationType `json:"authenticationType"`
+	AuthenticationType v1alpha1.AuthenticationType `json:"authenticationType"`
 
 	// S3 - Details of S3 credentials
 	S3 *SecretS3 `json:"secretS3"`
@@ -65,5 +65,5 @@ type BucketInfoSpec struct {
 	// -  S3: Indicates Amazon S3 protocol
 	// -  Azure: Indicates Microsoft Azure BlobStore protocol
 	// -  GCS: Indicates Google Cloud Storage protocol
-	Protocols []Protocol `json:"protocols"`
+	Protocols []v1alpha1.Protocol `json:"protocols"`
 }

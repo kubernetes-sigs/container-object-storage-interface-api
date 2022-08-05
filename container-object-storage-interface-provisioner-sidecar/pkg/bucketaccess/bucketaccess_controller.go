@@ -30,10 +30,10 @@ import (
 	"k8s.io/klog/v2"
 
 	cosiapi "sigs.k8s.io/container-object-storage-interface-api/apis"
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage.k8s.io/v1alpha1"
-	buckets "sigs.k8s.io/container-object-storage-interface-api/clientset"
-	bucketapi "sigs.k8s.io/container-object-storage-interface-api/clientset/typed/objectstorage.k8s.io/v1alpha1"
-	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/const"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	buckets "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned"
+	bucketapi "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/typed/objectstorage/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 
 	"github.com/pkg/errors"
@@ -66,7 +66,7 @@ func NewBucketAccessListener(driverName string, client cosi.ProvisionerClient) (
 func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1alpha1.BucketAccess) error {
 	bucketAccess := inputBucketAccess.DeepCopy()
 
-	if bucketAccess.Status.AccessGranted && bucketAccess.Status.AccountID != nil {
+	if bucketAccess.Status.AccessGranted && bucketAccess.Status.AccountID != "" {
 		klog.V(3).InfoS("BucketAccess already exists", bucketAccess.ObjectMeta.Name)
 		return nil
 	}
@@ -100,7 +100,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	namespace := bucketAccess.ObjectMeta.Namespace
-	bucketClaim, err := bal.BucketClaims(namespace).Get(ctx, bucketClaimName, metav1.GetOptions{})
+	bucketClaim, err := bal.bucketClaims(namespace).Get(ctx, bucketClaimName, metav1.GetOptions{})
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch bucketClaim", "bucketClaim", bucketClaimName)
 		return errors.Wrap(err, "Failed to fetch bucketClaim")
@@ -117,7 +117,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		return errors.Wrap(err, "Invalid arguments")
 	}
 
-	bucketAccessClass, err := bal.BucketAccessClasses().Get(ctx, bucketAccessClassName, metav1.GetOptions{})
+	bucketAccessClass, err := bal.bucketAccessClasses().Get(ctx, bucketAccessClassName, metav1.GetOptions{})
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch bucketAccessClass", "bucketAccessClass", bucketAccessClassName)
 		return errors.Wrap(err, "Failed to fetch BucketAccessClass")
@@ -140,7 +140,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		return nil
 	}
 
-	bucket, err := bal.Buckets().Get(ctx, bucketClaim.Status.BucketName, metav1.GetOptions{})
+	bucket, err := bal.buckets().Get(ctx, bucketClaim.Status.BucketName, metav1.GetOptions{})
 	if err != nil {
 		klog.ErrorS(err, "Failed to fetch bucket", "bucket", bucketClaim.Status.BucketName)
 		return errors.Wrap(err, "Failed to fetch bucket")
@@ -150,7 +150,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		return errors.New("BucketAccess can't be granted to bucket not in Ready state and without a bucketID")
 	}
 
-	accountName := const.AccountNamePrefix + string(bucketAccess.UID)
+	accountName := consts.AccountNamePrefix + string(bucketAccess.UID)
 
 	req := &cosi.DriverGrantBucketAccessRequest{
 		BucketId:     bucket.Status.BucketID,
@@ -173,9 +173,15 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	}
 
-	if rsp.AccountId == nil {
+	if rsp.AccountId == "" {
 		klog.ErrorS("AccountId not defined in DriverGrantBucketAccess")
-		return errors.New("Failed to grant access. AccountId not defined in DriverGrantBucketAccess.")
+		return errors.New("Failed to grant access. AccountId or Credentials not defined in DriverGrantBucketAccessResponse for BucketAccess: ", bucketAccess.ObjectMeta.Name)
+	}
+
+	credentials := rsp.Credentials
+	if len(credentials) != 1 {
+		klog.ErrorS("Credentials returned in DriverGrantBucketAccessResponse should be of length 1")
+		return errors.New("Credentials returned in DriverGrantBucketAccessResponse should be of length 1 for BucketAccess: ", bucketAccess.ObjectMeta.Name)
 	}
 
 	bucketInfo := cosiapi.BucketInfo {
@@ -185,10 +191,31 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		BucketInfoSpec: cosiapi.BucketInfoSpec {
 			BucketName: bucket.ObjectMeta.Name,
 			AuthenticationType: bucketAccess.Spec.AuthenticationType,
-			Endpoint: ,
-			Region: ,
-			Protocol: ,
+			Protocols: []v1alpha1.Protocol[bucketAccess.Spec.Protocol],
 		}
+	}
+
+	var val cosi.CredentialDetails
+	var ok bool
+
+	if val, ok = credentials[consts.S3Key]; ok {
+		secretS3 := &cosiapi.SecretS3 {
+			Endpoint: "",
+			Region: "",
+			AccessKeyID: val[consts.S3SecretAccessKeyID],
+			AccessSecretKey: val[consts.S3SecretAccessSecretKey],
+		}
+
+		bucketInfo.S3 = secretS3
+	} else if val, ok = credentials[consts.AzureKey]; ok {
+		expiryTs := val[consts.AzureSecretExpiryTimeStamp]
+		expiryTimestamp := time.Parse(consts.DefaultTimeFormat, expiryTs)
+		secretAzure := &cosi.SecretAzure {
+			AccessToken: val[consts.AzureSecretAccessToken],
+			Expiry: expiryTs,
+		}
+
+		bucketInfo.Azure = secretAzure
 	}
 
 	srtingData, err := json.Marshal(bucketInfo)
@@ -196,7 +223,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		return errors.New("Error converting bucketinfo into secret")
 	}
 
-	if _, err := bal.Secrets(namespace).Get(ctx, secretCredName, metav1.GetOptions{}); err != nil {
+	if _, err := bal.secrets(namespace).Get(ctx, secretCredName, metav1.GetOptions{}); err != nil {
 		if !kubeerrors.IsNotFound(err) {
 			klog.ErrorS(err,
 				"Failed to create secrets",
@@ -205,11 +232,11 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 			return errors.Wrap(err, "failed to fetch secrets")
 		}
 
-		if _, err := bal.Secrets(namespace).Create(ctx, &corev1.Secret{
+		if _, err := bal.secrets(namespace).Create(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretCredName,
 				Namespace: namespace,
-				Finalizers: []string{const.SecretFinalizer},
+				Finalizers: []string{consts.SecretFinalizer},
 			},
 			StringData: map[string]string{
 				BucketInfo: string(stringData),
@@ -226,24 +253,31 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		}
 	}
 
-	bucketFinalizer := const.BaFinalizer + string(bucketAccess.ObjectMeta.UID)
-	finalizers := bucket.ObjectMeta.Finalizers
-	finalizers = append(finalizers, bucketFinalizer)
-	bucket.ObjectMeta.Finalizers = finalizers
-	_, err = bal.Buckets().Update(ctx, bucket, metav1.UpdateOptions{})
-	if err != nil {
-		return err
+	if controllerutil.AddFinalizer(bucket, consts.BABucketFinalizer) {
+		_, err = bal.buckets().Update(ctx, bucket, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	if controllerutil.AddFinalizer(bucketAccess, consts.BAFinalizer) {
+		if _, err = bal.bucketAccesses(bucketAccess.ObjectMeta.Namespace).Update(ctx, bucketAccess, metav1.UpdateOptions{}); err != nil {
+			klog.ErrorS(err, "Failed to update BucketAccess finalizer",
+				"bucketAccess", bucketAccess.ObjectMeta.Name,
+				"bucket", bucket.ObjectMeta.Name)
+			return errors.Wrap(err, "Failed to update BucketAccess finalizer", bucketAccess.ObjectMeta.Name)
+		}
 	}
 
 	bucketAccess.Status.AccountID = rsp.AccountId
 	bucketAccess.Status.AccessGranted = true
 
 	// if this step fails, then controller will retry with backoff
-	if _, err := bal.BucketAccesses().UpdateStatus(ctx, bucketAccess, metav1.UpdateOptions{}); err != nil {
+	if _, err := bal.bucketAccesses(bucketAccess.ObjectMeta.Namespace).UpdateStatus(ctx, bucketAccess, metav1.UpdateOptions{}); err != nil {
 		klog.ErrorS(err, "Failed to update BucketAccess Status",
 			"bucketAccess", bucketAccess.ObjectMeta.Name,
 			"bucket", bucket.ObjectMeta.Name)
-		return errors.Wrap(err, "Failed to update BucketAccess Status")
+		return errors.Wrap(err, "Failed to update BucketAccess Status", bucketAccess.ObjectMeta.Name)
 	}
 
 	return nil
@@ -256,6 +290,13 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 func (bal *BucketAccessListener) Update(ctx context.Context, old, new *v1alpha1.BucketAccess) error {
 	klog.V(3).InfoS("Update BucketAccess",
 		"name", old.ObjectMeta.Name)
+
+	new := bucketAccess.DeepCopy()
+
+	err := bal.deleteBucketAccessOp(ctx, bucketAccess)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -270,79 +311,71 @@ func (bal *BucketAccessListener) Delete(ctx context.Context, bucketAccess *v1alp
 		"bucket", bucketAccess.Spec.BucketName,
 	)
 
+	return nil
+}
+
+func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucketAccess *v1alpha1.BucketAccess) error {
 	credSecretName := bucketAccess.Spec.CredentialsSecretName
-	secret, err := bal.Secrets(bucketAccess.ObjectMeta.Namespace).Get(ctx, credSecretName, metav1.GetOptions{})
+	secret, err := bal.secrets(bucketAccess.ObjectMeta.Namespace).Get(ctx, credSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if controllerutil.RemoveFinalizer(secret, const.SecretFinalizer) {
-		_, err = bal.Secrets(bucketAccess.ObjectMeta.Namespace).Update(ctx, credSecretName, metav1.UpdateOptions{})
+	if controllerutil.RemoveFinalizer(secret, consts.SecretFinalizer) {
+		_, err = bal.secrets(bucketAccess.ObjectMeta.Namespace).Update(ctx, credSecretName, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
 	}
 
-	bucketClaimName = bucketAccess.Spec.BucketClaimName
-	bucketClaim, err := bal.BucketClaims(bucketAccess.ObjectMeta.Namespace).Get(ctx, bucketClaimName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	bucket, err := bal.Buckets().Get(ctx, bucketClaim.Status.BucketName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	bucketFinalizer := const.BaFinalizer + string(bucketAccess.ObjectMeta.UID)
-	if controllerutil.RemoveFinalizer(bucketFinalizer) {
-		_, err = bal.Buckets().Update(ctx, bucket, metav1.UpdateOptions{})
+	if controllerutil.RemoveFinalizer(bucketAccess, consts.BAFinalizer) {
+		_, err = bal.bucketAccesses(bucketAccess.ObjectMeta.Namespace).Update(ctx, bucketAccess, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
-	}
+	} 
 
 	return nil
 }
 
-func (b *BucketAccessListener) Secrets(ns string) kubecorev1.SecretInterface {
-	if b.kubeClient != nil {
-		return b.kubeClient.CoreV1().Secrets(ns)
+func (bal *BucketAccessListener) secrets(ns string) kubecorev1.SecretInterface {
+	if bal.kubeClient != nil {
+		return bal.kubeClient.CoreV1().Secrets(ns)
 	}
 	panic("uninitialized listener")
 }
 
-func (b *BucketAccessListener) BucketAccesses() bucketapi.BucketAccessInterface {
-	if b.bucketClient != nil {
-		return b.bucketClient.ObjectstorageV1alpha1().BucketAccesses()
+func (bal *BucketAccessListener) bucketAccesses(ns string) bucketapi.BucketAccessInterface {
+	if bal.bucketClient != nil {
+		return bal.bucketClient.ObjectstorageV1alpha1().BucketAccesses(ns)
 	}
 	panic("uninitialized listener")
 }
 
-func (b *BucketAccessListener) Buckets() bucketapi.BucketInterface {
-	if b.bucketClient != nil {
-		return b.bucketClient.ObjectstorageV1alpha1().Buckets()
+func (bal *BucketAccessListener) buckets() bucketapi.BucketInterface {
+	if bal.bucketClient != nil {
+		return bal.bucketClient.ObjectstorageV1alpha1().Buckets()
 	}
 	panic("uninitialized listener")
 }
 
-func (b *BucketAccessListener) BucketClaims(namespace string) bucketapi.BucketClaimInterface {
-	if b.bucketClient != nil {
-		return b.bucketClient.ObjectstorageV1alpha1().BucketClaims(namespace)
+func (bal *BucketAccessListener) bucketClaims(namespace string) bucketapi.BucketClaimInterface {
+	if bal.bucketClient != nil {
+		return bal.bucketClient.ObjectstorageV1alpha1().BucketClaims(namespace)
 	}
 	panic("uninitialized listener")
 }
 
-func (b *BucketAccessListener) BucketAccessClasses() bucketapi.BucketClaimInterface {
-	if b.bucketClient != nil {
-		return b.bucketClient.ObjectstorageV1alpha1().BucketAccessClasses()
+func (bal *BucketAccessListener) bucketAccessClasses() bucketapi.BucketClaimInterface {
+	if bal.bucketClient != nil {
+		return bal.bucketClient.ObjectstorageV1alpha1().BucketAccessClasses()
 	}
 	panic("uninitialized listener")
 }
 
 // InitializeKubeClient initializes the kubernetes client
-func (b *BucketAccessListener) InitializeKubeClient(k kube.Interface) {
-	b.kubeClient = k
+func (bal *BucketAccessListener) InitializeKubeClient(k kube.Interface) {
+	bal.kubeClient = k
 
 	serverVersion, err := k.Discovery().ServerVersion()
 	if err != nil {
@@ -353,6 +386,6 @@ func (b *BucketAccessListener) InitializeKubeClient(k kube.Interface) {
 }
 
 // InitializeBucketClient initializes the object storage bucket client
-func (b *BucketAccessListener) InitializeBucketClient(bc buckets.Interface) {
-	b.bucketClient = bc
+func (bal *BucketAccessListener) InitializeBucketClient(bc buckets.Interface) {
+	bal.bucketClient = bc
 }

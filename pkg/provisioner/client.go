@@ -41,7 +41,7 @@ func (c *COSIProvisionerClient) DriverGetInfo(ctx context.Context,
 	return c.identityClient.DriverGetInfo(ctx, in, opts...)
 }
 
-func (c *COSIProvisionerClient) ProvisionerCreateBucket(ctx context.Context,
+func (c *COSIProvisionerClient) DriverCreateBucket(ctx context.Context,
 	in *cosi.DriverCreateBucketRequest,
 	opts ...grpc.CallOption) (*cosi.DriverCreateBucketResponse, error) {
 

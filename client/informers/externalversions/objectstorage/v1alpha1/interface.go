@@ -54,7 +54,7 @@ func (v *version) Buckets() BucketInformer {
 
 // BucketAccesses returns a BucketAccessInformer.
 func (v *version) BucketAccesses() BucketAccessInformer {
-	return &bucketAccessInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &bucketAccessInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // BucketAccessClasses returns a BucketAccessClassInformer.

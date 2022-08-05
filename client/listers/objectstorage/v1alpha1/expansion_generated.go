@@ -26,6 +26,10 @@ type BucketListerExpansion interface{}
 // BucketAccessLister.
 type BucketAccessListerExpansion interface{}
 
+// BucketAccessNamespaceListerExpansion allows custom methods to be added to
+// BucketAccessNamespaceLister.
+type BucketAccessNamespaceListerExpansion interface{}
+
 // BucketAccessClassListerExpansion allows custom methods to be added to
 // BucketAccessClassLister.
 type BucketAccessClassListerExpansion interface{}

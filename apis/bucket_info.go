@@ -22,6 +22,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type SecretS3 struct {
+	Endpoint string `json:"endpoint"`
+	Region string `json:"region"`
+	AccessKeyID string `json:"accessKeyID"`
+	AccessSecretKey string `json:"accessSecretKey"`
+}
+
+type SecretAzure struct {
+	AccessToken string `json:"acessToken"`
+	ExpiryTimeStamp *metav1.Time `json:"expiryTimeStamp"`
+}
+
 // +k8s:deepcopy-gen=false
 type BucketInfo struct {
 	metav1.TypeMeta `json:",inline"`
@@ -42,11 +54,11 @@ type BucketInfoSpec struct {
 	// IAM - implicit authentication of pods to the OSP based on service account mappings
 	AuthenticationType AuthenticationType `json:"authenticationType"`
 
-	// Endpoint is the URL at which the bucket can be accessed
-	Endpoint string `json:"endpoint"`
+	// S3 - Details of S3 credentials
+	S3 *SecretS3 `json:"secretS3"`
 
-	// Region is the vendor-defined region where the bucket "resides"
-	Region string `json:"region"`
+	// Azure - Details of Azure credentials
+	Azure *SecretAzure `json:"secretAzure"`
 
 	// Protocols are the set of data APIs this bucket is expected to support.
 	// The possible values for protocol are:

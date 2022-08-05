@@ -33,6 +33,7 @@ import (
 // FakeBucketAccesses implements BucketAccessInterface
 type FakeBucketAccesses struct {
 	Fake *FakeObjectstorageV1alpha1
+	ns   string
 }
 
 var bucketaccessesResource = schema.GroupVersionResource{Group: "objectstorage.k8s.io", Version: "v1alpha1", Resource: "bucketaccesses"}
@@ -42,7 +43,8 @@ var bucketaccessesKind = schema.GroupVersionKind{Group: "objectstorage.k8s.io", 
 // Get takes name of the bucketAccess, and returns the corresponding bucketAccess object, and an error if there is any.
 func (c *FakeBucketAccesses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.BucketAccess, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(bucketaccessesResource, name), &v1alpha1.BucketAccess{})
+		Invokes(testing.NewGetAction(bucketaccessesResource, c.ns, name), &v1alpha1.BucketAccess{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -52,7 +54,8 @@ func (c *FakeBucketAccesses) Get(ctx context.Context, name string, options v1.Ge
 // List takes label and field selectors, and returns the list of BucketAccesses that match those selectors.
 func (c *FakeBucketAccesses) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.BucketAccessList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(bucketaccessesResource, bucketaccessesKind, opts), &v1alpha1.BucketAccessList{})
+		Invokes(testing.NewListAction(bucketaccessesResource, bucketaccessesKind, c.ns, opts), &v1alpha1.BucketAccessList{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -73,13 +76,15 @@ func (c *FakeBucketAccesses) List(ctx context.Context, opts v1.ListOptions) (res
 // Watch returns a watch.Interface that watches the requested bucketAccesses.
 func (c *FakeBucketAccesses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(bucketaccessesResource, opts))
+		InvokesWatch(testing.NewWatchAction(bucketaccessesResource, c.ns, opts))
+
 }
 
 // Create takes the representation of a bucketAccess and creates it.  Returns the server's representation of the bucketAccess, and an error, if there is any.
 func (c *FakeBucketAccesses) Create(ctx context.Context, bucketAccess *v1alpha1.BucketAccess, opts v1.CreateOptions) (result *v1alpha1.BucketAccess, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(bucketaccessesResource, bucketAccess), &v1alpha1.BucketAccess{})
+		Invokes(testing.NewCreateAction(bucketaccessesResource, c.ns, bucketAccess), &v1alpha1.BucketAccess{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -89,7 +94,8 @@ func (c *FakeBucketAccesses) Create(ctx context.Context, bucketAccess *v1alpha1.
 // Update takes the representation of a bucketAccess and updates it. Returns the server's representation of the bucketAccess, and an error, if there is any.
 func (c *FakeBucketAccesses) Update(ctx context.Context, bucketAccess *v1alpha1.BucketAccess, opts v1.UpdateOptions) (result *v1alpha1.BucketAccess, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(bucketaccessesResource, bucketAccess), &v1alpha1.BucketAccess{})
+		Invokes(testing.NewUpdateAction(bucketaccessesResource, c.ns, bucketAccess), &v1alpha1.BucketAccess{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -100,7 +106,8 @@ func (c *FakeBucketAccesses) Update(ctx context.Context, bucketAccess *v1alpha1.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakeBucketAccesses) UpdateStatus(ctx context.Context, bucketAccess *v1alpha1.BucketAccess, opts v1.UpdateOptions) (*v1alpha1.BucketAccess, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(bucketaccessesResource, "status", bucketAccess), &v1alpha1.BucketAccess{})
+		Invokes(testing.NewUpdateSubresourceAction(bucketaccessesResource, "status", c.ns, bucketAccess), &v1alpha1.BucketAccess{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -110,13 +117,14 @@ func (c *FakeBucketAccesses) UpdateStatus(ctx context.Context, bucketAccess *v1a
 // Delete takes name of the bucketAccess and deletes it. Returns an error if one occurs.
 func (c *FakeBucketAccesses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(bucketaccessesResource, name, opts), &v1alpha1.BucketAccess{})
+		Invokes(testing.NewDeleteActionWithOptions(bucketaccessesResource, c.ns, name, opts), &v1alpha1.BucketAccess{})
+
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeBucketAccesses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(bucketaccessesResource, listOpts)
+	action := testing.NewDeleteCollectionAction(bucketaccessesResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.BucketAccessList{})
 	return err
@@ -125,7 +133,8 @@ func (c *FakeBucketAccesses) DeleteCollection(ctx context.Context, opts v1.Delet
 // Patch applies the patch and returns the patched bucketAccess.
 func (c *FakeBucketAccesses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.BucketAccess, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(bucketaccessesResource, name, pt, data, subresources...), &v1alpha1.BucketAccess{})
+		Invokes(testing.NewPatchSubresourceAction(bucketaccessesResource, c.ns, name, pt, data, subresources...), &v1alpha1.BucketAccess{})
+
 	if obj == nil {
 		return nil, err
 	}

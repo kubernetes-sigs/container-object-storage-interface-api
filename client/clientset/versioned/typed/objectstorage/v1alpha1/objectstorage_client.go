@@ -44,8 +44,8 @@ func (c *ObjectstorageV1alpha1Client) Buckets() BucketInterface {
 	return newBuckets(c)
 }
 
-func (c *ObjectstorageV1alpha1Client) BucketAccesses() BucketAccessInterface {
-	return newBucketAccesses(c)
+func (c *ObjectstorageV1alpha1Client) BucketAccesses(namespace string) BucketAccessInterface {
+	return newBucketAccesses(c, namespace)
 }
 
 func (c *ObjectstorageV1alpha1Client) BucketAccessClasses() BucketAccessClassInterface {

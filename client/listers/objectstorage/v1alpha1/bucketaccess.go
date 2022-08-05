@@ -31,9 +31,8 @@ type BucketAccessLister interface {
 	// List lists all BucketAccesses in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.BucketAccess, err error)
-	// Get retrieves the BucketAccess from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.BucketAccess, error)
+	// BucketAccesses returns an object that can list and get BucketAccesses.
+	BucketAccesses(namespace string) BucketAccessNamespaceLister
 	BucketAccessListerExpansion
 }
 
@@ -55,9 +54,41 @@ func (s *bucketAccessLister) List(selector labels.Selector) (ret []*v1alpha1.Buc
 	return ret, err
 }
 
-// Get retrieves the BucketAccess from the index for a given name.
-func (s *bucketAccessLister) Get(name string) (*v1alpha1.BucketAccess, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
+// BucketAccesses returns an object that can list and get BucketAccesses.
+func (s *bucketAccessLister) BucketAccesses(namespace string) BucketAccessNamespaceLister {
+	return bucketAccessNamespaceLister{indexer: s.indexer, namespace: namespace}
+}
+
+// BucketAccessNamespaceLister helps list and get BucketAccesses.
+// All objects returned here must be treated as read-only.
+type BucketAccessNamespaceLister interface {
+	// List lists all BucketAccesses in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*v1alpha1.BucketAccess, err error)
+	// Get retrieves the BucketAccess from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.BucketAccess, error)
+	BucketAccessNamespaceListerExpansion
+}
+
+// bucketAccessNamespaceLister implements the BucketAccessNamespaceLister
+// interface.
+type bucketAccessNamespaceLister struct {
+	indexer   cache.Indexer
+	namespace string
+}
+
+// List lists all BucketAccesses in the indexer for a given namespace.
+func (s bucketAccessNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.BucketAccess, err error) {
+	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
+		ret = append(ret, m.(*v1alpha1.BucketAccess))
+	})
+	return ret, err
+}
+
+// Get retrieves the BucketAccess from the indexer for a given namespace and name.
+func (s bucketAccessNamespaceLister) Get(name string) (*v1alpha1.BucketAccess, error) {
+	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
 	if err != nil {
 		return nil, err
 	}

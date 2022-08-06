@@ -34,37 +34,37 @@ type COSIProvisionerClient struct {
 	provisionerClient cosi.ProvisionerClient
 }
 
-func (c *COSIProvisionerClient) ProvisionerGetInfo(ctx context.Context,
-	in *cosi.ProvisionerGetInfoRequest,
-	opts ...grpc.CallOption) (*cosi.ProvisionerGetInfoResponse, error) {
+func (c *COSIProvisionerClient) DriverGetInfo(ctx context.Context,
+	in *cosi.DriverGetInfoRequest,
+	opts ...grpc.CallOption) (*cosi.DriverGetInfoResponse, error) {
 
-	return c.identityClient.ProvisionerGetInfo(ctx, in, opts...)
+	return c.identityClient.DriverGetInfo(ctx, in, opts...)
 }
 
-func (c *COSIProvisionerClient) ProvisionerCreateBucket(ctx context.Context,
-	in *cosi.ProvisionerCreateBucketRequest,
-	opts ...grpc.CallOption) (*cosi.ProvisionerCreateBucketResponse, error) {
+func (c *COSIProvisionerClient) DriverCreateBucket(ctx context.Context,
+	in *cosi.DriverCreateBucketRequest,
+	opts ...grpc.CallOption) (*cosi.DriverCreateBucketResponse, error) {
 
-	return c.provisionerClient.ProvisionerCreateBucket(ctx, in, opts...)
+	return c.provisionerClient.DriverCreateBucket(ctx, in, opts...)
 }
 
-func (c *COSIProvisionerClient) ProvisionerDeleteBucket(ctx context.Context,
-	in *cosi.ProvisionerDeleteBucketRequest,
-	opts ...grpc.CallOption) (*cosi.ProvisionerDeleteBucketResponse, error) {
+func (c *COSIProvisionerClient) DriverDeleteBucket(ctx context.Context,
+	in *cosi.DriverDeleteBucketRequest,
+	opts ...grpc.CallOption) (*cosi.DriverDeleteBucketResponse, error) {
 
-	return c.provisionerClient.ProvisionerDeleteBucket(ctx, in, opts...)
+	return c.provisionerClient.DriverDeleteBucket(ctx, in, opts...)
 }
 
-func (c *COSIProvisionerClient) ProvisionerGrantBucketAccess(ctx context.Context,
-	in *cosi.ProvisionerGrantBucketAccessRequest,
-	opts ...grpc.CallOption) (*cosi.ProvisionerGrantBucketAccessResponse, error) {
+func (c *COSIProvisionerClient) DriverGrantBucketAccess(ctx context.Context,
+	in *cosi.DriverGrantBucketAccessRequest,
+	opts ...grpc.CallOption) (*cosi.DriverGrantBucketAccessResponse, error) {
 
-	return c.provisionerClient.ProvisionerGrantBucketAccess(ctx, in, opts...)
+	return c.provisionerClient.DriverGrantBucketAccess(ctx, in, opts...)
 }
 
-func (c *COSIProvisionerClient) ProvisionerRevokeBucketAccess(ctx context.Context,
-	in *cosi.ProvisionerRevokeBucketAccessRequest,
-	opts ...grpc.CallOption) (*cosi.ProvisionerRevokeBucketAccessResponse, error) {
+func (c *COSIProvisionerClient) DriverRevokeBucketAccess(ctx context.Context,
+	in *cosi.DriverRevokeBucketAccessRequest,
+	opts ...grpc.CallOption) (*cosi.DriverRevokeBucketAccessResponse, error) {
 
-	return c.provisionerClient.ProvisionerRevokeBucketAccess(ctx, in, opts...)
+	return c.provisionerClient.DriverRevokeBucketAccess(ctx, in, opts...)
 }

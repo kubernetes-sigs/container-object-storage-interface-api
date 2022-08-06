@@ -16,18 +16,20 @@
 package consts
 
 const (
-    AccountNamePrefix = "ba-"
-    BABucketFinalizer = "cosi.objectstorage.k8s.io/bucketaccess-bucket-protection"
-    BAFinalizer = "cosi.objectstorage.k8s.io/bucketaccess-protection"
-    BCFinalizer = "cosi.objectstorage.k8s.io/bucketclaim-protection"
-    BucketFinalizer = "cosi.objectstorage.k8s.io/bucket-protection"
-    SecretFinalizer = "cosi.objectstorage.k8s.io/secret-protection"
+	AccountNamePrefix = "ba-"
+	BucketInfoPrefix  = "bc-"
 
-    S3Key = "s3"
-    AzureKey = "azure"
-    S3SecretAccessKeyID = "accessKeyID"
-    S3SecretAccessSecretKey = "accessSecretKey"
-    AzureSecretAccessToken = "accessToken"
-    AzureSecretExpiryTimeStamp = "expiryTs"
-    DefaultTimeFormat = "2006-01-02 15:04:05.999999999 -0700 MST"
+	BABucketFinalizer = "cosi.objectstorage.k8s.io/bucketaccess-bucket-protection"
+	BAFinalizer       = "cosi.objectstorage.k8s.io/bucketaccess-protection"
+	BCFinalizer       = "cosi.objectstorage.k8s.io/bucketclaim-protection"
+	BucketFinalizer   = "cosi.objectstorage.k8s.io/bucket-protection"
+	SecretFinalizer   = "cosi.objectstorage.k8s.io/secret-protection"
+
+	S3Key                      = "s3"
+	AzureKey                   = "azure"
+	S3SecretAccessKeyID        = "accessKeyID"
+	S3SecretAccessSecretKey    = "accessSecretKey"
+	AzureSecretAccessToken     = "accessToken"
+	AzureSecretExpiryTimeStamp = "expiryTs"
+	DefaultTimeFormat          = "2006-01-02 15:04:05.999999999 -0700 MST"
 )

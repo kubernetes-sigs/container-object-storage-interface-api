@@ -20,9 +20,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/version"
@@ -72,49 +72,56 @@ func TestInitializeBucketClient(t *testing.T) {
 }
 
 func TestAddWrongProvisioner(t *testing.T) {
-	provisioner := "provisioner1"
-	bucketName := "bucket1"
-	bucketId := "bucketId1"
+	driver := "driver1"
+	bucketAccessClassName := "bucketAccessClass1"
+	bucketClaimName := "bucketClaim1"
 	accountId := "accountId1"
-	bucketAccessRequestName := "bar1"
-	policy := "policy1"
+	secretName := "secret1"
+	timeNow := time.Now()
+	secret := map[string]string{
+		"accessToken": "randomValue",
+		"expiryTs":    timeNow.String(),
+	}
+
+	credentialDetails := &cosi.CredentialDetails{
+		Secrets: secret,
+	}
+	credential := map[string]*cosi.CredentialDetails{
+		"azure": credentialDetails,
+	}
 
 	mpc := struct{ fakespec.FakeProvisionerClient }{}
-	mpc.FakeProvisionerGrantBucketAccess = func(ctx context.Context,
-		in *cosi.ProvisionerGrantBucketAccessRequest,
-		opts ...grpc.CallOption) (*cosi.ProvisionerGrantBucketAccessResponse, error) {
+	mpc.FakeDriverGrantBucketAccess = func(ctx context.Context,
+		in *cosi.DriverGrantBucketAccessRequest,
+		opts ...grpc.CallOption) (*cosi.DriverGrantBucketAccessResponse, error) {
 		t.Errorf("grpc client called")
-		return &cosi.ProvisionerGrantBucketAccessResponse{
-			AccountId: accountId,
+		return &cosi.DriverGrantBucketAccessResponse{
+			AccountId:   accountId,
+			Credentials: credential,
 		}, nil
 	}
 
-	b := v1alpha1.Bucket{
+	b := v1alpha1.BucketAccessClass{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: bucketName,
+			Name: bucketAccessClassName,
 		},
-		Spec: v1alpha1.BucketSpec{
-			Provisioner: provisioner + "-invalid",
-			Protocol:    v1alpha1.Protocol{},
-		},
-		Status: v1alpha1.BucketStatus{
-			BucketID: bucketId,
-		},
+		DriverName:         driver + "-invalid",
+		AuthenticationType: v1alpha1.AuthenticationTypeKey,
 	}
 
 	ba := v1alpha1.BucketAccess{
 		Spec: v1alpha1.BucketAccessSpec{
-			BucketName: bucketName,
-			BucketAccessRequest: &corev1.ObjectReference{
-				Name: bucketAccessRequestName,
-			},
-			PolicyActionsConfigMapData: policy,
+			BucketClaimName:       bucketClaimName,
+			Protocol:              v1alpha1.ProtocolAzure,
+			BucketAccessClassName: bucketAccessClassName,
+			CredentialsSecretName: secretName,
 		},
 	}
+
 	client := fakebucketclientset.NewSimpleClientset(&ba, &b)
 	kubeClient := fakekubeclientset.NewSimpleClientset()
 	bal := BucketAccessListener{
-		provisionerName:   provisioner,
+		driverName:        driver,
 		provisionerClient: &mpc,
 		bucketClient:      client,
 		kubeClient:        kubeClient,
@@ -128,23 +135,39 @@ func TestAddWrongProvisioner(t *testing.T) {
 }
 
 func TestAddBucketAccess(t *testing.T) {
-	provisioner := "provisioner"
+	driver := "driver"
 	bucketName := "bucket1"
 	bucketId := "bucketId1"
-	bucketAccessRequestName := "bar1"
+	bucketClaimName := "bucketClaim1"
+	bucketClassName := "bucketClass1"
+	bucketAccessClassName := "bucketAccessClass1"
+	bucketAccessName := "bucketAccess1"
+	secretName := "secret1"
 
-	policy := "policy1"
 	accountId := "account1"
-	creds := "credsContents"
 	ns := "testns"
+
+	timeNow := time.Now()
+	secret := map[string]string{
+		"accessToken": "randomValue",
+		"expiryTs":    timeNow.String(),
+	}
+
+	credentialDetails := &cosi.CredentialDetails{
+		Secrets: secret,
+	}
+	creds := map[string]*cosi.CredentialDetails{
+		"azure": credentialDetails,
+	}
+
 	mpc := struct{ fakespec.FakeProvisionerClient }{}
 
 	testCases := []struct {
 		name      string
 		setFields func(ba *v1alpha1.BucketAccess)
 		grantFunc func(ctx context.Context,
-			in *cosi.ProvisionerGrantBucketAccessRequest,
-			opts ...grpc.CallOption) (*cosi.ProvisionerGrantBucketAccessResponse, error)
+			in *cosi.DriverGrantBucketAccessRequest,
+			opts ...grpc.CallOption) (*cosi.DriverGrantBucketAccessResponse, error)
 	}{
 		{
 			name: "TestAddBucketAccess",
@@ -152,10 +175,10 @@ func TestAddBucketAccess(t *testing.T) {
 
 			},
 			grantFunc: func(ctx context.Context,
-				req *cosi.ProvisionerGrantBucketAccessRequest,
-				opts ...grpc.CallOption) (*cosi.ProvisionerGrantBucketAccessResponse, error) {
+				req *cosi.DriverGrantBucketAccessRequest,
+				opts ...grpc.CallOption) (*cosi.DriverGrantBucketAccessResponse, error) {
 
-				return &cosi.ProvisionerGrantBucketAccessResponse{
+				return &cosi.DriverGrantBucketAccessResponse{
 					AccountId:   accountId,
 					Credentials: creds,
 				}, nil
@@ -169,37 +192,64 @@ func TestAddBucketAccess(t *testing.T) {
 				Name: bucketName,
 			},
 			Spec: v1alpha1.BucketSpec{
-				Provisioner: provisioner,
-				Protocol:    v1alpha1.Protocol{},
+				DriverName:     driver,
+				Protocols:      []v1alpha1.Protocol{v1alpha1.ProtocolAzure},
+				DeletionPolicy: v1alpha1.DeletionPolicyRetain,
 			},
 			Status: v1alpha1.BucketStatus{
-				BucketID: bucketId,
+				BucketID:    bucketId,
+				BucketReady: true,
 			},
 		}
 
+		bc := v1alpha1.BucketClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bucketClaimName,
+				Namespace: ns,
+			},
+			Spec: v1alpha1.BucketClaimSpec{
+				BucketClassName: bucketClassName,
+				Protocols:       []v1alpha1.Protocol{v1alpha1.ProtocolAzure},
+			},
+			Status: v1alpha1.BucketClaimStatus{
+				BucketReady: true,
+				BucketName:  bucketName,
+			},
+		}
+
+		bac := v1alpha1.BucketAccessClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: bucketAccessClassName,
+			},
+			DriverName:         driver,
+			AuthenticationType: v1alpha1.AuthenticationTypeKey,
+		}
+
 		ba := v1alpha1.BucketAccess{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bucketAccessName,
+				Namespace: ns,
+			},
 			Spec: v1alpha1.BucketAccessSpec{
-				BucketName: bucketName,
-				BucketAccessRequest: &corev1.ObjectReference{
-					Name: bucketAccessRequestName,
-				},
-				PolicyActionsConfigMapData: policy,
+				BucketClaimName:       bucketClaimName,
+				Protocol:              v1alpha1.ProtocolAzure,
+				BucketAccessClassName: bucketAccessClassName,
+				CredentialsSecretName: secretName,
 			},
 		}
 
 		ctx := context.TODO()
 		tc.setFields(&ba)
 
-		client := fakebucketclientset.NewSimpleClientset(&ba, &b)
+		client := fakebucketclientset.NewSimpleClientset(&b, &bc, &bac, &ba)
 		kubeClient := fakekubeclientset.NewSimpleClientset()
-		mpc.FakeProvisionerGrantBucketAccess = tc.grantFunc
+		mpc.FakeDriverGrantBucketAccess = tc.grantFunc
 
 		bal := BucketAccessListener{
-			provisionerName:   provisioner,
+			driverName:        driver,
 			provisionerClient: &mpc,
 			bucketClient:      client,
 			kubeClient:        kubeClient,
-			namespace:         ns,
 		}
 
 		t.Logf(tc.name)
@@ -208,7 +258,7 @@ func TestAddBucketAccess(t *testing.T) {
 			t.Errorf("Add returned: %+v", err)
 		}
 
-		updatedBA, _ := bal.BucketAccesses().Get(ctx, ba.Name, metav1.GetOptions{})
+		updatedBA, _ := bal.bucketAccesses(ns).Get(ctx, ba.ObjectMeta.Name, metav1.GetOptions{})
 		if updatedBA.Status.AccessGranted != true {
 			t.Errorf("Expected %t, got %t", true, ba.Status.AccessGranted)
 		}
@@ -216,16 +266,9 @@ func TestAddBucketAccess(t *testing.T) {
 			t.Errorf("Expected %s, got %s", accountId, updatedBA.Status.AccountID)
 		}
 
-		secretName := "ba-" + string(ba.UID)
-		secret, err := bal.Secrets(ns).Get(ctx, secretName, metav1.GetOptions{})
+		_, err = bal.secrets(ns).Get(ctx, secretName, metav1.GetOptions{})
 		if err != nil {
-			t.Fatalf("minted secret creation failed: %v", err)
-		}
-
-		if secret.StringData["Credentials"] != creds {
-			t.Errorf("Expected %s, got %s",
-				creds,
-				secret.StringData["Credentials"])
+			t.Fatalf("Secret creation failed: %v", err)
 		}
 	}
 }

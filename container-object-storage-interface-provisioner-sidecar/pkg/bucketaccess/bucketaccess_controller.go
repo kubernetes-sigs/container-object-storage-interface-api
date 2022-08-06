@@ -17,9 +17,10 @@ package bucketaccess
 
 import (
 	"context"
-	"os"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"encoding/json"
+	"fmt"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,6 +36,7 @@ import (
 	bucketapi "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/typed/objectstorage/v1alpha1"
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -44,7 +46,7 @@ import (
 // BucketAccessListener manages Bucket objects
 type BucketAccessListener struct {
 	provisionerClient cosi.ProvisionerClient
-	driverName   string
+	driverName        string
 
 	kubeClient   kube.Interface
 	bucketClient buckets.Interface
@@ -54,7 +56,7 @@ type BucketAccessListener struct {
 // NewBucketAccessListener returns a resource handler for BucketAccess objects
 func NewBucketAccessListener(driverName string, client cosi.ProvisionerClient) (*BucketAccessListener, error) {
 	return &BucketAccessListener{
-		driverName:   driverName,
+		driverName:        driverName,
 		provisionerClient: client,
 	}, nil
 }
@@ -84,37 +86,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	)
 
 	secretCredName := bucketAccess.Spec.CredentialsSecretName
-	if secretCredName == nil {
+	if secretCredName == "" {
 		return errors.New("CredentialsSecretName not defined in the BucketAccess")
-	}
-
-	authType := cosi.AuthenticationType_UnknownAuthenticationType
-	if bucketAccess.Spec.AuthenticationType == v1alpha1.AuthenticationTypeKey {
-		authType = cosi.AuthenticationType_Key
-	} else if bucketAccess.Spec.AuthenticationType == v1alpha1.AuthenticationTypeIAM {
-		authType = cosi.AuthenticationType_IAM
-	}
-
-	if authType == cosi.AuthenticationType_IAM && bucketAccess.Spec.ServiceAccountName == "" {
-		return errors.New("Must define ServiceAccountName when AuthenticationType is IAM")
-	}
-
-	namespace := bucketAccess.ObjectMeta.Namespace
-	bucketClaim, err := bal.bucketClaims(namespace).Get(ctx, bucketClaimName, metav1.GetOptions{})
-	if err != nil {
-		klog.ErrorS(err, "Failed to fetch bucketClaim", "bucketClaim", bucketClaimName)
-		return errors.Wrap(err, "Failed to fetch bucketClaim")
-	}
-
-
-	if bucketClaim.Status.BucketName == "" || bucketClaim.Status.BucketReady != true {
-		err := errors.New("BucketName cannot be empty or BucketNotReady in bucketClaim")
-		klog.ErrorS(err,
-			"Invalid arguments",
-			"bucketClaim", bucketClaim.Name,
-			"bucketAccess", bucketAccess.ObjectMeta.Name,
-		)
-		return errors.Wrap(err, "Invalid arguments")
 	}
 
 	bucketAccessClass, err := bal.bucketAccessClasses().Get(ctx, bucketAccessClassName, metav1.GetOptions{})
@@ -131,6 +104,33 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		return nil
 	}
 
+	namespace := bucketAccess.ObjectMeta.Namespace
+	bucketClaim, err := bal.bucketClaims(namespace).Get(ctx, bucketClaimName, metav1.GetOptions{})
+	if err != nil {
+		klog.ErrorS(err, "Failed to fetch bucketClaim", "bucketClaim", bucketClaimName)
+		return errors.Wrap(err, "Failed to fetch bucketClaim")
+	}
+
+	if bucketClaim.Status.BucketName == "" || bucketClaim.Status.BucketReady != true {
+		err := errors.New("BucketName cannot be empty or BucketNotReady in bucketClaim")
+		klog.ErrorS(err,
+			"Invalid arguments",
+			"bucketClaim", bucketClaim.Name,
+			"bucketAccess", bucketAccess.ObjectMeta.Name,
+		)
+		return errors.Wrap(err, "Invalid arguments")
+	}
+
+	authType := cosi.AuthenticationType_UnknownAuthenticationType
+	if bucketAccessClass.AuthenticationType == v1alpha1.AuthenticationTypeKey {
+		authType = cosi.AuthenticationType_Key
+	} else if bucketAccessClass.AuthenticationType == v1alpha1.AuthenticationTypeIAM {
+		authType = cosi.AuthenticationType_IAM
+	}
+
+	if authType == cosi.AuthenticationType_IAM && bucketAccess.Spec.ServiceAccountName == "" {
+		return errors.New("Must define ServiceAccountName when AuthenticationType is IAM")
+	}
 
 	if bucketAccess.Status.AccessGranted == true {
 		klog.V(5).InfoS("AccessAlreadyGranted",
@@ -146,17 +146,17 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		return errors.Wrap(err, "Failed to fetch bucket")
 	}
 
-	if bucket.Status.BucketStatus != true || bucket.Status.BucketID == "" {
+	if bucket.Status.BucketReady != true || bucket.Status.BucketID == "" {
 		return errors.New("BucketAccess can't be granted to bucket not in Ready state and without a bucketID")
 	}
 
 	accountName := consts.AccountNamePrefix + string(bucketAccess.UID)
 
 	req := &cosi.DriverGrantBucketAccessRequest{
-		BucketId:     bucket.Status.BucketID,
-		AccountName:  accountName,
+		BucketId:           bucket.Status.BucketID,
+		Name:               accountName,
 		AuthenticationType: authType,
-		Parameters: bucketAccessClass.Parameters,
+		Parameters:         bucketAccessClass.Parameters,
 	}
 
 	// This needs to be idempotent
@@ -174,51 +174,56 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	if rsp.AccountId == "" {
-		klog.ErrorS("AccountId not defined in DriverGrantBucketAccess")
-		return errors.New("Failed to grant access. AccountId or Credentials not defined in DriverGrantBucketAccessResponse for BucketAccess: ", bucketAccess.ObjectMeta.Name)
+		err = errors.New("AccountId not defined in DriverGrantBucketAccess")
+		klog.ErrorS(err, "BucketAccess", bucketAccess.ObjectMeta.Name)
+		return errors.Wrap(err, fmt.Sprintf("BucketAccess %s", bucketAccess.ObjectMeta.Name))
 	}
 
 	credentials := rsp.Credentials
 	if len(credentials) != 1 {
-		klog.ErrorS("Credentials returned in DriverGrantBucketAccessResponse should be of length 1")
-		return errors.New("Credentials returned in DriverGrantBucketAccessResponse should be of length 1 for BucketAccess: ", bucketAccess.ObjectMeta.Name)
+		err = errors.New("Credentials returned in DriverGrantBucketAccessResponse should be of length 1")
+		klog.ErrorS(err, "BucketAccess", bucketAccess.ObjectMeta.Name)
+		return errors.Wrap(err, fmt.Sprintf("BucketAccess %s", bucketAccess.ObjectMeta.Name))
 	}
 
-	bucketInfo := cosiapi.BucketInfo {
-		ObjectMeta: metav1.ObjectMeta {
-			name: secretCredName,
+	bucketInfoName := consts.BucketInfoPrefix + string(bucketAccess.ObjectMeta.UID)
+
+	bucketInfo := cosiapi.BucketInfo{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: bucketInfoName,
 		},
-		BucketInfoSpec: cosiapi.BucketInfoSpec {
-			BucketName: bucket.ObjectMeta.Name,
-			AuthenticationType: bucketAccess.Spec.AuthenticationType,
-			Protocols: []v1alpha1.Protocol[bucketAccess.Spec.Protocol],
-		}
+		Spec: cosiapi.BucketInfoSpec{
+			BucketName:         bucket.ObjectMeta.Name,
+			AuthenticationType: bucketAccessClass.AuthenticationType,
+			Protocols:          []v1alpha1.Protocol{bucketAccess.Spec.Protocol},
+		},
 	}
 
-	var val cosi.CredentialDetails
+	var val *cosi.CredentialDetails
 	var ok bool
 
 	if val, ok = credentials[consts.S3Key]; ok {
-		secretS3 := &cosiapi.SecretS3 {
-			Endpoint: "",
-			Region: "",
-			AccessKeyID: val[consts.S3SecretAccessKeyID],
-			AccessSecretKey: val[consts.S3SecretAccessSecretKey],
+		secretS3 := &cosiapi.SecretS3{
+			Endpoint:        "https://s3.amazonaws.com",
+			Region:          "us-west-1",
+			AccessKeyID:     val.Secrets[consts.S3SecretAccessKeyID],
+			AccessSecretKey: val.Secrets[consts.S3SecretAccessSecretKey],
 		}
 
-		bucketInfo.S3 = secretS3
+		bucketInfo.Spec.S3 = secretS3
 	} else if val, ok = credentials[consts.AzureKey]; ok {
-		expiryTs := val[consts.AzureSecretExpiryTimeStamp]
-		expiryTimestamp := time.Parse(consts.DefaultTimeFormat, expiryTs)
-		secretAzure := &cosi.SecretAzure {
-			AccessToken: val[consts.AzureSecretAccessToken],
-			Expiry: expiryTs,
+		expiryTs := val.Secrets[consts.AzureSecretExpiryTimeStamp]
+		expiryTimestamp, _ := time.Parse(consts.DefaultTimeFormat, expiryTs)
+		metav1Time := &metav1.Time{Time: expiryTimestamp}
+		secretAzure := &cosiapi.SecretAzure{
+			AccessToken:     val.Secrets[consts.AzureSecretAccessToken],
+			ExpiryTimeStamp: metav1Time,
 		}
 
-		bucketInfo.Azure = secretAzure
+		bucketInfo.Spec.Azure = secretAzure
 	}
 
-	srtingData, err := json.Marshal(bucketInfo)
+	stringData, err := json.Marshal(bucketInfo)
 	if err != nil {
 		return errors.New("Error converting bucketinfo into secret")
 	}
@@ -234,12 +239,12 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 		if _, err := bal.secrets(namespace).Create(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretCredName,
-				Namespace: namespace,
+				Name:       secretCredName,
+				Namespace:  namespace,
 				Finalizers: []string{consts.SecretFinalizer},
 			},
 			StringData: map[string]string{
-				BucketInfo: string(stringData),
+				"BucketInfo": string(stringData),
 			},
 			Type: corev1.SecretTypeOpaque,
 		}, metav1.CreateOptions{}); err != nil {
@@ -265,7 +270,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 			klog.ErrorS(err, "Failed to update BucketAccess finalizer",
 				"bucketAccess", bucketAccess.ObjectMeta.Name,
 				"bucket", bucket.ObjectMeta.Name)
-			return errors.Wrap(err, "Failed to update BucketAccess finalizer", bucketAccess.ObjectMeta.Name)
+			return errors.Wrap(err, fmt.Sprintf("Failed to update BucketAccess finalizer. BucketAccess: %s", bucketAccess.ObjectMeta.Name))
 		}
 	}
 
@@ -277,7 +282,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		klog.ErrorS(err, "Failed to update BucketAccess Status",
 			"bucketAccess", bucketAccess.ObjectMeta.Name,
 			"bucket", bucket.ObjectMeta.Name)
-		return errors.Wrap(err, "Failed to update BucketAccess Status", bucketAccess.ObjectMeta.Name)
+		return errors.Wrap(err, fmt.Sprintf("Failed to update BucketAccess Status. BucketAccess: %s", bucketAccess.ObjectMeta.Name))
 	}
 
 	return nil
@@ -291,8 +296,7 @@ func (bal *BucketAccessListener) Update(ctx context.Context, old, new *v1alpha1.
 	klog.V(3).InfoS("Update BucketAccess",
 		"name", old.ObjectMeta.Name)
 
-	new := bucketAccess.DeepCopy()
-
+	bucketAccess := new.DeepCopy()
 	err := bal.deleteBucketAccessOp(ctx, bucketAccess)
 	if err != nil {
 		return err
@@ -308,7 +312,7 @@ func (bal *BucketAccessListener) Update(ctx context.Context, old, new *v1alpha1.
 func (bal *BucketAccessListener) Delete(ctx context.Context, bucketAccess *v1alpha1.BucketAccess) error {
 	klog.V(3).InfoS("Delete BucketAccess",
 		"name", bucketAccess.ObjectMeta.Name,
-		"bucket", bucketAccess.Spec.BucketName,
+		"bucketClaim", bucketAccess.Spec.BucketClaimName,
 	)
 
 	return nil
@@ -322,7 +326,7 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 	}
 
 	if controllerutil.RemoveFinalizer(secret, consts.SecretFinalizer) {
-		_, err = bal.secrets(bucketAccess.ObjectMeta.Namespace).Update(ctx, credSecretName, metav1.UpdateOptions{})
+		_, err = bal.secrets(bucketAccess.ObjectMeta.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
@@ -333,7 +337,7 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 		if err != nil {
 			return err
 		}
-	} 
+	}
 
 	return nil
 }
@@ -366,7 +370,7 @@ func (bal *BucketAccessListener) bucketClaims(namespace string) bucketapi.Bucket
 	panic("uninitialized listener")
 }
 
-func (bal *BucketAccessListener) bucketAccessClasses() bucketapi.BucketClaimInterface {
+func (bal *BucketAccessListener) bucketAccessClasses() bucketapi.BucketAccessClassInterface {
 	if bal.bucketClient != nil {
 		return bal.bucketClient.ObjectstorageV1alpha1().BucketAccessClasses()
 	}
@@ -381,7 +385,7 @@ func (bal *BucketAccessListener) InitializeKubeClient(k kube.Interface) {
 	if err != nil {
 		klog.ErrorS(err, "Cannot determine server version")
 	} else {
-		b.kubeVersion = utilversion.MustParseSemantic(serverVersion.GitVersion)
+		bal.kubeVersion = utilversion.MustParseSemantic(serverVersion.GitVersion)
 	}
 }
 

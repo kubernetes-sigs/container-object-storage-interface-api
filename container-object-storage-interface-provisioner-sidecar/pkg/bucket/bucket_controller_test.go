@@ -25,7 +25,6 @@ import (
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/version"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -71,117 +70,28 @@ func TestInitializeBucketClient(t *testing.T) {
 }
 
 func TestAddWrongProvisioner(t *testing.T) {
-	provisioner := "provisioner1"
+	driver := "driver1"
 	mpc := struct{ fakespec.FakeProvisionerClient }{}
-	mpc.FakeProvisionerCreateBucket = func(ctx context.Context,
-		in *cosi.ProvisionerCreateBucketRequest,
-		opts ...grpc.CallOption) (*cosi.ProvisionerCreateBucketResponse, error) {
+	mpc.FakeDriverCreateBucket = func(ctx context.Context,
+		in *cosi.DriverCreateBucketRequest,
+		opts ...grpc.CallOption) (*cosi.DriverCreateBucketResponse, error) {
 		t.Errorf("grpc client called")
 		return nil, nil
 	}
 
 	bl := BucketListener{
-		provisionerName:   provisioner,
+		driverName:        driver,
 		provisionerClient: &mpc,
 	}
 
 	b := v1alpha1.Bucket{
 		Spec: v1alpha1.BucketSpec{
-			Provisioner: "provisioner2",
+			DriverName: "driver2",
 		},
 	}
 	ctx := context.TODO()
 	err := bl.Add(ctx, &b)
 	if err != nil {
 		t.Errorf("Error returned: %+v", err)
-	}
-}
-
-func TestDeleteWrongProvisioner(t *testing.T) {
-	provisioner := "provisioner1"
-	mpc := struct{ fakespec.FakeProvisionerClient }{}
-	mpc.FakeProvisionerDeleteBucket = func(ctx context.Context,
-		in *cosi.ProvisionerDeleteBucketRequest,
-		opts ...grpc.CallOption) (*cosi.ProvisionerDeleteBucketResponse, error) {
-		t.Errorf("grpc client called")
-		return nil, nil
-	}
-
-	bl := BucketListener{
-		provisionerName:   provisioner,
-		provisionerClient: &mpc,
-	}
-
-	b := v1alpha1.Bucket{
-		Spec: v1alpha1.BucketSpec{
-			Provisioner: "provisioner2",
-		},
-	}
-	ctx := context.TODO()
-	err := bl.Delete(ctx, &b)
-	if err != nil {
-		t.Errorf("error returned: %+v", err)
-	}
-}
-
-func TestBucketDeletion(t *testing.T) {
-	provisioner := "provisioner1"
-	bucketId := "bucket1"
-	mpc := struct{ fakespec.FakeProvisionerClient }{}
-
-	testCases := []struct {
-		name       string
-		setFields  func(*v1alpha1.Bucket)
-		deleteFunc func(ctx context.Context,
-			in *cosi.ProvisionerDeleteBucketRequest,
-			opts ...grpc.CallOption) (*cosi.ProvisionerDeleteBucketResponse, error)
-	}{
-		{
-			name: "BucketDeletion",
-			setFields: func(b *v1alpha1.Bucket) {
-				b.Status.BucketID = bucketId
-			},
-			deleteFunc: func(ctx context.Context,
-				req *cosi.ProvisionerDeleteBucketRequest,
-				opts ...grpc.CallOption) (*cosi.ProvisionerDeleteBucketResponse, error) {
-				inBucketId := req.BucketId
-				if inBucketId != bucketId {
-					t.Errorf("expected %s, got %s", bucketId, inBucketId)
-				}
-				return &cosi.ProvisionerDeleteBucketResponse{}, nil
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		b := v1alpha1.Bucket{
-			Spec: v1alpha1.BucketSpec{
-				Provisioner: provisioner,
-			},
-			Status: v1alpha1.BucketStatus{
-				BucketAvailable: true,
-			},
-		}
-
-		ctx := context.TODO()
-		client := fakebucketclientset.NewSimpleClientset(&b)
-		mpc.FakeProvisionerDeleteBucket = tc.deleteFunc
-		bl := BucketListener{
-			provisionerName:   provisioner,
-			provisionerClient: &mpc,
-			bucketClient:      client,
-		}
-
-		tc.setFields(&b)
-		t.Logf(tc.name)
-		err := bl.Delete(ctx, &b)
-		if err != nil {
-			t.Errorf("Error running TestBucketDeletion: %v", err)
-		}
-
-		updatedB, _ := client.ObjectstorageV1alpha1().Buckets().Get(ctx, b.Name, metav1.GetOptions{})
-		if updatedB.Status.BucketAvailable != false {
-			t.Errorf("Expected %t, got %t", false, b.Status.BucketAvailable)
-		}
 	}
 }

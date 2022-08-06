@@ -39,7 +39,7 @@ import (
 // BucketListener manages Bucket objects
 type BucketListener struct {
 	provisionerClient cosi.ProvisionerClient
-	driverName   string
+	driverName        string
 
 	kubeClient   kube.Interface
 	bucketClient buckets.Interface
@@ -120,7 +120,6 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 			err = errors.New("DriverCreateBucket returned an empty bucketID")
 			return err
 		}
-
 
 		// Now we update the BucketReady status of BucketClaim
 		if bucket.Spec.BucketClaim != nil {
@@ -253,7 +252,7 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 
 	if bucket.Spec.BucketClaim != nil {
 		ref := bucket.Spec.BucketClaim
-		bucketClaim, err := b.bucketClaims(ref.ObjectMeta.Namespace).Get(ctx, ref.ObjectMeta.Name, metav1.GetOptions{})
+		bucketClaim, err := b.bucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -280,9 +279,8 @@ func (b *BucketListener) bucketClaims(namespace string) bucketapi.BucketClaimInt
 		return b.bucketClient.ObjectstorageV1alpha1().BucketClaims(namespace)
 	}
 
-	panic ("uninitialized listener")
+	panic("uninitialized listener")
 }
-
 
 func (b *BucketListener) bucketAccesses(namespace string) bucketapi.BucketAccessInterface {
 	if b.bucketClient != nil {
@@ -290,4 +288,3 @@ func (b *BucketListener) bucketAccesses(namespace string) bucketapi.BucketAccess
 	}
 	panic("uninitialized listener")
 }
-

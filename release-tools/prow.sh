@@ -127,7 +127,7 @@ configvar COSI_PROW_BUILD_JOB true "building code in repo enabled"
 # use the same settings as for "latest" Kubernetes. This works
 # as long as there are no breaking changes in Kubernetes, like
 # deprecating or changing the implementation of an alpha feature.
-configvar COSI_PROW_KUBERNETES_VERSION 1.17.0 "Kubernetes"
+configvar COSI_PROW_KUBERNETES_VERSION 1.24.0 "Kubernetes"
 
 # This is a hack to workaround the issue that each version
 # of kind currently only supports specific patch versions of
@@ -137,7 +137,7 @@ configvar COSI_PROW_KUBERNETES_VERSION 1.17.0 "Kubernetes"
 #
 # If the version is prefixed with "release-", then nothing
 # is overridden.
-override_k8s_version "1.19.3"
+override_k8s_version "1.24.0"
 
 # COSI_PROW_KUBERNETES_VERSION reduced to first two version numbers and
 # with underscore (1_13 instead of 1.13.3) and in uppercase (LATEST

@@ -20,8 +20,8 @@ Before diving into the code of this repo, we suggest that you familiarize yourse
 
 A good starting point towards understanding the functionality of this repo would be to study the tests:
 
-- [Bucket Controller Test](./pkg/controller/bucket/bucket_controller_test.go)
-- [Bucket Access Controller Test](./pkg/controller/bucketaccess/bucket_access_controller_test.go)
+- [Bucket Controller Test](./pkg/bucket/bucket_controller_test.go)
+- [Bucket Access Controller Test](./pkg/bucketaccess/bucketaccess_controller_test.go)
 
 ### Build and Test
 

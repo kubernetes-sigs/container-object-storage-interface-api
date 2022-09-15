@@ -6,6 +6,12 @@ steps:
 - name: "gcr.io/k8s-testimages/gcb-docker-gcloud:v20220617-174ad91c3a"
   entrypoint: make
   args: ['build']
+  env: 
+  - GIT_TAG=${_GIT_TAG}
+  - PULL_BASE_REF=${_PULL_BASE_REF}
 - name: "gcr.io/k8s-testimages/gcb-docker-gcloud:v20220617-174ad91c3a"
   entrypoint: make
   args: ['push']
+  env: 
+  - GIT_TAG=${_GIT_TAG}
+  - PULL_BASE_REF=${_PULL_BASE_REF}

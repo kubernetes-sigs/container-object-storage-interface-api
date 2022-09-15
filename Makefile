@@ -29,4 +29,4 @@ release-tools/build.make:
 include release-tools/build.make
 
 REGISTRY_NAME=gcr.io/k8s-staging-sig-storage/objectstorage-sidecar
-IMAGE_TAGS=canary
+IMAGE_TAGS=$(GIT_TAG)

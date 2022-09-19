@@ -87,10 +87,12 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		return nil
 	}
 
-	if bucket.Spec.ExistingBucketID != "" {
-		bucket.Status.BucketReady = true
-		bucket.Status.BucketID = bucket.Spec.ExistingBucketID
+	bucketReady := false
+	var bucketID string
 
+	if bucket.Spec.ExistingBucketID != "" {
+		bucketReady = true
+		bucketID = bucket.Spec.ExistingBucketID
 	} else {
 		req := &cosi.DriverCreateBucketRequest{
 			Parameters: bucket.Spec.Parameters,
@@ -114,8 +116,8 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		}
 
 		if rsp.BucketId != "" {
-			bucket.Status.BucketID = rsp.BucketId
-			bucket.Status.BucketReady = true
+			bucketID = rsp.BucketId
+			bucketReady = true
 		} else {
 			err = errors.New("DriverCreateBucket returned an empty bucketID")
 			return err
@@ -126,21 +128,31 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 			ref := bucket.Spec.BucketClaim
 			bucketClaim, err := b.bucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
 			if err != nil {
+				klog.ErrorS(err, "Failed to get bucketClaim",
+					"bucketClaim", ref.Name,
+					"bucket", bucket.ObjectMeta.Name)
 				return err
 			}
 
 			bucketClaim.Status.BucketReady = true
 			if _, err = b.bucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
+				klog.ErrorS(err, "Failed to update bucketClaim",
+					"bucketClaim", ref.Name,
+					"bucket", bucket.ObjectMeta.Name)
 				return err
 			}
 		}
 	}
 
 	controllerutil.AddFinalizer(bucket, consts.BucketFinalizer)
-	if _, err = b.buckets().Update(ctx, bucket, metav1.UpdateOptions{}); err != nil {
+	if bucket, err = b.buckets().Update(ctx, bucket, metav1.UpdateOptions{}); err != nil {
 		klog.ErrorS(err, "Failed to update bucket finalizers", "bucket", bucket.ObjectMeta.Name)
 		return errors.Wrap(err, "Failed to update bucket finalizers")
 	}
+
+	// Setting the status here so that the updated object is used
+	bucket.Status.BucketReady = bucketReady
+	bucket.Status.BucketID = bucketID
 
 	// if this step fails, then controller will retry with backoff
 	if _, err = b.buckets().UpdateStatus(ctx, bucket, metav1.UpdateOptions{}); err != nil {

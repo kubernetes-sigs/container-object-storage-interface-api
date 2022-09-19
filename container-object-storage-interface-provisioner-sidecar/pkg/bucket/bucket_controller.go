@@ -102,7 +102,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		rsp, err := b.provisionerClient.DriverCreateBucket(ctx, req)
 		if err != nil {
 			if status.Code(err) != codes.AlreadyExists {
-				klog.ErrorS(err, "Failed to create bucket",
+				klog.V(3).ErrorS(err, "Driver failed to create bucket",
 					"bucket", bucket.ObjectMeta.Name)
 				return errors.Wrap(err, "Failed to create bucket")
 			}
@@ -111,7 +111,8 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 
 		if rsp == nil {
 			err = errors.New("DriverCreateBucket returned a nil response")
-			klog.ErrorS(err, "Internal Error")
+			klog.V(3).ErrorS(err, "Internal Error from driver",
+				"bucket", bucket.ObjectMeta.Name)
 			return err
 		}
 
@@ -119,6 +120,8 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 			bucketID = rsp.BucketId
 			bucketReady = true
 		} else {
+			klog.V(3).ErrorS(err, "DriverCreateBucket returned an empty bucketID",
+				"bucket", bucket.ObjectMeta.Name)
 			err = errors.New("DriverCreateBucket returned an empty bucketID")
 			return err
 		}
@@ -128,7 +131,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 			ref := bucket.Spec.BucketClaim
 			bucketClaim, err := b.bucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
 			if err != nil {
-				klog.ErrorS(err, "Failed to get bucketClaim",
+				klog.V(3).ErrorS(err, "Failed to get bucketClaim",
 					"bucketClaim", ref.Name,
 					"bucket", bucket.ObjectMeta.Name)
 				return err
@@ -136,19 +139,23 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 
 			bucketClaim.Status.BucketReady = true
 			if _, err = b.bucketClaims(bucketClaim.Namespace).UpdateStatus(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
-				klog.ErrorS(err, "Failed to update bucketClaim",
+				klog.V(3).ErrorS(err, "Failed to update bucketClaim",
 					"bucketClaim", ref.Name,
 					"bucket", bucket.ObjectMeta.Name)
 				return err
 			}
+
+			klog.V(5).Infof("Successfully updated status of bucketClaim: %s, bucket: %s", bucketClaim.ObjectMeta.Name, bucket.ObjectMeta.Name)
 		}
 	}
 
 	controllerutil.AddFinalizer(bucket, consts.BucketFinalizer)
 	if bucket, err = b.buckets().Update(ctx, bucket, metav1.UpdateOptions{}); err != nil {
-		klog.ErrorS(err, "Failed to update bucket finalizers", "bucket", bucket.ObjectMeta.Name)
+		klog.V(3).ErrorS(err, "Failed to update bucket finalizers", "bucket", bucket.ObjectMeta.Name)
 		return errors.Wrap(err, "Failed to update bucket finalizers")
 	}
+
+	klog.V(5).Infof("Successfully added finalizer to bucket: %s", bucket.ObjectMeta.Name)
 
 	// Setting the status here so that the updated object is used
 	bucket.Status.BucketReady = bucketReady
@@ -156,10 +163,15 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 
 	// if this step fails, then controller will retry with backoff
 	if _, err = b.buckets().UpdateStatus(ctx, bucket, metav1.UpdateOptions{}); err != nil {
-		klog.ErrorS(err, "Failed to update bucket status",
+		klog.V(3).ErrorS(err, "Failed to update bucket status",
 			"bucket", bucket.ObjectMeta.Name)
 		return errors.Wrap(err, "Failed to update bucket status")
 	}
+
+	klog.V(3).InfoS("Add Bucket success",
+		"bucket", bucket.ObjectMeta.Name,
+		"bucketID", bucketID,
+		"ns", bucket.ObjectMeta.Namespace)
 
 	return nil
 }
@@ -186,12 +198,18 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 				if strings.EqualFold(bucketAccess.Spec.BucketClaimName, bucketClaimName) {
 					err = b.bucketAccesses(bucketClaimNs).Delete(ctx, bucketAccess.Name, metav1.DeleteOptions{})
 					if err != nil {
+						klog.V(3).ErrorS(err, "Error deleting BucketAccess",
+							"name", bucketAccess.Name,
+							"bucket", bucket.ObjectMeta.Name)
 						return err
 					}
 				}
 			}
 
+			klog.V(5).Infof("Successfully deleted dependent bucketAccess of bucket:%s", bucket.ObjectMeta.Name)
+
 			controllerutil.RemoveFinalizer(bucket, consts.BABucketFinalizer)
+			klog.V(5).Infof("Successfully removed finalizer: %s of bucket: %s", consts.BABucketFinalizer, bucket.ObjectMeta.Name)
 		}
 
 		if controllerutil.ContainsFinalizer(bucket, consts.BucketFinalizer) {
@@ -202,6 +220,9 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 		}
 	}
 
+	klog.V(3).InfoS("Update Bucket success",
+		"name", bucket.ObjectMeta.Name,
+		"ns", bucket.ObjectMeta.Namespace)
 	return nil
 }
 
@@ -225,7 +246,7 @@ func (b *BucketListener) InitializeKubeClient(k kube.Interface) {
 
 	serverVersion, err := k.Discovery().ServerVersion()
 	if err != nil {
-		klog.ErrorS(err, "Cannot determine server version")
+		klog.V(3).ErrorS(err, "Cannot determine server version")
 	} else {
 		b.kubeVersion = utilversion.MustParseSemantic(serverVersion.GitVersion)
 	}
@@ -238,7 +259,7 @@ func (b *BucketListener) InitializeBucketClient(bc buckets.Interface) {
 
 func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bucket) error {
 	if !strings.EqualFold(bucket.Spec.DriverName, b.driverName) {
-		klog.V(5).InfoS("Skipping bucket for provisiner",
+		klog.V(5).InfoS("Skipping bucket for provisioner",
 			"bucket", bucket.ObjectMeta.Name,
 			"driver", bucket.Spec.DriverName,
 		)
@@ -254,26 +275,36 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 
 		if _, err := b.provisionerClient.DriverDeleteBucket(ctx, req); err != nil {
 			if status.Code(err) != codes.NotFound {
-				klog.ErrorS(err, "Failed to delete bucket",
+				klog.V(3).ErrorS(err, "Failed to delete bucket",
 					"bucket", bucket.ObjectMeta.Name,
 				)
 				return err
 			}
 		}
+
+		klog.V(5).Infof("Successfully deleted bucketID: %s from the object storage for bucket: %s", bucket.Status.BucketID, bucket.ObjectMeta.Name)
 	}
 
 	if bucket.Spec.BucketClaim != nil {
 		ref := bucket.Spec.BucketClaim
 		bucketClaim, err := b.bucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
 		if err != nil {
+			klog.V(3).ErrorS(err, "Error fetching bucketClaim",
+				"bucketClaim", ref.Name,
+				"bucket", bucket.ObjectMeta.Name)
 			return err
 		}
 
 		if controllerutil.RemoveFinalizer(bucketClaim, consts.BCFinalizer) {
 			if _, err := b.bucketClaims(bucketClaim.ObjectMeta.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
+				klog.V(3).ErrorS(err, "Error removing finalizer from bucketClaim",
+					"bucketClaim", bucketClaim.ObjectMeta.Name,
+					"bucket", bucket.ObjectMeta.Name)
 				return err
 			}
 		}
+
+		klog.V(5).Infof("Successfully removed finalizer: %s from bucketClaim: %s for bucket: %s", consts.BCFinalizer, bucketClaim.ObjectMeta.Name, bucket.ObjectMeta.Name)
 	}
 
 	return nil

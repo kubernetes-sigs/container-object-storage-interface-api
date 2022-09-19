@@ -135,7 +135,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 			}
 
 			bucketClaim.Status.BucketReady = true
-			if _, err = b.bucketClaims(bucketClaim.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
+			if _, err = b.bucketClaims(bucketClaim.Namespace).UpdateStatus(ctx, bucketClaim, metav1.UpdateOptions{}); err != nil {
 				klog.ErrorS(err, "Failed to update bucketClaim",
 					"bucketClaim", ref.Name,
 					"bucket", bucket.ObjectMeta.Name)

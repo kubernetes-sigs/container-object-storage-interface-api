@@ -217,6 +217,16 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 			if err != nil {
 				return err
 			}
+
+			controllerutil.RemoveFinalizer(bucket, consts.BucketFinalizer)
+			klog.V(5).Infof("Successfully removed finalizer: %s of bucket: %s", consts.BucketFinalizer, bucket.ObjectMeta.Name)
+		}
+
+		_, err = b.buckets().Update(ctx, bucket, metav1.UpdateOptions{})
+		if err != nil {
+			klog.V(3).ErrorS(err, "Error updating bucket after removing finalizers",
+				"bucket", bucket.ObjectMeta.Name)
+			return err
 		}
 	}
 

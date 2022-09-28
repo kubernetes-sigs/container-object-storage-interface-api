@@ -331,7 +331,7 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 	}
 
 	if controllerutil.RemoveFinalizer(secret, consts.SecretFinalizer) {
-		_, err = bal.secrets(bucketAccess.ObjectMeta.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
+		_, err = bal.secrets(secret.ObjectMeta.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
 		if err != nil {
 			klog.V(3).ErrorS(err, "Error removing finalizer from secret",
 				"secret", secret.ObjectMeta.Name,
@@ -340,6 +340,15 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 		}
 
 		klog.V(5).Infof("Successfully removed finalizer from secret: %s, bucketAccess: %s", secret.ObjectMeta.Name, bucketAccess.ObjectMeta.Name)
+	}
+
+	err = bal.secrets(secret.ObjectMeta.Namespace).Delete(ctx, credSecretName, metav1.DeleteOptions{})
+	if err != nil {
+		klog.V(3).ErrorS(err, "Error deleting secret",
+			"secret", secret.ObjectMeta.Name,
+			"bucketAccess", bucketAccess.ObjectMeta.Name,
+			"ns", bucketAccess.ObjectMeta.Namespace)
+		return nil
 	}
 
 	if controllerutil.RemoveFinalizer(bucketAccess, consts.BAFinalizer) {

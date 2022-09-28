@@ -237,6 +237,8 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 }
 
 // Delete attemps to delete a bucket. This function must be idempotent
+// Delete function is called when the bucket was not able to add finalizers while creation.
+// Hence we will take care of removing the BucketClaim finalizer before deleting the Bucket object.
 // Return values
 //    nil - Bucket successfully deleted
 //    non-nil err - Internal error                                [requeue'd with exponential backoff]
@@ -245,6 +247,29 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 		"name", inputBucket.ObjectMeta.Name,
 		"bucketclass", inputBucket.Spec.BucketClassName,
 	)
+
+	if inputBucket.Spec.BucketClaim != nil {
+		klog.V(3).Infof("Removing dependent BucketClaim finalizer")
+		ref := inputBucket.Spec.BucketClaim
+
+		bucketClaim, err := b.bucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+		if err != nil {
+			klog.V(3).ErrorS(err, "Error getting bucketClaim for removing finalizer",
+				"bucket", inputBucket.ObjectMeta.Name,
+				"bucketClaim", ref.Name)
+			return err
+		}
+
+		if controllerutil.RemoveFinalizer(bucketClaim, consts.BCFinalizer) {
+			_, err := b.bucketClaims(bucketClaim.ObjectMeta.Namespace).UpdateStatus(ctx, bucketClaim, metav1.UpdateOptions{})
+			if err != nil {
+				klog.V(3).ErrorS(err, "Error removing bucketClaim finalizer",
+					"bucket", inputBucket.ObjectMeta.Name,
+					"bucketClaim", bucketClaim.ObjectMeta.Name)
+				return err
+			}
+		}
+	}
 
 	return nil
 

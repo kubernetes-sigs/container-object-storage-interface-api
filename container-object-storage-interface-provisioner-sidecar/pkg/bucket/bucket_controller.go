@@ -145,7 +145,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		} else {
 			klog.V(3).ErrorS(err, "DriverCreateBucket returned an empty bucketID",
 				"bucket", bucket.ObjectMeta.Name)
-			err = errors.New(fmt.Sprintf("DriverCreateBucket returned an empty bucketID for bucket: %s",bucket.ObjectMeta.Name))
+			err = errors.New(fmt.Sprintf("DriverCreateBucket returned an empty bucketID for bucket: %s", bucket.ObjectMeta.Name))
 			return err
 		}
 

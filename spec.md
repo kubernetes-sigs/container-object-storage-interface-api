@@ -287,7 +287,7 @@ message DriverCreateBucketRequest {
     string name = 1;
 
     // This field is OPTIONAL
-    // The caller should treat the values in parameters as opaque. 
+    // The caller should treat the values in parameters as opaque.
     // The receiver is responsible for parsing and validating the values.
     map<string,string> parameters = 2;
 }
@@ -307,6 +307,11 @@ message DriverDeleteBucketRequest {
     // bucket_id is a globally unique identifier for the bucket
     // in the object storage provider 
     string bucket_id = 1;
+
+    // This field is OPTIONAL
+    // The caller should treat the values in delete_context as opaque.
+    // The receiver is responsible for parsing and validating the values.
+    map<string,string> delete_context = 2;
 }
 
 message DriverDeleteBucketResponse {
@@ -329,7 +334,7 @@ message DriverGrantBucketAccessRequest {
     AuthenticationType authentication_type = 3;
 
     // This field is OPTIONAL
-    // The caller should treat the values in parameters as opaque. 
+    // The caller should treat the values in parameters as opaque.
     // The receiver is responsible for parsing and validating the values.
     map<string,string> parameters = 4;
 }

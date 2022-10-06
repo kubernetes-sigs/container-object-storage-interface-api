@@ -180,6 +180,11 @@ message DriverDeleteBucketRequest {
     // bucket_id is a globally unique identifier for the bucket
     // in the object storage provider 
     string bucket_id = 1;
+
+    // This field is OPTIONAL
+    // The caller should treat the values in delete_context as opaque. 
+    // The receiver is responsible for parsing and validating the values.
+    map<string,string> delete_context = 2;
 }
 
 message DriverDeleteBucketResponse {

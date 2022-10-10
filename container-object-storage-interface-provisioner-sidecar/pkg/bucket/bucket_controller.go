@@ -327,7 +327,8 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 	// only when the retain policy is set to Delete
 	if bucket.Spec.DeletionPolicy == v1alpha1.DeletionPolicyDelete {
 		req := &cosi.DriverDeleteBucketRequest{
-			BucketId: bucket.Status.BucketID,
+			BucketId:      bucket.Status.BucketID,
+			DeleteContext: bucket.Spec.Parameters,
 		}
 
 		if _, err := b.provisionerClient.DriverDeleteBucket(ctx, req); err != nil {

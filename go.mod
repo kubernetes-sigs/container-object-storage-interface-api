@@ -13,7 +13,7 @@ require (
 	k8s.io/client-go v0.24.2
 	k8s.io/klog/v2 v2.70.1
 	sigs.k8s.io/container-object-storage-interface-api v0.0.0-20220806044417-5d7517114883
-	sigs.k8s.io/container-object-storage-interface-spec v0.0.0-20220811182913-3c421cfc2830
+	sigs.k8s.io/container-object-storage-interface-spec v0.1.1-0.20221006174327-ec782953b8ac
 	sigs.k8s.io/controller-runtime v0.12.3
 )
 

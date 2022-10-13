@@ -17,6 +17,7 @@ package bucket
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,9 +67,13 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 	var err error
 
 	klog.V(3).InfoS("Add Bucket",
-		"name", bucket.ObjectMeta.Name,
-		"bucketclass", bucket.Spec.BucketClassName,
-	)
+		"name", bucket.ObjectMeta.Name)
+
+	if bucket.Spec.BucketClassName == "" {
+		err = errors.New(fmt.Sprintf("BucketClassName not defined for bucket %s", bucket.ObjectMeta.Name))
+		klog.V(3).ErrorS(err, "BucketClassName not defined")
+		return err
+	}
 
 	if !strings.EqualFold(bucket.Spec.DriverName, b.driverName) {
 		klog.V(5).InfoS("Skipping bucket for driver",
@@ -93,6 +98,24 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 	if bucket.Spec.ExistingBucketID != "" {
 		bucketReady = true
 		bucketID = bucket.Spec.ExistingBucketID
+		if bucket.Spec.Parameters == nil {
+			bucketClass, err := b.bucketClasses().Get(ctx, bucket.Spec.BucketClassName, metav1.GetOptions{})
+			if err != nil {
+				klog.V(3).ErrorS(err, "Error fetching bucketClass",
+					"bucketClass", bucket.Spec.BucketClassName,
+					"bucket", bucket.ObjectMeta.Name)
+				return err
+			}
+
+			if bucketClass.Parameters != nil {
+				var param map[string]string
+				for k, v := range bucketClass.Parameters {
+					param[k] = v
+				}
+
+				bucket.Spec.Parameters = param
+			}
+		}
 	} else {
 		req := &cosi.DriverCreateBucketRequest{
 			Parameters: bucket.Spec.Parameters,
@@ -110,7 +133,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		}
 
 		if rsp == nil {
-			err = errors.New("DriverCreateBucket returned a nil response")
+			err = errors.New(fmt.Sprintf("DriverCreateBucket returned a nil response for bucket: %s", bucket.ObjectMeta.Name))
 			klog.V(3).ErrorS(err, "Internal Error from driver",
 				"bucket", bucket.ObjectMeta.Name)
 			return err
@@ -122,7 +145,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		} else {
 			klog.V(3).ErrorS(err, "DriverCreateBucket returned an empty bucketID",
 				"bucket", bucket.ObjectMeta.Name)
-			err = errors.New("DriverCreateBucket returned an empty bucketID")
+			err = errors.New(fmt.Sprintf("DriverCreateBucket returned an empty bucketID for bucket: %s", bucket.ObjectMeta.Name))
 			return err
 		}
 
@@ -217,6 +240,16 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 			if err != nil {
 				return err
 			}
+
+			controllerutil.RemoveFinalizer(bucket, consts.BucketFinalizer)
+			klog.V(5).Infof("Successfully removed finalizer: %s of bucket: %s", consts.BucketFinalizer, bucket.ObjectMeta.Name)
+		}
+
+		_, err = b.buckets().Update(ctx, bucket, metav1.UpdateOptions{})
+		if err != nil {
+			klog.V(3).ErrorS(err, "Error updating bucket after removing finalizers",
+				"bucket", bucket.ObjectMeta.Name)
+			return err
 		}
 	}
 
@@ -227,14 +260,38 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 }
 
 // Delete attemps to delete a bucket. This function must be idempotent
+// Delete function is called when the bucket was not able to add finalizers while creation.
+// Hence we will take care of removing the BucketClaim finalizer before deleting the Bucket object.
 // Return values
 //    nil - Bucket successfully deleted
 //    non-nil err - Internal error                                [requeue'd with exponential backoff]
 func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucket) error {
 	klog.V(3).InfoS("Delete Bucket",
 		"name", inputBucket.ObjectMeta.Name,
-		"bucketclass", inputBucket.Spec.BucketClassName,
-	)
+		"bucketclass", inputBucket.Spec.BucketClassName)
+
+	if inputBucket.Spec.BucketClaim != nil {
+		ref := inputBucket.Spec.BucketClaim
+		klog.V(3).Infof("Removing finalizer of bucketClaim: %s before deleting bucket: %s", ref.Name, inputBucket.ObjectMeta.Name)
+
+		bucketClaim, err := b.bucketClaims(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+		if err != nil {
+			klog.V(3).ErrorS(err, "Error getting bucketClaim for removing finalizer",
+				"bucket", inputBucket.ObjectMeta.Name,
+				"bucketClaim", ref.Name)
+			return err
+		}
+
+		if controllerutil.RemoveFinalizer(bucketClaim, consts.BCFinalizer) {
+			_, err := b.bucketClaims(bucketClaim.ObjectMeta.Namespace).Update(ctx, bucketClaim, metav1.UpdateOptions{})
+			if err != nil {
+				klog.V(3).ErrorS(err, "Error removing bucketClaim finalizer",
+					"bucket", inputBucket.ObjectMeta.Name,
+					"bucketClaim", bucketClaim.ObjectMeta.Name)
+				return err
+			}
+		}
+	}
 
 	return nil
 
@@ -270,7 +327,8 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 	// only when the retain policy is set to Delete
 	if bucket.Spec.DeletionPolicy == v1alpha1.DeletionPolicyDelete {
 		req := &cosi.DriverDeleteBucketRequest{
-			BucketId: bucket.Status.BucketID,
+			BucketId:      bucket.Status.BucketID,
+			DeleteContext: bucket.Spec.Parameters,
 		}
 
 		if _, err := b.provisionerClient.DriverDeleteBucket(ctx, req); err != nil {
@@ -313,6 +371,13 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 func (b *BucketListener) buckets() bucketapi.BucketInterface {
 	if b.bucketClient != nil {
 		return b.bucketClient.ObjectstorageV1alpha1().Buckets()
+	}
+	panic("uninitialized listener")
+}
+
+func (b *BucketListener) bucketClasses() bucketapi.BucketClassInterface {
+	if b.bucketClient != nil {
+		return b.bucketClient.ObjectstorageV1alpha1().BucketClasses()
 	}
 	panic("uninitialized listener")
 }

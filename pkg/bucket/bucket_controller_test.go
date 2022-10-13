@@ -17,6 +17,7 @@ package bucket
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -25,6 +26,7 @@ import (
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/version"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -86,12 +88,44 @@ func TestAddWrongProvisioner(t *testing.T) {
 
 	b := v1alpha1.Bucket{
 		Spec: v1alpha1.BucketSpec{
-			DriverName: "driver2",
+			DriverName:      "driver2",
+			BucketClassName: "test-bucket",
 		},
 	}
 	ctx := context.TODO()
 	err := bl.Add(ctx, &b)
 	if err != nil {
 		t.Errorf("Error returned: %+v", err)
+	}
+}
+
+func TestMissingBucketClassName(t *testing.T) {
+	driver := "driver1"
+	mpc := struct{ fakespec.FakeProvisionerClient }{}
+	mpc.FakeDriverCreateBucket = func(ctx context.Context,
+		in *cosi.DriverCreateBucketRequest,
+		opts ...grpc.CallOption) (*cosi.DriverCreateBucketResponse, error) {
+		t.Errorf("grpc client called")
+		return nil, nil
+	}
+
+	bl := BucketListener{
+		driverName:        driver,
+		provisionerClient: &mpc,
+	}
+
+	b := v1alpha1.Bucket{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "testbucket",
+		},
+		Spec: v1alpha1.BucketSpec{
+			DriverName: "driver1",
+		},
+	}
+	ctx := context.TODO()
+	err := bl.Add(ctx, &b)
+	expectedErr := errors.New("BucketClassName not defined for bucket testbucket")
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Errorf("Expecter error: %+v \n Returned error: %+v", expectedErr, err)
 	}
 }

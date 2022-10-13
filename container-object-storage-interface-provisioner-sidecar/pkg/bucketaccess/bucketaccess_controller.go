@@ -324,6 +324,36 @@ func (bal *BucketAccessListener) Delete(ctx context.Context, bucketAccess *v1alp
 }
 
 func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucketAccess *v1alpha1.BucketAccess) error {
+	// Fetching bucketClaim and corresponding bucket to get the bucketID
+	// for performing DriverRevokeBucketAccess request.
+	bucketClaimName := bucketAccess.Spec.BucketClaimName
+	bucketClaim, err := bal.bucketClaims(bucketAccess.ObjectMeta.Namespace).Get(ctx, bucketClaimName, metav1.GetOptions{})
+	if err != nil {
+		klog.V(3).ErrorS(err, "Failed to fetch bucketClaim", "bucketClaim", bucketClaimName)
+		return errors.Wrap(err, "Failed to fetch bucketClaim")
+	}
+
+	bucket, err := bal.buckets().Get(ctx, bucketClaim.Status.BucketName, metav1.GetOptions{})
+	if err != nil {
+		klog.V(3).ErrorS(err, "Failed to fetch bucket", "bucket", bucketClaim.Status.BucketName)
+		return errors.Wrap(err, "Failed to fetch bucket")
+	}
+
+	req := &cosi.DriverRevokeBucketAccessRequest{
+		BucketId:  bucket.Status.BucketID,
+		AccountId: bucketAccess.Status.AccountID,
+	}
+
+	// First we revoke the bucketAccess from the driver
+	if _, err := bal.provisionerClient.DriverRevokeBucketAccess(ctx, req); err != nil {
+		klog.V(3).ErrorS(err,
+			"Failed to revoke bucket access",
+			"bucketAccess", bucketAccess.ObjectMeta.Name,
+			"bucketClaim", bucketClaimName,
+		)
+		return errors.Wrap(err, "failed to revoke access")
+	}
+
 	credSecretName := bucketAccess.Spec.CredentialsSecretName
 	secret, err := bal.secrets(bucketAccess.ObjectMeta.Namespace).Get(ctx, credSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -331,7 +361,7 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 	}
 
 	if controllerutil.RemoveFinalizer(secret, consts.SecretFinalizer) {
-		_, err = bal.secrets(bucketAccess.ObjectMeta.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
+		_, err = bal.secrets(secret.ObjectMeta.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
 		if err != nil {
 			klog.V(3).ErrorS(err, "Error removing finalizer from secret",
 				"secret", secret.ObjectMeta.Name,
@@ -340,6 +370,15 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 		}
 
 		klog.V(5).Infof("Successfully removed finalizer from secret: %s, bucketAccess: %s", secret.ObjectMeta.Name, bucketAccess.ObjectMeta.Name)
+	}
+
+	err = bal.secrets(secret.ObjectMeta.Namespace).Delete(ctx, credSecretName, metav1.DeleteOptions{})
+	if err != nil {
+		klog.V(3).ErrorS(err, "Error deleting secret",
+			"secret", secret.ObjectMeta.Name,
+			"bucketAccess", bucketAccess.ObjectMeta.Name,
+			"ns", bucketAccess.ObjectMeta.Namespace)
+		return nil
 	}
 
 	if controllerutil.RemoveFinalizer(bucketAccess, consts.BAFinalizer) {

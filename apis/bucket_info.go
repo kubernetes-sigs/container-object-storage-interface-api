@@ -30,7 +30,7 @@ type SecretS3 struct {
 }
 
 type SecretAzure struct {
-	AccessToken string `json:"acessToken"`
+	AccessToken string `json:"accessToken"`
 	ExpiryTimeStamp *metav1.Time `json:"expiryTimeStamp"`
 }
 

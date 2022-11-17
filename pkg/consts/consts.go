@@ -29,6 +29,8 @@ const (
 	AzureKey                   = "azure"
 	S3SecretAccessKeyID        = "accessKeyID"
 	S3SecretAccessSecretKey    = "accessSecretKey"
+	S3Endpoint                 = "endpoint"
+	S3Region                   = "region"
 	AzureSecretAccessToken     = "accessToken"
 	AzureSecretExpiryTimeStamp = "expiryTs"
 	DefaultTimeFormat          = "2006-01-02 15:04:05.999999999 -0700 MST"

@@ -204,8 +204,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	if val, ok = credentials[consts.S3Key]; ok {
 		secretS3 := &cosiapi.SecretS3{
-			Endpoint:        "https://s3.amazonaws.com",
-			Region:          "us-west-1",
+			Endpoint:        val.Secrets[consts.S3Endpoint],
+			Region:          val.Secrets[consts.S3Region],
 			AccessKeyID:     val.Secrets[consts.S3SecretAccessKeyID],
 			AccessSecretKey: val.Secrets[consts.S3SecretAccessSecretKey],
 		}

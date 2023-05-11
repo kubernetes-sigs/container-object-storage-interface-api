@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
@@ -67,6 +68,17 @@ func TestInitializeBucketClient(t *testing.T) {
 	bal.InitializeBucketClient(client)
 
 	if bal.bucketClient == nil {
+		t.Errorf("BucketClient not initialized, expected not nil")
+	}
+}
+
+func TestInitializeEventRecorder(t *testing.T) {
+	eventRecorder := record.NewFakeRecorder(1)
+
+	bal := BucketAccessListener{}
+	bal.InitializeEventRecorder(eventRecorder)
+
+	if bal.eventRecorder == nil {
 		t.Errorf("BucketClient not initialized, expected not nil")
 	}
 }

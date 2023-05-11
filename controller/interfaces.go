@@ -9,12 +9,14 @@ import (
 
 	// k8s client
 	kubeclientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 )
 
 // Set the clients for each of the listeners
 type GenericListener interface {
 	InitializeKubeClient(kubeclientset.Interface)
 	InitializeBucketClient(bucketclientset.Interface)
+	InitializeEventRecorder(record.EventRecorder)
 }
 
 type BucketListener interface {

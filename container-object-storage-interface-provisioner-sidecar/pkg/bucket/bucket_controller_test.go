@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/record"
 
 	"google.golang.org/grpc"
 )
@@ -68,6 +69,17 @@ func TestInitializeBucketClient(t *testing.T) {
 
 	if bl.bucketClient == nil {
 		t.Errorf("BucketClient was nil")
+	}
+}
+
+func TestInitializeEventRecorder(t *testing.T) {
+	eventRecorder := record.NewFakeRecorder(1)
+
+	bl := BucketListener{}
+	bl.InitializeEventRecorder(eventRecorder)
+
+	if bl.eventRecorder == nil {
+		t.Errorf("BucketClient not initialized, expected not nil")
 	}
 }
 

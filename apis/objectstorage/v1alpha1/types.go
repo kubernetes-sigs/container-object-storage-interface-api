@@ -234,7 +234,7 @@ type BucketAccessClass struct {
 
 	// AuthenticationType denotes the style of authentication
 	// It can be one of
-	// KEY - access, secret tokens based authentication
+	// Key - access, secret tokens based authentication
 	// IAM - implicit authentication of pods to the OSP based on service account mappings
 	AuthenticationType AuthenticationType `json:"authenticationType"`
 

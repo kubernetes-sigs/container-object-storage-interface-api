@@ -26,7 +26,7 @@ spec:
             type: string
           authenticationType:
             description: AuthenticationType denotes the style of authentication It
-              can be one of KEY - access, secret tokens based authentication IAM -
+              can be one of Key - access, secret tokens based authentication IAM -
               implicit authentication of pods to the OSP based on service account
               mappings
             type: string

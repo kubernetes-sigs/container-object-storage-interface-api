@@ -33,8 +33,8 @@ func init() {
 type DeletionPolicy string
 
 const (
-	DeletionPolicyRetain      DeletionPolicy = "Retain"
-	DeletionPolicyDelete      DeletionPolicy = "Delete"
+	DeletionPolicyRetain DeletionPolicy = "Retain"
+	DeletionPolicyDelete DeletionPolicy = "Delete"
 )
 
 type Protocol string
@@ -60,8 +60,8 @@ const (
 // +kubebuilder:subresource:status
 type Bucket struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
 
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec BucketSpec `json:"spec,omitempty"`
@@ -77,7 +77,7 @@ type BucketSpec struct {
 	// Name of the BucketClass specified in the BucketRequest
 	BucketClassName string `json:"bucketClassName"`
 
-	// Name of the BucketClaim that resulted in the creation of this Bucket 
+	// Name of the BucketClaim that resulted in the creation of this Bucket
 	// In case the Bucket object was created manually, then this should refer
 	// to the BucketClaim with which this Bucket should be bound
 	BucketClaim *corev1.ObjectReference `json:"bucketClaim"`
@@ -98,7 +98,7 @@ type BucketSpec struct {
 	//  - Delete: Indicates that the bucket should be deleted from the OSP
 	//        once all the workloads accessing this bucket are done
 	// +optional
-	// +kubebuilder:default:=retain
+	// +kubebuilder:default:=Retain
 	DeletionPolicy DeletionPolicy `json:"deletionPolicy"`
 
 	// ExistingBucketID is the unique id of the bucket in the OSP. This field should be
@@ -120,7 +120,6 @@ type BucketStatus struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 type BucketList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -134,8 +133,8 @@ type BucketList struct {
 // +kubebuilder:storageversion
 type BucketClaim struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
 
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec BucketClaimSpec `json:"spec,omitempty"`
@@ -168,14 +167,13 @@ type BucketClaimStatus struct {
 	BucketReady bool `json:"bucketReady"`
 
 	// BucketName is the name of the provisioned Bucket in response
-	// to this BucketClaim. It is generated and set by the COSI controller 
+	// to this BucketClaim. It is generated and set by the COSI controller
 	// before making the creation request to the OSP backend.
 	// +optional
 	BucketName string `json:"bucketName,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 type BucketClaimList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -202,7 +200,7 @@ type BucketClass struct {
 	//  - Retain: Indicates that the bucket should not be deleted from the OSP
 	//  - Delete: Indicates that the bucket should be deleted from the OSP
 	//        once all the workloads accessing this bucket are done
-	// +kubebuilder:default:=retain
+	// +kubebuilder:default:=Retain
 	DeletionPolicy DeletionPolicy `json:"deletionPolicy"`
 
 	// Parameters is an opaque map for passing in configuration to a driver
@@ -212,7 +210,6 @@ type BucketClass struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 type BucketClassList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -237,7 +234,7 @@ type BucketAccessClass struct {
 
 	// AuthenticationType denotes the style of authentication
 	// It can be one of
-	// KEY - access, secret tokens based authentication
+	// Key - access, secret tokens based authentication
 	// IAM - implicit authentication of pods to the OSP based on service account mappings
 	AuthenticationType AuthenticationType `json:"authenticationType"`
 
@@ -276,11 +273,11 @@ type BucketAccessSpec struct {
 	// BucketClaimName is the name of the BucketClaim.
 	BucketClaimName string `json:"bucketClaimName"`
 
-	// Protocol is the name of the Protocol 
+	// Protocol is the name of the Protocol
 	// that this access credential is supposed to support
 	// If left empty, it will choose the protocol supported
 	// by the bucket. If the bucket supports multiple protocols,
-	// the end protocol is determined by the driver. 
+	// the end protocol is determined by the driver.
 	// +optional
 	Protocol Protocol `json:"protocol,omitempty"`
 
@@ -317,4 +314,3 @@ type BucketAccessList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BucketAccess `json:"items"`
 }
-

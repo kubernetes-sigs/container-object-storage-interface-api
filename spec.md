@@ -359,6 +359,11 @@ message DriverRevokeBucketAccessRequest {
     // This field is REQUIRED
     // This is the account_id that is having its access revoked.
     string account_id = 2;
+
+    // This field is OPTIONAL
+    // The caller should treat the values in revoke_access_context as opaque.
+    // The receiver is responsible for parsing and validating the values.
+    map<string,string> revoke_access_context = 3;
 }
 
 message DriverRevokeBucketAccessResponse {

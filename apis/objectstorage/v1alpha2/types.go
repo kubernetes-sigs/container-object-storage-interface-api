@@ -18,6 +18,7 @@ package v1alpha2
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -203,10 +204,29 @@ type BucketClass struct {
 	// +kubebuilder:default:=Retain
 	DeletionPolicy DeletionPolicy `json:"deletionPolicy"`
 
+	// Quotas defines optional quotas applied to all buckets created from this Bucket Class.
+	// +optional
+	Quotas BucketQuotas `json:"quotas,omitempty"`
+
 	// Parameters is an opaque map for passing in configuration to a driver
 	// for creating the bucket
 	// +optional
 	Parameters map[string]string `json:"parameters,omitempty"`
+}
+
+type BucketQuotas struct {
+	// MaxObjects specifies the maximum number of objects that will be allowed in a bucket.
+	// +optional
+	// +nullable
+	MaxObjects *uint64 `json:"maxObjects"`
+
+	// MaxSize specifies the maximum allowed size counting all objects in the bucket. This parameter
+	// should not be assumed to be a hard limit. Most object storage providers are only able to
+	// check the total size of a bucket periodically, and high-bandwidth bucket writes may allow the
+	// total size to surpass the limit by some margin.
+	// +optional
+	// +nullable
+	MaxSize *resource.Quantity `json:"maxSize"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

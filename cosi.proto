@@ -160,7 +160,7 @@ message DriverCreateBucketRequest {
     string name = 1;
 
     // This field is OPTIONAL
-    // The caller should treat the values in parameters as opaque. 
+    // The caller should treat the values in parameters as opaque.
     // The receiver is responsible for parsing and validating the values.
     map<string,string> parameters = 2;
 }
@@ -182,7 +182,7 @@ message DriverDeleteBucketRequest {
     string bucket_id = 1;
 
     // This field is OPTIONAL
-    // The caller should treat the values in delete_context as opaque. 
+    // The caller should treat the values in delete_context as opaque.
     // The receiver is responsible for parsing and validating the values.
     map<string,string> delete_context = 2;
 }
@@ -207,7 +207,7 @@ message DriverGrantBucketAccessRequest {
     AuthenticationType authentication_type = 3;
 
     // This field is OPTIONAL
-    // The caller should treat the values in parameters as opaque. 
+    // The caller should treat the values in parameters as opaque.
     // The receiver is responsible for parsing and validating the values.
     map<string,string> parameters = 4;
 }
@@ -232,6 +232,11 @@ message DriverRevokeBucketAccessRequest {
     // This field is REQUIRED
     // This is the account_id that is having its access revoked.
     string account_id = 2;
+
+    // This field is OPTIONAL
+    // The caller should treat the values in revoke_access_context as opaque.
+    // The receiver is responsible for parsing and validating the values.
+    map<string,string> revoke_access_context = 3;
 }
 
 message DriverRevokeBucketAccessResponse {

@@ -2,7 +2,7 @@ module sigs.k8s.io/container-object-storage-interface-provisioner-sidecar
 
 go 1.18
 
-replace sigs.k8s.io/container-object-storage-interface-api => github.com/shanduur/container-object-storage-interface-api v0.0.0-20231018120758-aef9fef22070
+replace sigs.k8s.io/container-object-storage-interface-api => github.com/shanduur/container-object-storage-interface-api v0.0.0-20231018134926-df1d34a6d9e9
 
 require (
 	github.com/pkg/errors v0.9.1
@@ -17,6 +17,7 @@ require (
 	sigs.k8s.io/container-object-storage-interface-api v0.0.0-20220806044417-5d7517114883
 	sigs.k8s.io/container-object-storage-interface-spec v0.1.1-0.20221006174327-ec782953b8ac
 	sigs.k8s.io/controller-runtime v0.12.3
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.1
 )
 
 require (
@@ -69,6 +70,5 @@ require (
 	k8s.io/kube-openapi v0.0.0-20220627174259-011e075b9cb8 // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )

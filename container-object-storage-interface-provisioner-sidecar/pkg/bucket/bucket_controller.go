@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/structured-merge-diff/v4/schema"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -418,6 +419,8 @@ func (b *BucketListener) bucketAccesses(namespace string) bucketapi.BucketAccess
 
 // recordEvent during the processing of the objects
 func (b *BucketListener) recordEvent(subject runtime.Object, eventtype, reason, message string) {
+	klog.InfoS("schema", "schema", schema.Schema)
+
 	if b.eventRecorder == nil {
 		return
 	}

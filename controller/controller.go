@@ -154,9 +154,14 @@ func NewObjectStorageControllerWithClientset(identity string, leaderLockName str
 	rb := record.NewBroadcaster()
 	leader := sanitize(fmt.Sprintf("%s/%s", leaderLockName, identity))
 
+	extendedScheme := scheme.Scheme
+	if err := v1alpha1.AddToScheme(extendedScheme); err != nil {
+		return nil, err
+	}
+
 	return &ObjectStorageController{
 		eventBroadcaster: rb,
-		eventRecorder:    rb.NewRecorder(scheme.Scheme, v1.EventSource{Component: leader}),
+		eventRecorder:    rb.NewRecorder(extendedScheme, v1.EventSource{Component: leader}),
 
 		identity:     id,
 		kubeClient:   kubeClient,

@@ -25,7 +25,7 @@ spec:
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           deletionPolicy:
-            default: retain
+            default: Retain
             description: 'DeletionPolicy is used to specify how COSI should handle
               deletion of this bucket. There are 2 possible values: - Retain: Indicates
               that the bucket should not be deleted from the OSP - Delete: Indicates

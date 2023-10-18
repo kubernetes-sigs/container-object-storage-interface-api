@@ -77,7 +77,7 @@ spec:
                 description: Name of the BucketClass specified in the BucketRequest
                 type: string
               deletionPolicy:
-                default: retain
+                default: Retain
                 description: 'DeletionPolicy is used to specify how COSI should handle
                   deletion of this bucket. There are 2 possible values: - Retain:
                   Indicates that the bucket should not be deleted from the OSP (default)

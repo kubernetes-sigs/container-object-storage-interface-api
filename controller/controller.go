@@ -421,7 +421,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	if c.BucketListener != nil {
 		c.BucketListener.InitializeKubeClient(c.kubeClient)
 		c.BucketListener.InitializeBucketClient(c.bucketClient)
-		c.BucketAccessListener.InitializeEventRecorder(c.eventRecorder)
+		c.BucketListener.InitializeEventRecorder(c.eventRecorder)
 		addFunc := func(ctx context.Context, obj interface{}) error {
 			return c.BucketListener.Add(ctx, obj.(*v1alpha1.Bucket))
 		}
@@ -436,7 +436,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	if c.BucketClaimListener != nil {
 		c.BucketClaimListener.InitializeKubeClient(c.kubeClient)
 		c.BucketClaimListener.InitializeBucketClient(c.bucketClient)
-		c.BucketAccessListener.InitializeEventRecorder(c.eventRecorder)
+		c.BucketClaimListener.InitializeEventRecorder(c.eventRecorder)
 		addFunc := func(ctx context.Context, obj interface{}) error {
 			return c.BucketClaimListener.Add(ctx, obj.(*v1alpha1.BucketClaim))
 		}
@@ -466,7 +466,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	if c.BucketClassListener != nil {
 		c.BucketClassListener.InitializeKubeClient(c.kubeClient)
 		c.BucketClassListener.InitializeBucketClient(c.bucketClient)
-		c.BucketAccessListener.InitializeEventRecorder(c.eventRecorder)
+		c.BucketClassListener.InitializeEventRecorder(c.eventRecorder)
 		addFunc := func(ctx context.Context, obj interface{}) error {
 			return c.BucketClassListener.Add(ctx, obj.(*v1alpha1.BucketClass))
 		}
@@ -481,7 +481,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	if c.BucketAccessClassListener != nil {
 		c.BucketAccessClassListener.InitializeKubeClient(c.kubeClient)
 		c.BucketAccessClassListener.InitializeBucketClient(c.bucketClient)
-		c.BucketAccessListener.InitializeEventRecorder(c.eventRecorder)
+		c.BucketAccessClassListener.InitializeEventRecorder(c.eventRecorder)
 		addFunc := func(ctx context.Context, obj interface{}) error {
 			return c.BucketAccessClassListener.Add(ctx, obj.(*v1alpha1.BucketAccessClass))
 		}

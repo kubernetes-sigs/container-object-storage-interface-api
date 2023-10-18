@@ -14,7 +14,7 @@ DOCKER ?= docker
 PLATFORM ?= linux/$(GOARCH)
 
 ## Image tag for all builds
-IMAGE_TAG ?= cosi-controller:latest
+IMAGE_TAG ?= cosi-provisioner-sidecar:latest
 
 ##
 ## === TARGETS === #

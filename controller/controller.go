@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"regexp"
@@ -152,7 +151,6 @@ func NewObjectStorageControllerWithClientset(identity string, leaderLockName str
 	}
 
 	rb := record.NewBroadcaster()
-	leader := sanitize(fmt.Sprintf("%s/%s", leaderLockName, identity))
 
 	extendedScheme := scheme.Scheme
 	if err := v1alpha1.AddToScheme(extendedScheme); err != nil {
@@ -161,7 +159,7 @@ func NewObjectStorageControllerWithClientset(identity string, leaderLockName str
 
 	return &ObjectStorageController{
 		eventBroadcaster: rb,
-		eventRecorder:    rb.NewRecorder(extendedScheme, v1.EventSource{Component: leader}),
+		eventRecorder:    rb.NewRecorder(extendedScheme, v1.EventSource{Component: id}),
 
 		identity:     id,
 		kubeClient:   kubeClient,
@@ -192,7 +190,7 @@ func (c *ObjectStorageController) Run(ctx context.Context) error {
 			return ns
 		}
 
-		if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
+		if data, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
 			if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
 				return ns
 			}

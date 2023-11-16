@@ -17,12 +17,13 @@ package provisioner
 
 import (
 	"context"
-	"google.golang.org/grpc/backoff"
 	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"k8s.io/klog/v2"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
@@ -38,7 +39,7 @@ func NewDefaultCOSIProvisionerClient(ctx context.Context, address string, debug 
 	backoffConfiguration.MaxDelay = maxGrpcBackoff
 
 	dialOpts := []grpc.DialOption{
-		grpc.WithInsecure(), // strictly restricting to local Unix domain socket
+		grpc.WithTransportCredentials(insecure.NewCredentials()), // strictly restricting to local Unix domain socket
 		grpc.WithConnectParams(grpc.ConnectParams{
 			Backoff:           backoffConfiguration,
 			MinConnectTimeout: grpcDialTimeout,

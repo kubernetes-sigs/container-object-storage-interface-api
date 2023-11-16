@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"regexp"
@@ -81,17 +80,20 @@ type ObjectStorageController struct {
 	RenewDeadline time.Duration
 	RetryPeriod   time.Duration
 
+	eventBroadcaster record.EventBroadcaster
+	eventRecorder    record.EventRecorder
+
 	// Controller
 	ResyncPeriod time.Duration
 	queue        workqueue.RateLimitingInterface
 	threadiness  int
 
 	// Listeners
-	BucketListener              BucketListener
-	BucketClaimListener         BucketClaimListener
-	BucketAccessListener        BucketAccessListener
-	BucketClassListener         BucketClassListener
-	BucketAccessClassListener   BucketAccessClassListener
+	BucketListener            BucketListener
+	BucketClaimListener       BucketClaimListener
+	BucketAccessListener      BucketAccessListener
+	BucketClassListener       BucketClassListener
+	BucketAccessClassListener BucketAccessClassListener
 
 	// leader election
 	leaderLock string
@@ -148,7 +150,17 @@ func NewObjectStorageControllerWithClientset(identity string, leaderLockName str
 		}
 	}
 
+	rb := record.NewBroadcaster()
+
+	extendedScheme := scheme.Scheme
+	if err := v1alpha1.AddToScheme(extendedScheme); err != nil {
+		return nil, err
+	}
+
 	return &ObjectStorageController{
+		eventBroadcaster: rb,
+		eventRecorder:    rb.NewRecorder(extendedScheme, v1.EventSource{Component: id}),
+
 		identity:     id,
 		kubeClient:   kubeClient,
 		bucketClient: bucketClient,
@@ -178,7 +190,7 @@ func (c *ObjectStorageController) Run(ctx context.Context) error {
 			return ns
 		}
 
-		if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
+		if data, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
 			if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
 				return ns
 			}
@@ -186,31 +198,20 @@ func (c *ObjectStorageController) Run(ctx context.Context) error {
 		return "default"
 	}()
 
-	sanitize := func(n string) string {
-		re := regexp.MustCompile("[^a-zA-Z0-9-]")
-		name := strings.ToLower(re.ReplaceAllString(n, "-"))
-		if name[len(name)-1] == '-' {
-			// name must not end with '-'
-			name = name + "X"
-		}
-		return name
-	}
-
-	leader := sanitize(fmt.Sprintf("%s/%s", c.leaderLock, c.identity))
 	id, err := os.Hostname()
 	if err != nil {
 		return fmt.Errorf("error getting the default leader identity: %v", err)
 	}
 
-	recorder := record.NewBroadcaster()
-	recorder.StartRecordingToSink(&corev1.EventSinkImpl{Interface: c.kubeClient.CoreV1().Events(ns)})
-	eRecorder := recorder.NewRecorder(scheme.Scheme, v1.EventSource{Component: leader})
+	c.eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: c.kubeClient.CoreV1().Events(ns)})
+	defer c.eventBroadcaster.Shutdown()
 
 	rlConfig := resourcelock.ResourceLockConfig{
 		Identity:      sanitize(id),
-		EventRecorder: eRecorder,
+		EventRecorder: c.eventRecorder,
 	}
 
+	leader := sanitize(fmt.Sprintf("%s/%s", c.leaderLock, c.identity))
 	l, err := resourcelock.New(resourcelock.LeasesResourceLock, ns, leader, c.kubeClient.CoreV1(), c.kubeClient.CoordinationV1(), rlConfig)
 	if err != nil {
 		return err
@@ -423,6 +424,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	if c.BucketListener != nil {
 		c.BucketListener.InitializeKubeClient(c.kubeClient)
 		c.BucketListener.InitializeBucketClient(c.bucketClient)
+		c.BucketListener.InitializeEventRecorder(c.eventRecorder)
 		addFunc := func(ctx context.Context, obj interface{}) error {
 			return c.BucketListener.Add(ctx, obj.(*v1alpha1.Bucket))
 		}
@@ -437,6 +439,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	if c.BucketClaimListener != nil {
 		c.BucketClaimListener.InitializeKubeClient(c.kubeClient)
 		c.BucketClaimListener.InitializeBucketClient(c.bucketClient)
+		c.BucketClaimListener.InitializeEventRecorder(c.eventRecorder)
 		addFunc := func(ctx context.Context, obj interface{}) error {
 			return c.BucketClaimListener.Add(ctx, obj.(*v1alpha1.BucketClaim))
 		}
@@ -451,6 +454,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	if c.BucketAccessListener != nil {
 		c.BucketAccessListener.InitializeKubeClient(c.kubeClient)
 		c.BucketAccessListener.InitializeBucketClient(c.bucketClient)
+		c.BucketAccessListener.InitializeEventRecorder(c.eventRecorder)
 		addFunc := func(ctx context.Context, obj interface{}) error {
 			return c.BucketAccessListener.Add(ctx, obj.(*v1alpha1.BucketAccess))
 		}
@@ -465,6 +469,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	if c.BucketClassListener != nil {
 		c.BucketClassListener.InitializeKubeClient(c.kubeClient)
 		c.BucketClassListener.InitializeBucketClient(c.bucketClient)
+		c.BucketClassListener.InitializeEventRecorder(c.eventRecorder)
 		addFunc := func(ctx context.Context, obj interface{}) error {
 			return c.BucketClassListener.Add(ctx, obj.(*v1alpha1.BucketClass))
 		}
@@ -479,6 +484,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	if c.BucketAccessClassListener != nil {
 		c.BucketAccessClassListener.InitializeKubeClient(c.kubeClient)
 		c.BucketAccessClassListener.InitializeBucketClient(c.bucketClient)
+		c.BucketAccessClassListener.InitializeEventRecorder(c.eventRecorder)
 		addFunc := func(ctx context.Context, obj interface{}) error {
 			return c.BucketAccessClassListener.Add(ctx, obj.(*v1alpha1.BucketAccessClass))
 		}
@@ -492,4 +498,14 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 	}
 
 	<-ctx.Done()
+}
+
+func sanitize(n string) string {
+	re := regexp.MustCompile("[^a-zA-Z0-9-]")
+	name := strings.ToLower(re.ReplaceAllString(n, "-"))
+	if name[len(name)-1] == '-' {
+		// name must not end with '-'
+		name = name + "X"
+	}
+	return name
 }

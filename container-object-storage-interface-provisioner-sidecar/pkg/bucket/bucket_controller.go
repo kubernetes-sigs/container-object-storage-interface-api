@@ -35,7 +35,6 @@ import (
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/structured-merge-diff/v4/schema"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -232,6 +231,11 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 			bucketClaimNs := bucket.Spec.BucketClaim.Namespace
 			bucketClaimName := bucket.Spec.BucketClaim.Name
 			bucketAccessList, err := b.bucketAccesses(bucketClaimNs).List(ctx, metav1.ListOptions{})
+			if err != nil {
+				klog.V(3).ErrorS(err, "Error fetching BucketAccessList",
+					"bucket", bucket.ObjectMeta.Name)
+				return err
+			}
 
 			for _, bucketAccess := range bucketAccessList.Items {
 				if strings.EqualFold(bucketAccess.Spec.BucketClaimName, bucketClaimName) {
@@ -419,8 +423,6 @@ func (b *BucketListener) bucketAccesses(namespace string) bucketapi.BucketAccess
 
 // recordEvent during the processing of the objects
 func (b *BucketListener) recordEvent(subject runtime.Object, eventtype, reason, message string) {
-	klog.InfoS("schema", "schema", schema.Schema)
-
 	if b.eventRecorder == nil {
 		return
 	}

@@ -20,6 +20,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,17 +31,13 @@ import (
 	kube "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
-
 	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 	buckets "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned"
 	bucketapi "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/typed/objectstorage/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-api/controller/events"
 	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/pkg/errors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // BucketListener manages Bucket objects
@@ -65,15 +64,9 @@ func NewBucketListener(driverName string, client cosi.ProvisionerClient) *Bucket
 
 // Add attempts to create a bucket for a given bucket. This function must be idempotent
 //
-// Recorded events
-//
-//	MissingBucketClassName - BucketClassName was not defined for the inputBucket
-//	InvalidBucketClass - BucketClass provided in the BucketClaim does not exist
-//
 // Return values
-//
-//	nil - Bucket successfully provisioned
-//	non-nil err - Internal error                                [requeue'd with exponential backoff]
+//   - nil - Bucket successfully provisioned
+//   - non-nil err - Internal error                                [requeue'd with exponential backoff]
 func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) error {
 	bucket := inputBucket.DeepCopy()
 
@@ -84,7 +77,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 
 	if bucket.Spec.BucketClassName == "" {
 		err = errors.New(fmt.Sprintf("BucketClassName not defined for bucket %s", bucket.ObjectMeta.Name))
-		b.recordEvent(inputBucket, v1.EventTypeWarning, "MissingBucketClassName", "BucketClassName was not defined in the Bucket")
+		b.recordEvent(inputBucket, v1.EventTypeWarning, events.ProvisioningFailed, "BucketClassName was not defined in the Bucket")
 		return err
 	}
 
@@ -114,7 +107,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		if bucket.Spec.Parameters == nil {
 			bucketClass, err := b.bucketClasses().Get(ctx, bucket.Spec.BucketClassName, metav1.GetOptions{})
 			if kubeerrors.IsNotFound(err) {
-				b.recordEvent(inputBucket, v1.EventTypeWarning, "InvalidBucketClass", "BucketClass provided in the BucketClaim does not exist")
+				b.recordEvent(inputBucket, v1.EventTypeWarning, events.ProvisioningFailed, "BucketClass provided in the BucketClaim does not exist")
 				return err
 			} else if err != nil {
 				klog.V(3).ErrorS(err, "Error fetching bucketClass",
@@ -141,7 +134,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		rsp, err := b.provisionerClient.DriverCreateBucket(ctx, req)
 		if err != nil {
 			if status.Code(err) != codes.AlreadyExists {
-				b.recordEvent(inputBucket, v1.EventTypeWarning, status.Code(err).String(), "Failed to create bucket")
+				b.recordEvent(inputBucket, v1.EventTypeWarning, events.ProvisioningFailed, "Failed to create bucket")
 				return errors.Wrap(err, "Failed to create bucket")
 			}
 		}
@@ -215,9 +208,8 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 
 // Update attempts to reconcile changes to a given bucket. This function must be idempotent
 // Return values
-//
-//	nil - Bucket successfully reconciled
-//	non-nil err - Internal error                                [requeue'd with exponential backoff]
+//   - nil - Bucket successfully reconciled
+//   - non-nil err - Internal error                                [requeue'd with exponential backoff]
 func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) error {
 	klog.V(3).InfoS("Update Bucket",
 		"name", old.Name)
@@ -283,9 +275,8 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 // Delete function is called when the bucket was not able to add finalizers while creation.
 // Hence we will take care of removing the BucketClaim finalizer before deleting the Bucket object.
 // Return values
-//
-//	nil - Bucket successfully deleted
-//	non-nil err - Internal error                                [requeue'd with exponential backoff]
+//   - nil - Bucket successfully deleted
+//   - non-nil err - Internal error                                [requeue'd with exponential backoff]
 func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucket) error {
 	klog.V(3).InfoS("Delete Bucket",
 		"name", inputBucket.ObjectMeta.Name,
@@ -359,7 +350,7 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 
 		if _, err := b.provisionerClient.DriverDeleteBucket(ctx, req); err != nil {
 			if status.Code(err) != codes.NotFound {
-				b.recordEvent(bucket, v1.EventTypeWarning, status.Code(err).String(), "Failed to delete bucket")
+				b.recordEvent(bucket, v1.EventTypeWarning, events.BucketDeleteFailed, "Failed to delete bucket")
 				return err
 			}
 		}

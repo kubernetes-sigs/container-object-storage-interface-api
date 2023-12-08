@@ -91,7 +91,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	secretCredName := bucketAccess.Spec.CredentialsSecretName
 	if secretCredName == "" {
-		return errors.New("CredentialsSecretName not defined in the BucketAccess")
+		return consts.ErrUndefinedSecretName
 	}
 
 	bucketAccessClass, err := bal.bucketAccessClasses().Get(ctx, bucketAccessClassName, metav1.GetOptions{})
@@ -119,7 +119,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	if bucketClaim.Status.BucketName == "" || bucketClaim.Status.BucketReady != true {
-		err := errors.New("BucketName cannot be empty or BucketNotReady in bucketClaim")
+		err := consts.ErrInvalidBucketState
 		klog.V(3).ErrorS(err,
 			"Invalid arguments",
 			"bucketClaim", bucketClaim.Name,
@@ -156,7 +156,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	if bucket.Status.BucketReady != true || bucket.Status.BucketID == "" {
 		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.WaitingForBucket, "BucketAccess can't be granted to Bucket %q not in Ready state (isReady? %t) or without a bucketID (ID empty? %t).", bucket.Name, bucket.Status.BucketReady, bucket.Status.BucketID == "")
-		return errors.New("BucketAccess can't be granted to bucket not in Ready state and without a bucketID")
+		return consts.ErrInvalidBucketState
 	}
 
 	accountName := consts.AccountNamePrefix + string(bucketAccess.UID)
@@ -179,14 +179,14 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	if rsp.AccountId == "" {
-		err = errors.New("AccountId not defined in DriverGrantBucketAccess")
+		err = consts.ErrUndefinedAccountID
 		klog.V(3).ErrorS(err, "BucketAccess", bucketAccess.ObjectMeta.Name)
 		return errors.Wrap(err, fmt.Sprintf("BucketAccess %s", bucketAccess.ObjectMeta.Name))
 	}
 
 	credentials := rsp.Credentials
 	if len(credentials) != 1 {
-		err = errors.New("Credentials returned in DriverGrantBucketAccessResponse should be of length 1")
+		err = consts.ErrInvalidCredentials
 		klog.V(3).ErrorS(err, "BucketAccess", bucketAccess.ObjectMeta.Name)
 		return errors.Wrap(err, fmt.Sprintf("BucketAccess %s", bucketAccess.ObjectMeta.Name))
 	}
@@ -230,7 +230,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	stringData, err := json.Marshal(bucketInfo)
 	if err != nil {
-		return errors.New("Error converting bucketinfo into secret")
+		return consts.ErrBucketInfoConversionFailed
 	}
 
 	if _, err := bal.secrets(namespace).Get(ctx, secretCredName, metav1.GetOptions{}); err != nil {

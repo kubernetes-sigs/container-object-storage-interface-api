@@ -96,7 +96,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	bucketAccessClass, err := bal.bucketAccessClasses().Get(ctx, bucketAccessClassName, metav1.GetOptions{})
 	if kubeerrors.IsNotFound(err) {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.GrantingAccessFailed, "BucketAccessClass provided in the BucketAccess does not exist")
+		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, "BucketAccessClass %q provided in the BucketAccess does not exist", bucketAccessClass.Name)
 		return err
 	} else if err != nil {
 		klog.ErrorS(err, "Failed to fetch bucketAccessClass", "bucketAccessClass", bucketAccessClassName)
@@ -136,7 +136,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	if authType == cosi.AuthenticationType_IAM && bucketAccess.Spec.ServiceAccountName == "" {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.GrantingAccessFailed, "Must define ServiceAccountName when AuthenticationType is IAM")
+		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedCreateBucket, "Must define ServiceAccountName when AuthenticationType is IAM.")
 		return errors.New("Must define ServiceAccountName when AuthenticationType is IAM")
 	}
 
@@ -155,7 +155,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	if bucket.Status.BucketReady != true || bucket.Status.BucketID == "" {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.WaitingForBucket, "BucketAccess can't be granted to bucket not in Ready state and without a bucketID")
+		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.WaitingForBucket, "BucketAccess can't be granted to Bucket %q not in Ready state (isReady? %t) or without a bucketID (ID empty? %t).", bucket.Name, bucket.Status.BucketReady, bucket.Status.BucketID == "")
 		return errors.New("BucketAccess can't be granted to bucket not in Ready state and without a bucketID")
 	}
 
@@ -172,7 +172,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	rsp, err := bal.provisionerClient.DriverGrantBucketAccess(ctx, req)
 	if err != nil {
 		if status.Code(err) != codes.AlreadyExists {
-			bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.GrantingAccessFailed, "Failed to grant access")
+			bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, "Failed to grant access.")
 			return errors.Wrap(err, "failed to grant access")
 		}
 
@@ -351,7 +351,7 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 
 	// First we revoke the bucketAccess from the driver
 	if _, err := bal.provisionerClient.DriverRevokeBucketAccess(ctx, req); err != nil {
-		bal.recordEvent(bucketAccess, v1.EventTypeWarning, events.RevokingAccessFailed, "Failed to revoke bucket access")
+		bal.recordEvent(bucketAccess, v1.EventTypeWarning, events.FailedRevokeAccess, "Failed to revoke bucket access.")
 		return errors.Wrap(err, "failed to revoke access")
 	}
 
@@ -454,9 +454,9 @@ func (bal *BucketAccessListener) InitializeEventRecorder(er record.EventRecorder
 }
 
 // recordEvent during the processing of the objects
-func (bal *BucketAccessListener) recordEvent(subject runtime.Object, eventtype, reason, message string) {
+func (bal *BucketAccessListener) recordEvent(subject runtime.Object, eventtype, reason, message string, args ...any) {
 	if bal.eventRecorder == nil {
 		return
 	}
-	bal.eventRecorder.Event(subject, eventtype, reason, message)
+	bal.eventRecorder.Event(subject, eventtype, reason, fmt.Sprintf(message, args...))
 }

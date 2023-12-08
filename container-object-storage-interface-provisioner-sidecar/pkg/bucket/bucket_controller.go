@@ -77,7 +77,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 
 	if bucket.Spec.BucketClassName == "" {
 		err = errors.New(fmt.Sprintf("BucketClassName not defined for bucket %s", bucket.ObjectMeta.Name))
-		b.recordEvent(inputBucket, v1.EventTypeWarning, events.ProvisioningFailed, "BucketClassName was not defined in the Bucket")
+		b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClassName was not defined in the Bucket.")
 		return err
 	}
 
@@ -107,7 +107,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		if bucket.Spec.Parameters == nil {
 			bucketClass, err := b.bucketClasses().Get(ctx, bucket.Spec.BucketClassName, metav1.GetOptions{})
 			if kubeerrors.IsNotFound(err) {
-				b.recordEvent(inputBucket, v1.EventTypeWarning, events.ProvisioningFailed, "BucketClass provided in the BucketClaim does not exist")
+				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClass %q provided in the BucketClaim does not exist.", bucket.Spec.BucketClassName)
 				return err
 			} else if err != nil {
 				klog.V(3).ErrorS(err, "Error fetching bucketClass",
@@ -134,7 +134,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		rsp, err := b.provisionerClient.DriverCreateBucket(ctx, req)
 		if err != nil {
 			if status.Code(err) != codes.AlreadyExists {
-				b.recordEvent(inputBucket, v1.EventTypeWarning, events.ProvisioningFailed, "Failed to create bucket")
+				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "Failed to create bucket.")
 				return errors.Wrap(err, "Failed to create bucket")
 			}
 		}
@@ -350,7 +350,7 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 
 		if _, err := b.provisionerClient.DriverDeleteBucket(ctx, req); err != nil {
 			if status.Code(err) != codes.NotFound {
-				b.recordEvent(bucket, v1.EventTypeWarning, events.BucketDeleteFailed, "Failed to delete bucket")
+				b.recordEvent(bucket, v1.EventTypeWarning, events.FailedDeleteBucket, "Failed to delete bucket.")
 				return err
 			}
 		}
@@ -413,9 +413,9 @@ func (b *BucketListener) bucketAccesses(namespace string) bucketapi.BucketAccess
 }
 
 // recordEvent during the processing of the objects
-func (b *BucketListener) recordEvent(subject runtime.Object, eventtype, reason, message string) {
+func (b *BucketListener) recordEvent(subject runtime.Object, eventtype, reason, message string, args ...any) {
 	if b.eventRecorder == nil {
 		return
 	}
-	b.eventRecorder.Event(subject, eventtype, reason, message)
+	b.eventRecorder.Event(subject, eventtype, reason, fmt.Sprintf(message, args...))
 }

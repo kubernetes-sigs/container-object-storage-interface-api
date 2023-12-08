@@ -2,9 +2,10 @@ package events
 
 // COSI relevant event reasons
 const (
-	BucketDeleteFailed   = "BucketDeleteFailed"
-	GrantingAccessFailed = "GrantingAccessFailed"
-	ProvisioningFailed   = "ProvisioningFailed"
-	RevokingAccessFailed = "RevokingAccessFailed"
-	WaitingForBucket     = "WaitingForBucket"
+	FailedCreateBucket = "FailedCreateBucket"
+	FailedDeleteBucket = "FailedDeleteBucket"
+	WaitingForBucket   = "WaitingForBucket"
+
+	FailedGrantAccess  = "FailedGrantAccess"
+	FailedRevokeAccess = "FailedRevokeAccess"
 )

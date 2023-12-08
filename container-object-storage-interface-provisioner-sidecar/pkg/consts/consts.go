@@ -15,6 +15,8 @@
 
 package consts
 
+import "errors"
+
 const (
 	AccountNamePrefix = "ba-"
 	BucketInfoPrefix  = "bc-"
@@ -34,4 +36,15 @@ const (
 	AzureSecretAccessToken     = "accessToken"
 	AzureSecretExpiryTimeStamp = "expiryTs"
 	DefaultTimeFormat          = "2006-01-02 15:04:05.999999999 -0700 MST"
+)
+
+var (
+	ErrInternal                   = errors.New("driverCreateBucket returned a nil response")
+	ErrBucketInfoConversionFailed = errors.New("error converting bucketInfo into Secret")
+	ErrEmptyBucketID              = errors.New("driverCreateBucket returned an empty bucketID")
+	ErrUndefinedBucketClassName   = errors.New("BucketClassName not defined")
+	ErrUndefinedAccountID         = errors.New("AccountId not defined in DriverGrantBucketAccess")
+	ErrUndefinedSecretName        = errors.New("CredentialsSecretName not defined in the BucketAccess")
+	ErrInvalidBucketState         = errors.New("BucketName cannot be empty or BucketNotReady in bucketClaim")
+	ErrInvalidCredentials         = errors.New("Credentials returned in DriverGrantBucketAccessResponse should be of length 1")
 )

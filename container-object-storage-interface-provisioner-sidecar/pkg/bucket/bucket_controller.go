@@ -76,9 +76,8 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		"name", bucket.ObjectMeta.Name)
 
 	if bucket.Spec.BucketClassName == "" {
-		err = errors.New(fmt.Sprintf("BucketClassName not defined for bucket %s", bucket.ObjectMeta.Name))
-		b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClassName was not defined in the Bucket.")
-		return err
+		b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClassName was not defined in the Bucket %q.", bucket.Name)
+		return errors.Wrapf(consts.ErrUndefinedBucketClassName, "Bucket %q", bucket.Name)
 	}
 
 	if !strings.EqualFold(bucket.Spec.DriverName, b.driverName) {
@@ -134,16 +133,17 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		rsp, err := b.provisionerClient.DriverCreateBucket(ctx, req)
 		if err != nil {
 			if status.Code(err) != codes.AlreadyExists {
-				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "Failed to create bucket.")
-				return errors.Wrap(err, "Failed to create bucket")
+				err = errors.Wrapf(err, "Failed to create Bucket %q", bucket.Name)
+				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, err.Error())
+				return err
 			}
 		}
 
 		if rsp == nil {
-			err = errors.New(fmt.Sprintf("DriverCreateBucket returned a nil response for bucket: %s", bucket.ObjectMeta.Name))
+			err = consts.ErrInternal
 			klog.V(3).ErrorS(err, "Internal Error from driver",
 				"bucket", bucket.ObjectMeta.Name)
-			return err
+			return errors.Wrapf(err, "Bucket %q", bucket.Name)
 		}
 
 		if rsp.BucketId != "" {
@@ -152,8 +152,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		} else {
 			klog.V(3).ErrorS(err, "DriverCreateBucket returned an empty bucketID",
 				"bucket", bucket.ObjectMeta.Name)
-			err = errors.New(fmt.Sprintf("DriverCreateBucket returned an empty bucketID for bucket: %s", bucket.ObjectMeta.Name))
-			return err
+			return errors.Wrapf(consts.ErrEmptyBucketID, "Bucket %q", bucket.Name)
 		}
 
 		// Now we update the BucketReady status of BucketClaim

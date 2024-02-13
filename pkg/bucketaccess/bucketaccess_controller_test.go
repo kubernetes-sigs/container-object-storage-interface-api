@@ -24,6 +24,7 @@ import (
 
 	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/version"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -282,5 +283,27 @@ func TestAddBucketAccess(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Secret creation failed: %v", err)
 		}
+	}
+}
+
+// Test recording events
+func TestRecordEvents(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name          string
+		expectedEvent struct {
+			subject runtime.Object
+			reason  string
+			message string
+		}
+	}{} {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// TODO: actual test
+		})
 	}
 }

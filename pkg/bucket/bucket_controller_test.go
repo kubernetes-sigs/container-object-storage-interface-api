@@ -27,6 +27,7 @@ import (
 	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/apimachinery/pkg/version"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -139,5 +140,27 @@ func TestMissingBucketClassName(t *testing.T) {
 	expectedErr := errors.New("BucketClassName not defined for bucket testbucket")
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Errorf("Expecter error: %+v \n Returned error: %+v", expectedErr, err)
+	}
+}
+
+// Test recording events
+func TestRecordEvents(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name          string
+		expectedEvent struct {
+			subject runtime.Object
+			reason  string
+			message string
+		}
+	}{} {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// TODO: actual test
+		})
 	}
 }

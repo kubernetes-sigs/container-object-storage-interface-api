@@ -12,7 +12,7 @@ require (
 	k8s.io/apimachinery v0.24.2
 	k8s.io/client-go v0.24.2
 	k8s.io/klog/v2 v2.70.1
-	sigs.k8s.io/container-object-storage-interface-api v0.1.1-0.20231116171305-97700454b010
+	sigs.k8s.io/container-object-storage-interface-api v0.1.1-0.20240208184109-05444273ee49
 	sigs.k8s.io/container-object-storage-interface-spec v0.1.1-0.20221006174327-ec782953b8ac
 	sigs.k8s.io/controller-runtime v0.12.3
 )

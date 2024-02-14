@@ -29,7 +29,6 @@ import (
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilversion "k8s.io/apimachinery/pkg/util/version"
 	kube "k8s.io/client-go/kubernetes"
 	kubecorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
@@ -53,15 +52,14 @@ type BucketAccessListener struct {
 
 	kubeClient   kube.Interface
 	bucketClient buckets.Interface
-	kubeVersion  *utilversion.Version
 }
 
 // NewBucketAccessListener returns a resource handler for BucketAccess objects
-func NewBucketAccessListener(driverName string, client cosi.ProvisionerClient) (*BucketAccessListener, error) {
+func NewBucketAccessListener(driverName string, client cosi.ProvisionerClient) *BucketAccessListener {
 	return &BucketAccessListener{
 		driverName:        driverName,
 		provisionerClient: client,
-	}, nil
+	}
 }
 
 // Add attempts to provision credentials to access a given bucket. This function must be idempotent
@@ -96,7 +94,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	bucketAccessClass, err := bal.bucketAccessClasses().Get(ctx, bucketAccessClassName, metav1.GetOptions{})
 	if kubeerrors.IsNotFound(err) {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, "BucketAccessClass %q provided in the BucketAccess does not exist", bucketAccessClass.Name)
+		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, "BucketAccessClass %v provided in the BucketAccess does not exist: %v", bucketAccessClass.Name, err)
 		return err
 	} else if err != nil {
 		klog.ErrorS(err, "Failed to fetch bucketAccessClass", "bucketAccessClass", bucketAccessClassName)
@@ -136,7 +134,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	if authType == cosi.AuthenticationType_IAM && bucketAccess.Spec.ServiceAccountName == "" {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedCreateBucket, "Must define ServiceAccountName when AuthenticationType is IAM.")
+		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, "Must define ServiceAccountName when AuthenticationType is IAM.")
 		return errors.New("Must define ServiceAccountName when AuthenticationType is IAM")
 	}
 
@@ -155,7 +153,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	if bucket.Status.BucketReady != true || bucket.Status.BucketID == "" {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.WaitingForBucket, "BucketAccess can't be granted to Bucket %q not in Ready state (isReady? %t) or without a bucketID (ID empty? %t).", bucket.Name, bucket.Status.BucketReady, bucket.Status.BucketID == "")
+		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.WaitingForBucket, "BucketAccess can't be granted to Bucket %v not in Ready state (isReady? %t) or without a bucketID (ID empty? %t).", bucket.Name, bucket.Status.BucketReady, bucket.Status.BucketID == "")
 		return consts.ErrInvalidBucketState
 	}
 
@@ -434,13 +432,6 @@ func (bal *BucketAccessListener) bucketAccessClasses() bucketapi.BucketAccessCla
 // InitializeKubeClient initializes the kubernetes client
 func (bal *BucketAccessListener) InitializeKubeClient(k kube.Interface) {
 	bal.kubeClient = k
-
-	serverVersion, err := k.Discovery().ServerVersion()
-	if err != nil {
-		klog.V(3).ErrorS(err, "Cannot determine server version")
-	} else {
-		bal.kubeVersion = utilversion.MustParseSemantic(serverVersion.GitVersion)
-	}
 }
 
 // InitializeBucketClient initializes the object storage bucket client

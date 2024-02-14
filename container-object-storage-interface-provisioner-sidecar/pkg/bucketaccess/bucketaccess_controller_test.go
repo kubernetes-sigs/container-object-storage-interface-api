@@ -17,48 +17,32 @@ package bucketaccess
 
 import (
 	"context"
-	"reflect"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"google.golang.org/grpc"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilversion "k8s.io/apimachinery/pkg/util/version"
-	"k8s.io/apimachinery/pkg/version"
-	fakediscovery "k8s.io/client-go/discovery/fake"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/record"
-
 	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
+	"sigs.k8s.io/container-object-storage-interface-api/controller/events"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 )
 
 func TestInitializeKubeClient(t *testing.T) {
 	client := fakekubeclientset.NewSimpleClientset()
-	fakeDiscovery, ok := client.Discovery().(*fakediscovery.FakeDiscovery)
-	if !ok {
-		t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
-	}
-
-	fakeVersion := &version.Info{
-		GitVersion: "v1.0.0",
-	}
-	fakeDiscovery.FakedServerVersion = fakeVersion
 
 	bal := BucketAccessListener{}
 	bal.InitializeKubeClient(client)
 
 	if bal.kubeClient == nil {
 		t.Errorf("KubeClient was nil")
-	}
-
-	expected := utilversion.MustParseSemantic(fakeVersion.GitVersion)
-	if !reflect.DeepEqual(expected, bal.kubeVersion) {
-		t.Errorf("Expected %+v, but got %+v", expected, bal.kubeVersion)
 	}
 }
 
@@ -292,18 +276,149 @@ func TestRecordEvents(t *testing.T) {
 
 	for _, tc := range []struct {
 		name          string
-		expectedEvent struct {
-			subject runtime.Object
-			reason  string
-			message string
-		}
-	}{} {
+		expectedEvent string
+		cosiObjects   []runtime.Object
+		driver        struct{ fakespec.FakeProvisionerClient }
+		eventTrigger  func(*testing.T, *BucketAccessListener)
+	}{
+		{
+			name: "",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedGrantAccess,
+				""),
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				panic("unimplemented")
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverGrantBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverGrantBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverGrantBucketAccessResponse, error) {
+						panic("unimplemented")
+					},
+				},
+			},
+		},
+		{
+			name: "",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedGrantAccess,
+				""),
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				panic("unimplemented")
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverGrantBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverGrantBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverGrantBucketAccessResponse, error) {
+						panic("unimplemented")
+					},
+				},
+			},
+		},
+		{
+			name: "",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedGrantAccess,
+				""),
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				panic("unimplemented")
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverGrantBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverGrantBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverGrantBucketAccessResponse, error) {
+						panic("unimplemented")
+					},
+				},
+			},
+		},
+		{
+			name: "",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.WaitingForBucket,
+				""),
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				panic("unimplemented")
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverGrantBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverGrantBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverGrantBucketAccessResponse, error) {
+						panic("unimplemented")
+					},
+				},
+			},
+		},
+		{
+			name: "",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedRevokeAccess,
+				""),
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				panic("unimplemented")
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverRevokeBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverRevokeBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverRevokeBucketAccessResponse, error) {
+						panic("unimplemented")
+					},
+				},
+			},
+		},
+	} {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			// TODO: actual test
+			client := fakebucketclientset.NewSimpleClientset(tc.cosiObjects...)
+			kubeClient := fakekubeclientset.NewSimpleClientset()
+			eventRecorder := record.NewFakeRecorder(1)
+
+			listener := NewBucketAccessListener("test", &tc.driver)
+			listener.InitializeKubeClient(kubeClient)
+			listener.InitializeBucketClient(client)
+			listener.InitializeEventRecorder(eventRecorder)
+
+			tc.eventTrigger(t, listener)
+
+			select {
+			case event, ok := <-eventRecorder.Events:
+				if ok {
+					if event != tc.expectedEvent {
+						t.Errorf("Expected %s \n got %s", tc.expectedEvent, event)
+					}
+				} else {
+					t.Error("channel closed, no event")
+				}
+			default:
+				t.Errorf("no event after trigger")
+			}
 		})
 	}
+}
+
+func newEvent(eventType, reason, message string) string {
+	return fmt.Sprintf("%s %s %s", eventType, reason, message)
 }

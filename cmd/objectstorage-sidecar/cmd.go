@@ -96,10 +96,7 @@ func run(ctx context.Context, args []string) error {
 	}
 
 	bl := bucket.NewBucketListener(info.Name, cosiClient)
-	bal, err := bucketaccess.NewBucketAccessListener(info.Name, cosiClient)
-	if err != nil {
-		return err
-	}
+	bal := bucketaccess.NewBucketAccessListener(info.Name, cosiClient)
 
 	ctrl.AddBucketListener(bl)
 	ctrl.AddBucketAccessListener(bal)

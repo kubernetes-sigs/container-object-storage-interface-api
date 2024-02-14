@@ -17,6 +17,7 @@ package provisioner
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"time"
 
@@ -65,7 +66,7 @@ func NewCOSIProvisionerClient(ctx context.Context, address string, dialOpts []gr
 	if addr.Scheme != "unix" {
 		err := errors.New("Address must be a unix domain socket")
 		klog.ErrorS(err, "Unsupported scheme", "expected", "unix", "found", addr.Scheme)
-		return nil, errors.Wrap(err, "Invalid argument")
+		return nil, fmt.Errorf("unsupported scheme: %w", err)
 	}
 
 	for _, interceptor := range interceptors {

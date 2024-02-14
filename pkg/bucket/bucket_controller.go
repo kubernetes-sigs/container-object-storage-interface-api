@@ -20,14 +20,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilversion "k8s.io/apimachinery/pkg/util/version"
 	kube "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
@@ -49,7 +47,6 @@ type BucketListener struct {
 
 	kubeClient   kube.Interface
 	bucketClient buckets.Interface
-	kubeVersion  *utilversion.Version
 }
 
 // NewBucketListener returns a resource handler for Bucket objects
@@ -76,8 +73,8 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		"name", bucket.ObjectMeta.Name)
 
 	if bucket.Spec.BucketClassName == "" {
-		b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClassName was not defined in the Bucket %q.", bucket.Name)
-		return errors.Wrapf(consts.ErrUndefinedBucketClassName, "Bucket %q", bucket.Name)
+		b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClassName was not defined in the Bucket %v.", bucket.Name)
+		return fmt.Errorf("%w for Bucket %v", consts.ErrUndefinedBucketClassName, bucket.Name)
 	}
 
 	if !strings.EqualFold(bucket.Spec.DriverName, b.driverName) {
@@ -106,7 +103,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		if bucket.Spec.Parameters == nil {
 			bucketClass, err := b.bucketClasses().Get(ctx, bucket.Spec.BucketClassName, metav1.GetOptions{})
 			if kubeerrors.IsNotFound(err) {
-				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClass %q provided in the BucketClaim does not exist.", bucket.Spec.BucketClassName)
+				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, err.Error())
 				return err
 			} else if err != nil {
 				klog.V(3).ErrorS(err, "Error fetching bucketClass",
@@ -133,7 +130,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		rsp, err := b.provisionerClient.DriverCreateBucket(ctx, req)
 		if err != nil {
 			if status.Code(err) != codes.AlreadyExists {
-				err = errors.Wrapf(err, "Failed to create Bucket %q", bucket.Name)
+				err = fmt.Errorf("Failed to create Bucket %v: %w", bucket.Name, err)
 				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, err.Error())
 				return err
 			}
@@ -143,7 +140,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 			err = consts.ErrInternal
 			klog.V(3).ErrorS(err, "Internal Error from driver",
 				"bucket", bucket.ObjectMeta.Name)
-			return errors.Wrapf(err, "Bucket %q", bucket.Name)
+			return fmt.Errorf("%w for Bucket %v", err, bucket.Name)
 		}
 
 		if rsp.BucketId != "" {
@@ -152,7 +149,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		} else {
 			klog.V(3).ErrorS(err, "DriverCreateBucket returned an empty bucketID",
 				"bucket", bucket.ObjectMeta.Name)
-			return errors.Wrapf(consts.ErrEmptyBucketID, "Bucket %q", bucket.Name)
+			return fmt.Errorf("%w for Bucket %v", consts.ErrEmptyBucketID, bucket.Name)
 		}
 
 		// Now we update the BucketReady status of BucketClaim
@@ -181,7 +178,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 	controllerutil.AddFinalizer(bucket, consts.BucketFinalizer)
 	if bucket, err = b.buckets().Update(ctx, bucket, metav1.UpdateOptions{}); err != nil {
 		klog.V(3).ErrorS(err, "Failed to update bucket finalizers", "bucket", bucket.ObjectMeta.Name)
-		return errors.Wrap(err, "Failed to update bucket finalizers")
+		return fmt.Errorf("failed to update bucket finalizers: %w", err)
 	}
 
 	klog.V(5).Infof("Successfully added finalizer to bucket: %s", bucket.ObjectMeta.Name)
@@ -194,7 +191,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 	if _, err = b.buckets().UpdateStatus(ctx, bucket, metav1.UpdateOptions{}); err != nil {
 		klog.V(3).ErrorS(err, "Failed to update bucket status",
 			"bucket", bucket.ObjectMeta.Name)
-		return errors.Wrap(err, "Failed to update bucket status")
+		return fmt.Errorf("failed to update bucket status: %w", err)
 	}
 
 	klog.V(3).InfoS("Add Bucket success",
@@ -311,13 +308,6 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 // InitializeKubeClient initializes the kubernetes client
 func (b *BucketListener) InitializeKubeClient(k kube.Interface) {
 	b.kubeClient = k
-
-	serverVersion, err := k.Discovery().ServerVersion()
-	if err != nil {
-		klog.V(3).ErrorS(err, "Cannot determine server version")
-	} else {
-		b.kubeVersion = utilversion.MustParseSemantic(serverVersion.GitVersion)
-	}
 }
 
 // InitializeBucketClient initializes the object storage bucket client
@@ -349,7 +339,7 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 
 		if _, err := b.provisionerClient.DriverDeleteBucket(ctx, req); err != nil {
 			if status.Code(err) != codes.NotFound {
-				b.recordEvent(bucket, v1.EventTypeWarning, events.FailedDeleteBucket, "Failed to delete bucket.")
+				b.recordEvent(bucket, v1.EventTypeWarning, events.FailedDeleteBucket, err.Error())
 				return err
 			}
 		}

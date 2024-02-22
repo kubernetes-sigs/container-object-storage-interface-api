@@ -127,7 +127,7 @@ func TestMissingBucketClassName(t *testing.T) {
 	err := bl.Add(ctx, &b)
 	expectedErr := errors.New("BucketClassName not defined for Bucket testbucket")
 	if err == nil || err.Error() != expectedErr.Error() {
-		t.Errorf("Expecter error: %+v \n Returned error: %+v", expectedErr, err)
+		t.Errorf("expecter error: %+v \n returned error: %+v", expectedErr, err)
 	}
 }
 
@@ -221,18 +221,18 @@ func TestRecordEvents(t *testing.T) {
 			},
 		},
 		{
-			name: "UnknownCreateError",
+			name: "CreateInternalError",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedCreateBucket,
-				"Failed to create Bucket bucket: rpc error: code = Unknown desc = unknown error test"),
+				"rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketClass},
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
 				bucket := bucket.DeepCopy()
 				bucket.Spec.BucketClassName = bucketClass.GetObjectMeta().GetName()
 
-				if err := bl.Add(context.TODO(), bucket); status.Code(err) != codes.Unknown {
-					t.Errorf("expected Unknown got %v", err)
+				if err := bl.Add(context.TODO(), bucket); status.Code(errors.Unwrap(err)) != codes.Internal {
+					t.Errorf("expected Internal got %v", err)
 				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
@@ -242,25 +242,25 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverCreateBucketRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverCreateBucketResponse, error) {
-						return nil, status.Error(codes.Unknown, "unknown error test")
+						return nil, status.Error(codes.Internal, "internal error test")
 					},
 				},
 			},
 		},
 		{
-			name: "UnknownDeleteError",
+			name: "DeleteInternalError",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedDeleteBucket,
-				"rpc error: code = Unknown desc = unknown error test"),
+				"rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketClaim},
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
 				bucket := bucket.DeepCopy()
 				time, _ := time.Parse(time.DateTime, "2006-01-02 15:04:05")
 				bucket.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: time}
 
-				if err := bl.Update(context.TODO(), bucket, bucket); status.Code(err) != codes.Unknown {
-					t.Errorf("expected Unknown got %v", err)
+				if err := bl.Update(context.TODO(), bucket, bucket); status.Code(errors.Unwrap(err)) != codes.Internal {
+					t.Errorf("expected Internal got %v", err)
 				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
@@ -270,7 +270,7 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverDeleteBucketRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverDeleteBucketResponse, error) {
-						return nil, status.Error(codes.Unknown, "unknown error test")
+						return nil, status.Error(codes.Internal, "internal error test")
 					},
 				},
 			},
@@ -296,7 +296,7 @@ func TestRecordEvents(t *testing.T) {
 			case event, ok := <-eventRecorder.Events:
 				if ok {
 					if event != tc.expectedEvent {
-						t.Errorf("Expected %s \n got %s", tc.expectedEvent, event)
+						t.Errorf("expected %s got %s", tc.expectedEvent, event)
 					}
 				} else {
 					t.Error("channel closed, no event")

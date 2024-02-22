@@ -130,9 +130,8 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		rsp, err := b.provisionerClient.DriverCreateBucket(ctx, req)
 		if err != nil {
 			if status.Code(err) != codes.AlreadyExists {
-				err = fmt.Errorf("Failed to create Bucket %v: %w", bucket.Name, err)
 				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, err.Error())
-				return err
+				return fmt.Errorf("failed to create bucket: %w", err)
 			}
 		}
 
@@ -339,7 +338,7 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 		if _, err := b.provisionerClient.DriverDeleteBucket(ctx, req); err != nil {
 			if status.Code(err) != codes.NotFound {
 				b.recordEvent(bucket, v1.EventTypeWarning, events.FailedDeleteBucket, err.Error())
-				return err
+				return fmt.Errorf("failed to delete bucket: %w", err)
 			}
 		}
 

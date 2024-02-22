@@ -17,13 +17,17 @@ package bucketaccess
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
@@ -31,6 +35,7 @@ import (
 	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
 	"sigs.k8s.io/container-object-storage-interface-api/controller/events"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 )
@@ -257,10 +262,10 @@ func TestAddBucketAccess(t *testing.T) {
 
 		updatedBA, _ := bal.bucketAccesses(ns).Get(ctx, ba.ObjectMeta.Name, metav1.GetOptions{})
 		if updatedBA.Status.AccessGranted != true {
-			t.Errorf("Expected %t, got %t", true, ba.Status.AccessGranted)
+			t.Errorf("expected %t, got %t", true, ba.Status.AccessGranted)
 		}
 		if !strings.EqualFold(updatedBA.Status.AccountID, accountId) {
-			t.Errorf("Expected %s, got %s", accountId, updatedBA.Status.AccountID)
+			t.Errorf("expected %s, got %s", accountId, updatedBA.Status.AccountID)
 		}
 
 		_, err = bal.secrets(ns).Get(ctx, secretName, metav1.GetOptions{})
@@ -274,6 +279,54 @@ func TestAddBucketAccess(t *testing.T) {
 func TestRecordEvents(t *testing.T) {
 	t.Parallel()
 
+	var (
+		// bucketClass = &v1alpha1.BucketClass{
+		// 	ObjectMeta: metav1.ObjectMeta{
+		// 		Name: "bucket-class",
+		// 	},
+		// }
+		bucket = &v1alpha1.Bucket{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket",
+			},
+		}
+		bucketReady = &v1alpha1.Bucket{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket",
+			},
+			Status: v1alpha1.BucketStatus{
+				BucketReady: true,
+				BucketID:    "test",
+			},
+		}
+		bucketClaim = &v1alpha1.BucketClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-claim",
+			},
+			Status: v1alpha1.BucketClaimStatus{
+				BucketReady: true,
+				BucketName:  bucket.GetObjectMeta().GetName(),
+			},
+		}
+		bucketAccessClass = &v1alpha1.BucketAccessClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-access-class",
+			},
+			DriverName:         "test",
+			AuthenticationType: v1alpha1.AuthenticationTypeIAM,
+		}
+		bucketAccess = &v1alpha1.BucketAccess{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-access",
+			},
+			Spec: v1alpha1.BucketAccessSpec{
+				CredentialsSecretName: "credentials",
+				BucketAccessClassName: bucketAccessClass.GetObjectMeta().GetName(),
+				BucketClaimName:       bucketClaim.GetObjectMeta().GetName(),
+			},
+		}
+	)
+
 	for _, tc := range []struct {
 		name          string
 		expectedEvent string
@@ -282,13 +335,17 @@ func TestRecordEvents(t *testing.T) {
 		eventTrigger  func(*testing.T, *BucketAccessListener)
 	}{
 		{
-			name: "",
+			name: "BucketAccessClassNotFound",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedGrantAccess,
-				""),
+				"bucketaccessclasses.objectstorage.k8s.io \"bucket-access-class\" not found"),
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
-				panic("unimplemented")
+				bucketAccess := bucketAccess.DeepCopy()
+
+				if err := bal.Add(context.TODO(), bucketAccess); !kubeerrors.IsNotFound(err) {
+					t.Errorf("expected Not Found error got %v", err)
+				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
 				FakeProvisionerClient: fakespec.FakeProvisionerClient{
@@ -297,19 +354,24 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverGrantBucketAccessRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverGrantBucketAccessResponse, error) {
-						panic("unimplemented")
+						panic("should not be reached")
 					},
 				},
 			},
 		},
 		{
-			name: "",
+			name: "UndefinedServiceAccountName",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedGrantAccess,
-				""),
+				consts.ErrUndefinedServiceAccountName.Error()),
+			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim},
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
-				panic("unimplemented")
+				bucketAccess := bucketAccess.DeepCopy()
+
+				if err := bal.Add(context.TODO(), bucketAccess); !errors.Is(err, consts.ErrUndefinedServiceAccountName) {
+					t.Errorf("expected %v got %v", consts.ErrUndefinedServiceAccountName, err)
+				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
 				FakeProvisionerClient: fakespec.FakeProvisionerClient{
@@ -318,40 +380,25 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverGrantBucketAccessRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverGrantBucketAccessResponse, error) {
-						panic("unimplemented")
+						panic("should not be reached")
 					},
 				},
 			},
 		},
 		{
-			name: "",
-			expectedEvent: newEvent(
-				v1.EventTypeWarning,
-				events.FailedGrantAccess,
-				""),
-			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
-				panic("unimplemented")
-			},
-			driver: struct{ fakespec.FakeProvisionerClient }{
-				FakeProvisionerClient: fakespec.FakeProvisionerClient{
-					FakeDriverGrantBucketAccess: func(
-						_ context.Context,
-						_ *cosi.DriverGrantBucketAccessRequest,
-						_ ...grpc.CallOption,
-					) (*cosi.DriverGrantBucketAccessResponse, error) {
-						panic("unimplemented")
-					},
-				},
-			},
-		},
-		{
-			name: "",
+			name: "InvalidBucketState",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.WaitingForBucket,
-				""),
+				"BucketAccess can't be granted to Bucket not in Ready state: (isReady? false), (ID empty? true)"),
+			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucket},
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
-				panic("unimplemented")
+				bucketAccess := bucketAccess.DeepCopy()
+				bucketAccess.Spec.ServiceAccountName = "service-account"
+
+				if err := bal.Add(context.TODO(), bucketAccess); !errors.Is(err, consts.ErrInvalidBucketState) {
+					t.Errorf("expected %v got %v", consts.ErrInvalidBucketState, err)
+				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
 				FakeProvisionerClient: fakespec.FakeProvisionerClient{
@@ -360,19 +407,53 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverGrantBucketAccessRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverGrantBucketAccessResponse, error) {
-						panic("unimplemented")
+						panic("should not be reached")
 					},
 				},
 			},
 		},
 		{
-			name: "",
+			name: "GrantInternalError",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedGrantAccess,
+				"rpc error: code = Internal desc = internal error test"),
+			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucketReady},
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				bucketAccess := bucketAccess.DeepCopy()
+				bucketAccess.Spec.ServiceAccountName = "service-account"
+
+				if err := bal.Add(context.TODO(), bucketAccess); status.Code(errors.Unwrap(err)) != codes.Internal {
+					t.Errorf("expected Internal got %v", err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverGrantBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverGrantBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverGrantBucketAccessResponse, error) {
+						return nil, status.Error(codes.Internal, "internal error test")
+					},
+				},
+			},
+		},
+		{
+			name: "RevokeInternalError",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedRevokeAccess,
-				""),
+				"rpc error: code = Internal desc = internal error test"),
+			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucketReady},
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
-				panic("unimplemented")
+				bucketAccess := bucketAccess.DeepCopy()
+				time, _ := time.Parse(time.DateTime, "2006-01-02 15:04:05")
+				bucketAccess.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: time}
+
+				if err := bal.Update(context.TODO(), bucketAccess, bucketAccess); status.Code(errors.Unwrap(err)) != codes.Internal {
+					t.Errorf("expected Internal got %v", err)
+				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
 				FakeProvisionerClient: fakespec.FakeProvisionerClient{
@@ -381,7 +462,7 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverRevokeBucketAccessRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverRevokeBucketAccessResponse, error) {
-						panic("unimplemented")
+						return nil, status.Error(codes.Internal, "internal error test")
 					},
 				},
 			},
@@ -407,7 +488,7 @@ func TestRecordEvents(t *testing.T) {
 			case event, ok := <-eventRecorder.Events:
 				if ok {
 					if event != tc.expectedEvent {
-						t.Errorf("Expected %s \n got %s", tc.expectedEvent, event)
+						t.Errorf("expected %s got %s", tc.expectedEvent, event)
 					}
 				} else {
 					t.Error("channel closed, no event")

@@ -353,7 +353,7 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 
 	// First we revoke the bucketAccess from the driver
 	if _, err := bal.provisionerClient.DriverRevokeBucketAccess(ctx, req); err != nil {
-		bal.recordEvent(bucketAccess, v1.EventTypeWarning, events.FailedRevokeAccess, "Failed to revoke bucket access.")
+		bal.recordEvent(bucketAccess, v1.EventTypeWarning, events.FailedRevokeAccess, err.Error())
 		return fmt.Errorf("failed to revoke access: %w", err)
 	}
 

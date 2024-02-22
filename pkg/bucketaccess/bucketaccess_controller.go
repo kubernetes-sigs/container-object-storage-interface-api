@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
@@ -94,11 +93,11 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	bucketAccessClass, err := bal.bucketAccessClasses().Get(ctx, bucketAccessClassName, metav1.GetOptions{})
 	if kubeerrors.IsNotFound(err) {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, "BucketAccessClass %v provided in the BucketAccess does not exist: %v", bucketAccessClass.Name, err)
+		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err.Error())
 		return err
 	} else if err != nil {
 		klog.ErrorS(err, "Failed to fetch bucketAccessClass", "bucketAccessClass", bucketAccessClassName)
-		return errors.Wrap(err, "Failed to fetch BucketAccessClass")
+		return fmt.Errorf("failed to fetch BucketAccessClass: %w", err)
 	}
 
 	if !strings.EqualFold(bucketAccessClass.DriverName, bal.driverName) {
@@ -113,7 +112,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	bucketClaim, err := bal.bucketClaims(namespace).Get(ctx, bucketClaimName, metav1.GetOptions{})
 	if err != nil {
 		klog.V(3).ErrorS(err, "Failed to fetch bucketClaim", "bucketClaim", bucketClaimName)
-		return errors.Wrap(err, "Failed to fetch bucketClaim")
+		return fmt.Errorf("failed to fetch bucketClaim: %w", err)
 	}
 
 	if bucketClaim.Status.BucketName == "" || bucketClaim.Status.BucketReady != true {
@@ -123,7 +122,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 			"bucketClaim", bucketClaim.Name,
 			"bucketAccess", bucketAccess.ObjectMeta.Name,
 		)
-		return errors.Wrap(err, "Invalid arguments")
+		return fmt.Errorf("invalid bucket state: %w", err)
 	}
 
 	authType := cosi.AuthenticationType_UnknownAuthenticationType
@@ -134,8 +133,9 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	}
 
 	if authType == cosi.AuthenticationType_IAM && bucketAccess.Spec.ServiceAccountName == "" {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, "Must define ServiceAccountName when AuthenticationType is IAM.")
-		return errors.New("Must define ServiceAccountName when AuthenticationType is IAM")
+		err = consts.ErrUndefinedServiceAccountName
+		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err.Error())
+		return err
 	}
 
 	if bucketAccess.Status.AccessGranted == true {
@@ -149,12 +149,16 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	bucket, err := bal.buckets().Get(ctx, bucketClaim.Status.BucketName, metav1.GetOptions{})
 	if err != nil {
 		klog.V(3).ErrorS(err, "Failed to fetch bucket", "bucket", bucketClaim.Status.BucketName)
-		return errors.Wrap(err, "Failed to fetch bucket")
+		return fmt.Errorf("failed to fetch bucket: %w", err)
 	}
 
 	if bucket.Status.BucketReady != true || bucket.Status.BucketID == "" {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.WaitingForBucket, "BucketAccess can't be granted to Bucket %v not in Ready state (isReady? %t) or without a bucketID (ID empty? %t).", bucket.Name, bucket.Status.BucketReady, bucket.Status.BucketID == "")
-		return consts.ErrInvalidBucketState
+		err = fmt.Errorf("%w: (isReady? %t), (ID empty? %t)",
+			consts.ErrInvalidBucketState,
+			bucket.Status.BucketReady,
+			bucket.Status.BucketID == "")
+		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.WaitingForBucket, err.Error())
+		return err
 	}
 
 	accountName := consts.AccountNamePrefix + string(bucketAccess.UID)
@@ -170,8 +174,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	rsp, err := bal.provisionerClient.DriverGrantBucketAccess(ctx, req)
 	if err != nil {
 		if status.Code(err) != codes.AlreadyExists {
-			bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, "Failed to grant access.")
-			return errors.Wrap(err, "failed to grant access")
+			bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err.Error())
+			return fmt.Errorf("failed to grant access: %w", err)
 		}
 
 	}
@@ -179,14 +183,14 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	if rsp.AccountId == "" {
 		err = consts.ErrUndefinedAccountID
 		klog.V(3).ErrorS(err, "BucketAccess", bucketAccess.ObjectMeta.Name)
-		return errors.Wrap(err, fmt.Sprintf("BucketAccess %s", bucketAccess.ObjectMeta.Name))
+		return fmt.Errorf("BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err)
 	}
 
 	credentials := rsp.Credentials
 	if len(credentials) != 1 {
 		err = consts.ErrInvalidCredentials
 		klog.V(3).ErrorS(err, "BucketAccess", bucketAccess.ObjectMeta.Name)
-		return errors.Wrap(err, fmt.Sprintf("BucketAccess %s", bucketAccess.ObjectMeta.Name))
+		return fmt.Errorf("BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err)
 	}
 
 	bucketInfoName := consts.BucketInfoPrefix + string(bucketAccess.ObjectMeta.UID)
@@ -237,7 +241,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 				"Failed to create secrets",
 				"bucketAccess", bucketAccess.ObjectMeta.Name,
 				"bucket", bucket.ObjectMeta.Name)
-			return errors.Wrap(err, "failed to fetch secrets")
+			return fmt.Errorf("failed to fetch secrets: %w", err)
 		}
 
 		if _, err := bal.secrets(namespace).Create(ctx, &v1.Secret{
@@ -256,7 +260,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 					"Failed to create minted secret",
 					"bucketAccess", bucketAccess.ObjectMeta.Name,
 					"bucket", bucket.ObjectMeta.Name)
-				return errors.Wrap(err, "Failed to create minted secret")
+				return fmt.Errorf("failed to create minted secret: %w", err)
 			}
 		}
 	}
@@ -274,7 +278,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 			klog.V(3).ErrorS(err, "Failed to update BucketAccess finalizer",
 				"bucketAccess", bucketAccess.ObjectMeta.Name,
 				"bucket", bucket.ObjectMeta.Name)
-			return errors.Wrap(err, fmt.Sprintf("Failed to update BucketAccess finalizer. BucketAccess: %s", bucketAccess.ObjectMeta.Name))
+			return fmt.Errorf("failed to update finalizer on BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err)
 		}
 	}
 
@@ -286,7 +290,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		klog.V(3).ErrorS(err, "Failed to update BucketAccess Status",
 			"bucketAccess", bucketAccess.ObjectMeta.Name,
 			"bucket", bucket.ObjectMeta.Name)
-		return errors.Wrap(err, fmt.Sprintf("Failed to update BucketAccess Status. BucketAccess: %s", bucketAccess.ObjectMeta.Name))
+		return fmt.Errorf("failed to update Status on BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err)
 	}
 
 	return nil
@@ -333,13 +337,13 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 	bucketClaim, err := bal.bucketClaims(bucketAccess.ObjectMeta.Namespace).Get(ctx, bucketClaimName, metav1.GetOptions{})
 	if err != nil {
 		klog.V(3).ErrorS(err, "Failed to fetch bucketClaim", "bucketClaim", bucketClaimName)
-		return errors.Wrap(err, "Failed to fetch bucketClaim")
+		return fmt.Errorf("failed to fetch bucketClaim: %w", err)
 	}
 
 	bucket, err := bal.buckets().Get(ctx, bucketClaim.Status.BucketName, metav1.GetOptions{})
 	if err != nil {
 		klog.V(3).ErrorS(err, "Failed to fetch bucket", "bucket", bucketClaim.Status.BucketName)
-		return errors.Wrap(err, "Failed to fetch bucket")
+		return fmt.Errorf("failed to fetch bucket: %w", err)
 	}
 
 	req := &cosi.DriverRevokeBucketAccessRequest{
@@ -350,7 +354,7 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 	// First we revoke the bucketAccess from the driver
 	if _, err := bal.provisionerClient.DriverRevokeBucketAccess(ctx, req); err != nil {
 		bal.recordEvent(bucketAccess, v1.EventTypeWarning, events.FailedRevokeAccess, "Failed to revoke bucket access.")
-		return errors.Wrap(err, "failed to revoke access")
+		return fmt.Errorf("failed to revoke access: %w", err)
 	}
 
 	credSecretName := bucketAccess.Spec.CredentialsSecretName

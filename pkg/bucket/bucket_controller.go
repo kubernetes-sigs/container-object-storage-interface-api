@@ -73,7 +73,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		"name", bucket.ObjectMeta.Name)
 
 	if bucket.Spec.BucketClassName == "" {
-		b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClassName was not defined in the Bucket %v.", bucket.Name)
+		b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClassName was not defined in the Bucket %v", bucket.Name)
 		return fmt.Errorf("%w for Bucket %v", consts.ErrUndefinedBucketClassName, bucket.Name)
 	}
 
@@ -302,7 +302,6 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 	}
 
 	return nil
-
 }
 
 // InitializeKubeClient initializes the kubernetes client

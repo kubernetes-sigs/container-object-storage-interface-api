@@ -20,9 +20,13 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
@@ -30,6 +34,7 @@ import (
 	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
 	"sigs.k8s.io/container-object-storage-interface-api/controller/events"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 )
@@ -130,6 +135,34 @@ func TestMissingBucketClassName(t *testing.T) {
 func TestRecordEvents(t *testing.T) {
 	t.Parallel()
 
+	var (
+		bucketClass = &v1alpha1.BucketClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-class",
+			},
+		}
+		bucketClaim = &v1alpha1.BucketClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-claim",
+			},
+		}
+		bucket = &v1alpha1.Bucket{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket",
+				Finalizers: []string{
+					consts.BucketFinalizer,
+				},
+			},
+			Spec: v1alpha1.BucketSpec{
+				DriverName:     "test",
+				DeletionPolicy: v1alpha1.DeletionPolicyDelete,
+				BucketClaim: &v1.ObjectReference{
+					Name: bucketClaim.GetObjectMeta().GetName(),
+				},
+			},
+		}
+	)
+
 	for _, tc := range []struct {
 		name          string
 		expectedEvent string
@@ -138,10 +171,15 @@ func TestRecordEvents(t *testing.T) {
 		eventTrigger  func(*testing.T, *BucketListener)
 	}{
 		{
-			name:          "",
-			expectedEvent: newEvent(v1.EventTypeWarning, events.FailedCreateBucket, ""),
+			name: "BucketClassNameNotDefined",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedCreateBucket,
+				"BucketClassName was not defined in the Bucket bucket"),
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
-				panic("unimplemented")
+				if err := bl.Add(context.TODO(), bucket.DeepCopy()); !errors.Is(err, consts.ErrUndefinedBucketClassName) {
+					t.Errorf("expected %v error got %v", consts.ErrUndefinedBucketClassName, err)
+				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
 				FakeProvisionerClient: fakespec.FakeProvisionerClient{
@@ -150,16 +188,25 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverCreateBucketRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverCreateBucketResponse, error) {
-						panic("unimplemented")
+						panic("should not be reached, bucket class name is not defined")
 					},
 				},
 			},
 		},
 		{
-			name:          "",
-			expectedEvent: newEvent(v1.EventTypeWarning, events.FailedCreateBucket, ""),
+			name: "BucketClassNotFound",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedCreateBucket,
+				"bucketclasses.objectstorage.k8s.io \"bucket-class\" not found"),
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
-				panic("unimplemented")
+				bucket := bucket.DeepCopy()
+				bucket.Spec.ExistingBucketID = "existing"
+				bucket.Spec.BucketClassName = bucketClass.GetObjectMeta().GetName()
+
+				if err := bl.Add(context.TODO(), bucket); !kubeerrors.IsNotFound(err) {
+					t.Errorf("expected Not Found error got %v", err)
+				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
 				FakeProvisionerClient: fakespec.FakeProvisionerClient{
@@ -168,16 +215,25 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverCreateBucketRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverCreateBucketResponse, error) {
-						panic("unimplemented")
+						panic("should not be reached, bucket class does not exist")
 					},
 				},
 			},
 		},
 		{
-			name:          "",
-			expectedEvent: newEvent(v1.EventTypeWarning, events.FailedCreateBucket, ""),
+			name: "UnknownCreateError",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedCreateBucket,
+				"Failed to create Bucket bucket: rpc error: code = Unknown desc = unknown error test"),
+			cosiObjects: []runtime.Object{bucketClass},
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
-				panic("unimplemented")
+				bucket := bucket.DeepCopy()
+				bucket.Spec.BucketClassName = bucketClass.GetObjectMeta().GetName()
+
+				if err := bl.Add(context.TODO(), bucket); status.Code(err) != codes.Unknown {
+					t.Errorf("expected Unknown got %v", err)
+				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
 				FakeProvisionerClient: fakespec.FakeProvisionerClient{
@@ -186,16 +242,26 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverCreateBucketRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverCreateBucketResponse, error) {
-						panic("unimplemented")
+						return nil, status.Error(codes.Unknown, "unknown error test")
 					},
 				},
 			},
 		},
 		{
-			name:          "",
-			expectedEvent: newEvent(v1.EventTypeWarning, events.FailedDeleteBucket, ""),
+			name: "UnknownDeleteError",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedDeleteBucket,
+				"rpc error: code = Unknown desc = unknown error test"),
+			cosiObjects: []runtime.Object{bucketClaim},
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
-				panic("unimplemented")
+				bucket := bucket.DeepCopy()
+				time, _ := time.Parse(time.DateTime, "2006-01-02 15:04:05")
+				bucket.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: time}
+
+				if err := bl.Update(context.TODO(), bucket, bucket); status.Code(err) != codes.Unknown {
+					t.Errorf("expected Unknown got %v", err)
+				}
 			},
 			driver: struct{ fakespec.FakeProvisionerClient }{
 				FakeProvisionerClient: fakespec.FakeProvisionerClient{
@@ -204,7 +270,7 @@ func TestRecordEvents(t *testing.T) {
 						_ *cosi.DriverDeleteBucketRequest,
 						_ ...grpc.CallOption,
 					) (*cosi.DriverDeleteBucketResponse, error) {
-						panic("unimplemented")
+						return nil, status.Error(codes.Unknown, "unknown error test")
 					},
 				},
 			},

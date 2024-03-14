@@ -73,8 +73,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		"name", bucket.ObjectMeta.Name)
 
 	if bucket.Spec.BucketClassName == "" {
-		b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, "BucketClassName was not defined in the Bucket %v", bucket.Name)
-		return fmt.Errorf("%w for Bucket %v", consts.ErrUndefinedBucketClassName, bucket.Name)
+		return b.recordError(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, fmt.Errorf("%w for Bucket %v", consts.ErrUndefinedBucketClassName, bucket.Name))
 	}
 
 	if !strings.EqualFold(bucket.Spec.DriverName, b.driverName) {
@@ -103,13 +102,12 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		if bucket.Spec.Parameters == nil {
 			bucketClass, err := b.bucketClasses().Get(ctx, bucket.Spec.BucketClassName, metav1.GetOptions{})
 			if kubeerrors.IsNotFound(err) {
-				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, err.Error())
-				return err
+				return b.recordError(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, err)
 			} else if err != nil {
 				klog.V(3).ErrorS(err, "Error fetching bucketClass",
 					"bucketClass", bucket.Spec.BucketClassName,
 					"bucket", bucket.ObjectMeta.Name)
-				return err
+				return b.recordError(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, err)
 			}
 
 			if bucketClass.Parameters != nil {
@@ -130,8 +128,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 		rsp, err := b.provisionerClient.DriverCreateBucket(ctx, req)
 		if err != nil {
 			if status.Code(err) != codes.AlreadyExists {
-				b.recordEvent(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, err.Error())
-				return fmt.Errorf("failed to create bucket: %w", err)
+				return b.recordError(inputBucket, v1.EventTypeWarning, events.FailedCreateBucket, fmt.Errorf("failed to create bucket: %w", err))
 			}
 		}
 
@@ -159,7 +156,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 				klog.V(3).ErrorS(err, "Failed to get bucketClaim",
 					"bucketClaim", ref.Name,
 					"bucket", bucket.ObjectMeta.Name)
-				return err
+				return b.recordError(bucket, v1.EventTypeWarning, events.FailedCreateBucket, err)
 			}
 
 			bucketClaim.Status.BucketReady = true
@@ -167,7 +164,7 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 				klog.V(3).ErrorS(err, "Failed to update bucketClaim",
 					"bucketClaim", ref.Name,
 					"bucket", bucket.ObjectMeta.Name)
-				return err
+				return b.recordError(bucket, v1.EventTypeWarning, events.FailedCreateBucket, err)
 			}
 
 			klog.V(5).Infof("Successfully updated status of bucketClaim: %s, bucket: %s", bucketClaim.ObjectMeta.Name, bucket.ObjectMeta.Name)
@@ -177,7 +174,8 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 	controllerutil.AddFinalizer(bucket, consts.BucketFinalizer)
 	if bucket, err = b.buckets().Update(ctx, bucket, metav1.UpdateOptions{}); err != nil {
 		klog.V(3).ErrorS(err, "Failed to update bucket finalizers", "bucket", bucket.ObjectMeta.Name)
-		return fmt.Errorf("failed to update bucket finalizers: %w", err)
+		return b.recordError(bucket, v1.EventTypeWarning, events.FailedCreateBucket,
+			fmt.Errorf("failed to update bucket finalizers: %w", err))
 	}
 
 	klog.V(5).Infof("Successfully added finalizer to bucket: %s", bucket.ObjectMeta.Name)
@@ -190,7 +188,8 @@ func (b *BucketListener) Add(ctx context.Context, inputBucket *v1alpha1.Bucket) 
 	if _, err = b.buckets().UpdateStatus(ctx, bucket, metav1.UpdateOptions{}); err != nil {
 		klog.V(3).ErrorS(err, "Failed to update bucket status",
 			"bucket", bucket.ObjectMeta.Name)
-		return fmt.Errorf("failed to update bucket status: %w", err)
+		return b.recordError(bucket, v1.EventTypeWarning, events.FailedCreateBucket,
+			fmt.Errorf("failed to update bucket status: %w", err))
 	}
 
 	klog.V(3).InfoS("Add Bucket success",
@@ -245,7 +244,7 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 		if controllerutil.ContainsFinalizer(bucket, consts.BucketFinalizer) {
 			err = b.deleteBucketOp(ctx, bucket)
 			if err != nil {
-				return err
+				return b.recordError(bucket, v1.EventTypeWarning, events.FailedDeleteBucket, err)
 			}
 
 			controllerutil.RemoveFinalizer(bucket, consts.BucketFinalizer)
@@ -337,7 +336,6 @@ func (b *BucketListener) deleteBucketOp(ctx context.Context, bucket *v1alpha1.Bu
 
 		if _, err := b.provisionerClient.DriverDeleteBucket(ctx, req); err != nil {
 			if status.Code(err) != codes.NotFound {
-				b.recordEvent(bucket, v1.EventTypeWarning, events.FailedDeleteBucket, err.Error())
 				return fmt.Errorf("failed to delete bucket: %w", err)
 			}
 		}
@@ -397,6 +395,16 @@ func (b *BucketListener) bucketAccesses(namespace string) bucketapi.BucketAccess
 		return b.bucketClient.ObjectstorageV1alpha1().BucketAccesses(namespace)
 	}
 	panic("uninitialized listener")
+}
+
+// recordError during the processing of the objects
+func (b *BucketListener) recordError(subject runtime.Object, eventtype, reason string, err error) error {
+	if b.eventRecorder == nil {
+		return err
+	}
+	b.eventRecorder.Event(subject, eventtype, reason, err.Error())
+
+	return err
 }
 
 // recordEvent during the processing of the objects

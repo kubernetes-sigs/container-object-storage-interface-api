@@ -93,11 +93,11 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	bucketAccessClass, err := bal.bucketAccessClasses().Get(ctx, bucketAccessClassName, metav1.GetOptions{})
 	if kubeerrors.IsNotFound(err) {
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err.Error())
-		return err
+		return bal.recordError(bucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err)
 	} else if err != nil {
 		klog.ErrorS(err, "Failed to fetch bucketAccessClass", "bucketAccessClass", bucketAccessClassName)
-		return fmt.Errorf("failed to fetch BucketAccessClass: %w", err)
+		return bal.recordError(bucketAccess, v1.EventTypeWarning, events.FailedGrantAccess,
+			fmt.Errorf("failed to fetch BucketAccessClass: %w", err))
 	}
 
 	if !strings.EqualFold(bucketAccessClass.DriverName, bal.driverName) {
@@ -122,7 +122,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 			"bucketClaim", bucketClaim.Name,
 			"bucketAccess", bucketAccess.ObjectMeta.Name,
 		)
-		return fmt.Errorf("invalid bucket state: %w", err)
+		return bal.recordError(bucketAccess, v1.EventTypeWarning, events.WaitingForBucket,
+			fmt.Errorf("invalid bucket state: %w", err))
 	}
 
 	authType := cosi.AuthenticationType_UnknownAuthenticationType
@@ -134,8 +135,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	if authType == cosi.AuthenticationType_IAM && bucketAccess.Spec.ServiceAccountName == "" {
 		err = consts.ErrUndefinedServiceAccountName
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err.Error())
-		return err
+		return bal.recordError(bucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err)
 	}
 
 	if bucketAccess.Status.AccessGranted == true {
@@ -149,7 +149,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	bucket, err := bal.buckets().Get(ctx, bucketClaim.Status.BucketName, metav1.GetOptions{})
 	if err != nil {
 		klog.V(3).ErrorS(err, "Failed to fetch bucket", "bucket", bucketClaim.Status.BucketName)
-		return fmt.Errorf("failed to fetch bucket: %w", err)
+		return bal.recordError(bucketAccess, v1.EventTypeWarning, events.FailedGrantAccess,
+			fmt.Errorf("failed to fetch bucket: %w", err))
 	}
 
 	if bucket.Status.BucketReady != true || bucket.Status.BucketID == "" {
@@ -157,8 +158,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 			consts.ErrInvalidBucketState,
 			bucket.Status.BucketReady,
 			bucket.Status.BucketID == "")
-		bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.WaitingForBucket, err.Error())
-		return err
+		return bal.recordError(bucketAccess, v1.EventTypeWarning, events.WaitingForBucket, err)
 	}
 
 	accountName := consts.AccountNamePrefix + string(bucketAccess.UID)
@@ -174,23 +174,24 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	rsp, err := bal.provisionerClient.DriverGrantBucketAccess(ctx, req)
 	if err != nil {
 		if status.Code(err) != codes.AlreadyExists {
-			bal.recordEvent(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err.Error())
-			return fmt.Errorf("failed to grant access: %w", err)
+			return bal.recordError(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess,
+				fmt.Errorf("failed to grant bucket access: %w", err))
 		}
-
 	}
 
 	if rsp.AccountId == "" {
 		err = consts.ErrUndefinedAccountID
 		klog.V(3).ErrorS(err, "BucketAccess", bucketAccess.ObjectMeta.Name)
-		return fmt.Errorf("BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err)
+		return bal.recordError(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess,
+			fmt.Errorf("BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err))
 	}
 
 	credentials := rsp.Credentials
 	if len(credentials) != 1 {
 		err = consts.ErrInvalidCredentials
 		klog.V(3).ErrorS(err, "BucketAccess", bucketAccess.ObjectMeta.Name)
-		return fmt.Errorf("BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err)
+		return bal.recordError(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess,
+			fmt.Errorf("BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err))
 	}
 
 	bucketInfoName := consts.BucketInfoPrefix + string(bucketAccess.ObjectMeta.UID)
@@ -232,7 +233,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 
 	stringData, err := json.Marshal(bucketInfo)
 	if err != nil {
-		return consts.ErrBucketInfoConversionFailed
+		return bal.recordError(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, consts.ErrBucketInfoConversionFailed)
 	}
 
 	if _, err := bal.secrets(namespace).Get(ctx, secretCredName, metav1.GetOptions{}); err != nil {
@@ -241,7 +242,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 				"Failed to create secrets",
 				"bucketAccess", bucketAccess.ObjectMeta.Name,
 				"bucket", bucket.ObjectMeta.Name)
-			return fmt.Errorf("failed to fetch secrets: %w", err)
+			return bal.recordError(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess,
+				fmt.Errorf("failed to fetch secrets: %w", err))
 		}
 
 		if _, err := bal.secrets(namespace).Create(ctx, &v1.Secret{
@@ -260,7 +262,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 					"Failed to create minted secret",
 					"bucketAccess", bucketAccess.ObjectMeta.Name,
 					"bucket", bucket.ObjectMeta.Name)
-				return fmt.Errorf("failed to create minted secret: %w", err)
+				return bal.recordError(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess,
+					fmt.Errorf("failed to create minted secret: %w", err))
 			}
 		}
 	}
@@ -268,7 +271,7 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 	if controllerutil.AddFinalizer(bucket, consts.BABucketFinalizer) {
 		_, err = bal.buckets().Update(ctx, bucket, metav1.UpdateOptions{})
 		if err != nil {
-			return err
+			return bal.recordError(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err)
 		}
 	}
 
@@ -278,7 +281,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 			klog.V(3).ErrorS(err, "Failed to update BucketAccess finalizer",
 				"bucketAccess", bucketAccess.ObjectMeta.Name,
 				"bucket", bucket.ObjectMeta.Name)
-			return fmt.Errorf("failed to update finalizer on BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err)
+			return bal.recordError(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess,
+				fmt.Errorf("failed to update finalizer on BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err))
 		}
 	}
 
@@ -290,7 +294,8 @@ func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1a
 		klog.V(3).ErrorS(err, "Failed to update BucketAccess Status",
 			"bucketAccess", bucketAccess.ObjectMeta.Name,
 			"bucket", bucket.ObjectMeta.Name)
-		return fmt.Errorf("failed to update Status on BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err)
+		return bal.recordError(inputBucketAccess, v1.EventTypeWarning, events.FailedGrantAccess,
+			fmt.Errorf("failed to update Status on BucketAccess %s: %w", bucketAccess.ObjectMeta.Name, err))
 	}
 
 	return nil
@@ -308,7 +313,7 @@ func (bal *BucketAccessListener) Update(ctx context.Context, old, new *v1alpha1.
 	if !bucketAccess.GetDeletionTimestamp().IsZero() {
 		err := bal.deleteBucketAccessOp(ctx, bucketAccess)
 		if err != nil {
-			return err
+			return bal.recordError(bucketAccess, v1.EventTypeWarning, events.FailedRevokeAccess, err)
 		}
 	}
 
@@ -353,7 +358,6 @@ func (bal *BucketAccessListener) deleteBucketAccessOp(ctx context.Context, bucke
 
 	// First we revoke the bucketAccess from the driver
 	if _, err := bal.provisionerClient.DriverRevokeBucketAccess(ctx, req); err != nil {
-		bal.recordEvent(bucketAccess, v1.EventTypeWarning, events.FailedRevokeAccess, err.Error())
 		return fmt.Errorf("failed to revoke access: %w", err)
 	}
 
@@ -446,6 +450,16 @@ func (bal *BucketAccessListener) InitializeBucketClient(bc buckets.Interface) {
 // InitializeEventRecorder initializes the event recorder
 func (bal *BucketAccessListener) InitializeEventRecorder(er record.EventRecorder) {
 	bal.eventRecorder = er
+}
+
+// recordError during the processing of the objects
+func (b *BucketAccessListener) recordError(subject runtime.Object, eventtype, reason string, err error) error {
+	if b.eventRecorder == nil {
+		return err
+	}
+	b.eventRecorder.Event(subject, eventtype, reason, err.Error())
+
+	return err
 }
 
 // recordEvent during the processing of the objects

@@ -417,7 +417,7 @@ func TestRecordEvents(t *testing.T) {
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedGrantAccess,
-				"rpc error: code = Internal desc = internal error test"),
+				"failed to grant bucket access: rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucketReady},
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
 				bucketAccess := bucketAccess.DeepCopy()
@@ -444,7 +444,7 @@ func TestRecordEvents(t *testing.T) {
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedRevokeAccess,
-				"rpc error: code = Internal desc = internal error test"),
+				"failed to revoke access: rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucketReady},
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
 				bucketAccess := bucketAccess.DeepCopy()

@@ -175,7 +175,7 @@ func TestRecordEvents(t *testing.T) {
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedCreateBucket,
-				"BucketClassName was not defined in the Bucket bucket"),
+				"BucketClassName not defined for Bucket bucket"),
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
 				if err := bl.Add(context.TODO(), bucket.DeepCopy()); !errors.Is(err, consts.ErrUndefinedBucketClassName) {
 					t.Errorf("expected %v error got %v", consts.ErrUndefinedBucketClassName, err)
@@ -225,7 +225,7 @@ func TestRecordEvents(t *testing.T) {
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedCreateBucket,
-				"rpc error: code = Internal desc = internal error test"),
+				"failed to create bucket: rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketClass},
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
 				bucket := bucket.DeepCopy()
@@ -252,7 +252,7 @@ func TestRecordEvents(t *testing.T) {
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
 				events.FailedDeleteBucket,
-				"rpc error: code = Internal desc = internal error test"),
+				"failed to delete bucket: rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketClaim},
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
 				bucket := bucket.DeepCopy()

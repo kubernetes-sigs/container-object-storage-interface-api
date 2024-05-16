@@ -17,46 +17,37 @@ package bucketaccess
 
 import (
 	"context"
-	"reflect"
+	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	v1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilversion "k8s.io/apimachinery/pkg/util/version"
-	"k8s.io/apimachinery/pkg/version"
-	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/apimachinery/pkg/runtime"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
-
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
+	"sigs.k8s.io/container-object-storage-interface-api/controller/events"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
 	cosi "sigs.k8s.io/container-object-storage-interface-spec"
 	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 )
 
 func TestInitializeKubeClient(t *testing.T) {
 	client := fakekubeclientset.NewSimpleClientset()
-	fakeDiscovery, ok := client.Discovery().(*fakediscovery.FakeDiscovery)
-	if !ok {
-		t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
-	}
-
-	fakeVersion := &version.Info{
-		GitVersion: "v1.0.0",
-	}
-	fakeDiscovery.FakedServerVersion = fakeVersion
 
 	bal := BucketAccessListener{}
 	bal.InitializeKubeClient(client)
 
 	if bal.kubeClient == nil {
 		t.Errorf("KubeClient was nil")
-	}
-
-	expected := utilversion.MustParseSemantic(fakeVersion.GitVersion)
-	if !reflect.DeepEqual(expected, bal.kubeVersion) {
-		t.Errorf("Expected %+v, but got %+v", expected, bal.kubeVersion)
 	}
 }
 
@@ -67,6 +58,17 @@ func TestInitializeBucketClient(t *testing.T) {
 	bal.InitializeBucketClient(client)
 
 	if bal.bucketClient == nil {
+		t.Errorf("BucketClient not initialized, expected not nil")
+	}
+}
+
+func TestInitializeEventRecorder(t *testing.T) {
+	eventRecorder := record.NewFakeRecorder(1)
+
+	bal := BucketAccessListener{}
+	bal.InitializeEventRecorder(eventRecorder)
+
+	if bal.eventRecorder == nil {
 		t.Errorf("BucketClient not initialized, expected not nil")
 	}
 }
@@ -260,10 +262,10 @@ func TestAddBucketAccess(t *testing.T) {
 
 		updatedBA, _ := bal.bucketAccesses(ns).Get(ctx, ba.ObjectMeta.Name, metav1.GetOptions{})
 		if updatedBA.Status.AccessGranted != true {
-			t.Errorf("Expected %t, got %t", true, ba.Status.AccessGranted)
+			t.Errorf("expected %t, got %t", true, ba.Status.AccessGranted)
 		}
 		if !strings.EqualFold(updatedBA.Status.AccountID, accountId) {
-			t.Errorf("Expected %s, got %s", accountId, updatedBA.Status.AccountID)
+			t.Errorf("expected %s, got %s", accountId, updatedBA.Status.AccountID)
 		}
 
 		_, err = bal.secrets(ns).Get(ctx, secretName, metav1.GetOptions{})
@@ -271,4 +273,233 @@ func TestAddBucketAccess(t *testing.T) {
 			t.Fatalf("Secret creation failed: %v", err)
 		}
 	}
+}
+
+// Test recording events
+func TestRecordEvents(t *testing.T) {
+	t.Parallel()
+
+	var (
+		// bucketClass = &v1alpha1.BucketClass{
+		// 	ObjectMeta: metav1.ObjectMeta{
+		// 		Name: "bucket-class",
+		// 	},
+		// }
+		bucket = &v1alpha1.Bucket{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket",
+			},
+		}
+		bucketReady = &v1alpha1.Bucket{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket",
+			},
+			Status: v1alpha1.BucketStatus{
+				BucketReady: true,
+				BucketID:    "test",
+			},
+		}
+		bucketClaim = &v1alpha1.BucketClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-claim",
+			},
+			Status: v1alpha1.BucketClaimStatus{
+				BucketReady: true,
+				BucketName:  bucket.GetObjectMeta().GetName(),
+			},
+		}
+		bucketAccessClass = &v1alpha1.BucketAccessClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-access-class",
+			},
+			DriverName:         "test",
+			AuthenticationType: v1alpha1.AuthenticationTypeIAM,
+		}
+		bucketAccess = &v1alpha1.BucketAccess{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-access",
+			},
+			Spec: v1alpha1.BucketAccessSpec{
+				CredentialsSecretName: "credentials",
+				BucketAccessClassName: bucketAccessClass.GetObjectMeta().GetName(),
+				BucketClaimName:       bucketClaim.GetObjectMeta().GetName(),
+			},
+		}
+	)
+
+	for _, tc := range []struct {
+		name          string
+		expectedEvent string
+		cosiObjects   []runtime.Object
+		driver        struct{ fakespec.FakeProvisionerClient }
+		eventTrigger  func(*testing.T, *BucketAccessListener)
+	}{
+		{
+			name: "BucketAccessClassNotFound",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedGrantAccess,
+				"bucketaccessclasses.objectstorage.k8s.io \"bucket-access-class\" not found"),
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				bucketAccess := bucketAccess.DeepCopy()
+
+				if err := bal.Add(context.TODO(), bucketAccess); !kubeerrors.IsNotFound(err) {
+					t.Errorf("expected Not Found error got %v", err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverGrantBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverGrantBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverGrantBucketAccessResponse, error) {
+						panic("should not be reached")
+					},
+				},
+			},
+		},
+		{
+			name: "UndefinedServiceAccountName",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedGrantAccess,
+				consts.ErrUndefinedServiceAccountName.Error()),
+			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim},
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				bucketAccess := bucketAccess.DeepCopy()
+
+				if err := bal.Add(context.TODO(), bucketAccess); !errors.Is(err, consts.ErrUndefinedServiceAccountName) {
+					t.Errorf("expected %v got %v", consts.ErrUndefinedServiceAccountName, err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverGrantBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverGrantBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverGrantBucketAccessResponse, error) {
+						panic("should not be reached")
+					},
+				},
+			},
+		},
+		{
+			name: "InvalidBucketState",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.WaitingForBucket,
+				"BucketAccess can't be granted to Bucket not in Ready state: (isReady? false), (ID empty? true)"),
+			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucket},
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				bucketAccess := bucketAccess.DeepCopy()
+				bucketAccess.Spec.ServiceAccountName = "service-account"
+
+				if err := bal.Add(context.TODO(), bucketAccess); !errors.Is(err, consts.ErrInvalidBucketState) {
+					t.Errorf("expected %v got %v", consts.ErrInvalidBucketState, err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverGrantBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverGrantBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverGrantBucketAccessResponse, error) {
+						panic("should not be reached")
+					},
+				},
+			},
+		},
+		{
+			name: "GrantInternalError",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedGrantAccess,
+				"failed to grant bucket access: rpc error: code = Internal desc = internal error test"),
+			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucketReady},
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				bucketAccess := bucketAccess.DeepCopy()
+				bucketAccess.Spec.ServiceAccountName = "service-account"
+
+				if err := bal.Add(context.TODO(), bucketAccess); status.Code(errors.Unwrap(err)) != codes.Internal {
+					t.Errorf("expected Internal got %v", err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverGrantBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverGrantBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverGrantBucketAccessResponse, error) {
+						return nil, status.Error(codes.Internal, "internal error test")
+					},
+				},
+			},
+		},
+		{
+			name: "RevokeInternalError",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedRevokeAccess,
+				"failed to revoke access: rpc error: code = Internal desc = internal error test"),
+			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucketReady},
+			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
+				bucketAccess := bucketAccess.DeepCopy()
+				time, _ := time.Parse(time.DateTime, "2006-01-02 15:04:05")
+				bucketAccess.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: time}
+
+				if err := bal.Update(context.TODO(), bucketAccess, bucketAccess); status.Code(errors.Unwrap(err)) != codes.Internal {
+					t.Errorf("expected Internal got %v", err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverRevokeBucketAccess: func(
+						_ context.Context,
+						_ *cosi.DriverRevokeBucketAccessRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverRevokeBucketAccessResponse, error) {
+						return nil, status.Error(codes.Internal, "internal error test")
+					},
+				},
+			},
+		},
+	} {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakebucketclientset.NewSimpleClientset(tc.cosiObjects...)
+			kubeClient := fakekubeclientset.NewSimpleClientset()
+			eventRecorder := record.NewFakeRecorder(1)
+
+			listener := NewBucketAccessListener("test", &tc.driver)
+			listener.InitializeKubeClient(kubeClient)
+			listener.InitializeBucketClient(client)
+			listener.InitializeEventRecorder(eventRecorder)
+
+			tc.eventTrigger(t, listener)
+
+			select {
+			case event, ok := <-eventRecorder.Events:
+				if ok {
+					if event != tc.expectedEvent {
+						t.Errorf("expected %s got %s", tc.expectedEvent, event)
+					}
+				} else {
+					t.Error("channel closed, no event")
+				}
+			default:
+				t.Errorf("no event after trigger")
+			}
+		})
+	}
+}
+
+func newEvent(eventType, reason, message string) string {
+	return fmt.Sprintf("%s %s %s", eventType, reason, message)
 }

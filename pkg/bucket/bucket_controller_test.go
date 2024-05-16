@@ -18,45 +18,35 @@ package bucket
 import (
 	"context"
 	"errors"
-	"reflect"
+	"fmt"
 	"testing"
-
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
-	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
-	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilversion "k8s.io/apimachinery/pkg/util/version"
-	"k8s.io/apimachinery/pkg/version"
-	fakediscovery "k8s.io/client-go/discovery/fake"
-	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
+	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	v1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
+	"sigs.k8s.io/container-object-storage-interface-api/controller/events"
+	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
+	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
 )
 
 func TestInitializeKubeClient(t *testing.T) {
 	client := fakekubeclientset.NewSimpleClientset()
-	fakeDiscovery, ok := client.Discovery().(*fakediscovery.FakeDiscovery)
-	if !ok {
-		t.Fatalf("Couldn't convert Discovery() to *FakeDiscovery")
-	}
-
-	fakeVersion := &version.Info{
-		GitVersion: "v1.0.0",
-	}
-	fakeDiscovery.FakedServerVersion = fakeVersion
 
 	bl := BucketListener{}
 	bl.InitializeKubeClient(client)
 
 	if bl.kubeClient == nil {
 		t.Errorf("KubeClient was nil")
-	}
-
-	expected := utilversion.MustParseSemantic(fakeVersion.GitVersion)
-	if !reflect.DeepEqual(expected, bl.kubeVersion) {
-		t.Errorf("Expected %+v, but got %+v", expected, bl.kubeVersion)
 	}
 }
 
@@ -68,6 +58,17 @@ func TestInitializeBucketClient(t *testing.T) {
 
 	if bl.bucketClient == nil {
 		t.Errorf("BucketClient was nil")
+	}
+}
+
+func TestInitializeEventRecorder(t *testing.T) {
+	eventRecorder := record.NewFakeRecorder(1)
+
+	bl := BucketListener{}
+	bl.InitializeEventRecorder(eventRecorder)
+
+	if bl.eventRecorder == nil {
+		t.Errorf("BucketClient not initialized, expected not nil")
 	}
 }
 
@@ -124,8 +125,189 @@ func TestMissingBucketClassName(t *testing.T) {
 	}
 	ctx := context.TODO()
 	err := bl.Add(ctx, &b)
-	expectedErr := errors.New("BucketClassName not defined for bucket testbucket")
+	expectedErr := errors.New("BucketClassName not defined for Bucket testbucket")
 	if err == nil || err.Error() != expectedErr.Error() {
-		t.Errorf("Expecter error: %+v \n Returned error: %+v", expectedErr, err)
+		t.Errorf("expecter error: %+v \n returned error: %+v", expectedErr, err)
 	}
+}
+
+// Test recording events
+func TestRecordEvents(t *testing.T) {
+	t.Parallel()
+
+	var (
+		bucketClass = &v1alpha1.BucketClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-class",
+			},
+		}
+		bucketClaim = &v1alpha1.BucketClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket-claim",
+			},
+		}
+		bucket = &v1alpha1.Bucket{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "bucket",
+				Finalizers: []string{
+					consts.BucketFinalizer,
+				},
+			},
+			Spec: v1alpha1.BucketSpec{
+				DriverName:     "test",
+				DeletionPolicy: v1alpha1.DeletionPolicyDelete,
+				BucketClaim: &v1.ObjectReference{
+					Name: bucketClaim.GetObjectMeta().GetName(),
+				},
+			},
+		}
+	)
+
+	for _, tc := range []struct {
+		name          string
+		expectedEvent string
+		cosiObjects   []runtime.Object
+		driver        struct{ fakespec.FakeProvisionerClient }
+		eventTrigger  func(*testing.T, *BucketListener)
+	}{
+		{
+			name: "BucketClassNameNotDefined",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedCreateBucket,
+				"BucketClassName not defined for Bucket bucket"),
+			eventTrigger: func(t *testing.T, bl *BucketListener) {
+				if err := bl.Add(context.TODO(), bucket.DeepCopy()); !errors.Is(err, consts.ErrUndefinedBucketClassName) {
+					t.Errorf("expected %v error got %v", consts.ErrUndefinedBucketClassName, err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverCreateBucket: func(
+						_ context.Context,
+						_ *cosi.DriverCreateBucketRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverCreateBucketResponse, error) {
+						panic("should not be reached, bucket class name is not defined")
+					},
+				},
+			},
+		},
+		{
+			name: "BucketClassNotFound",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedCreateBucket,
+				"bucketclasses.objectstorage.k8s.io \"bucket-class\" not found"),
+			eventTrigger: func(t *testing.T, bl *BucketListener) {
+				bucket := bucket.DeepCopy()
+				bucket.Spec.ExistingBucketID = "existing"
+				bucket.Spec.BucketClassName = bucketClass.GetObjectMeta().GetName()
+
+				if err := bl.Add(context.TODO(), bucket); !kubeerrors.IsNotFound(err) {
+					t.Errorf("expected Not Found error got %v", err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverCreateBucket: func(
+						_ context.Context,
+						_ *cosi.DriverCreateBucketRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverCreateBucketResponse, error) {
+						panic("should not be reached, bucket class does not exist")
+					},
+				},
+			},
+		},
+		{
+			name: "CreateInternalError",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedCreateBucket,
+				"failed to create bucket: rpc error: code = Internal desc = internal error test"),
+			cosiObjects: []runtime.Object{bucketClass},
+			eventTrigger: func(t *testing.T, bl *BucketListener) {
+				bucket := bucket.DeepCopy()
+				bucket.Spec.BucketClassName = bucketClass.GetObjectMeta().GetName()
+
+				if err := bl.Add(context.TODO(), bucket); status.Code(errors.Unwrap(err)) != codes.Internal {
+					t.Errorf("expected Internal got %v", err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverCreateBucket: func(
+						_ context.Context,
+						_ *cosi.DriverCreateBucketRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverCreateBucketResponse, error) {
+						return nil, status.Error(codes.Internal, "internal error test")
+					},
+				},
+			},
+		},
+		{
+			name: "DeleteInternalError",
+			expectedEvent: newEvent(
+				v1.EventTypeWarning,
+				events.FailedDeleteBucket,
+				"failed to delete bucket: rpc error: code = Internal desc = internal error test"),
+			cosiObjects: []runtime.Object{bucketClaim},
+			eventTrigger: func(t *testing.T, bl *BucketListener) {
+				bucket := bucket.DeepCopy()
+				time, _ := time.Parse(time.DateTime, "2006-01-02 15:04:05")
+				bucket.ObjectMeta.DeletionTimestamp = &metav1.Time{Time: time}
+
+				if err := bl.Update(context.TODO(), bucket, bucket); status.Code(errors.Unwrap(err)) != codes.Internal {
+					t.Errorf("expected Internal got %v", err)
+				}
+			},
+			driver: struct{ fakespec.FakeProvisionerClient }{
+				FakeProvisionerClient: fakespec.FakeProvisionerClient{
+					FakeDriverDeleteBucket: func(
+						_ context.Context,
+						_ *cosi.DriverDeleteBucketRequest,
+						_ ...grpc.CallOption,
+					) (*cosi.DriverDeleteBucketResponse, error) {
+						return nil, status.Error(codes.Internal, "internal error test")
+					},
+				},
+			},
+		},
+	} {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakebucketclientset.NewSimpleClientset(tc.cosiObjects...)
+			kubeClient := fakekubeclientset.NewSimpleClientset()
+			eventRecorder := record.NewFakeRecorder(1)
+
+			listener := NewBucketListener("test", &tc.driver)
+			listener.InitializeKubeClient(kubeClient)
+			listener.InitializeBucketClient(client)
+			listener.InitializeEventRecorder(eventRecorder)
+
+			tc.eventTrigger(t, listener)
+
+			select {
+			case event, ok := <-eventRecorder.Events:
+				if ok {
+					if event != tc.expectedEvent {
+						t.Errorf("expected %s got %s", tc.expectedEvent, event)
+					}
+				} else {
+					t.Error("channel closed, no event")
+				}
+			default:
+				t.Errorf("no event after trigger")
+			}
+		})
+	}
+}
+
+func newEvent(eventType, reason, message string) string {
+	return fmt.Sprintf("%s %s %s", eventType, reason, message)
 }

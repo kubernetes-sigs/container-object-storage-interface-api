@@ -1,0 +1,9 @@
+*.tmp
+.DS_Store
+.build
+*.swp
+travis.yml
+release-tools
+bin
+.idea
+vendor

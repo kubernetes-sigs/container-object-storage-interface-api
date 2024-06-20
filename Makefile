@@ -22,20 +22,12 @@ all:  unit build
 #.PHONY: reltools
 reltools: release-tools/build.make
 release-tools/build.make:
-	$(eval CURDIR := $(shell pwd))
-	$(eval TMP := $(shell mktemp -d))
-	$(shell cd ${TMP} && git clone git@github.com:kubernetes-sigs/container-object-storage-interface-spec.git)
-	$(shell cp -r ${TMP}/container-object-storage-interface-spec/release-tools ${CURDIR}/)
-	$(shell rm -rf ${TMP})  
-	ln -s release-tools/travis.yml travis.yml
-
+	echo "TODO: update kubernetes/test-infra when controller and sidecar can build successfully"
 
 build:
-	@echo "  >  Building binary..."
-	go build $(GOFILES)
 test:
 unit:
-codegen: 
+codegen:
 	@echo "Running update-codegen to generate the code..."
 	bash ./hack/update-codegen.sh
 

@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: bucketaccesses.objectstorage.k8s.io
 spec:
   group: objectstorage.k8s.io
@@ -20,14 +19,19 @@ spec:
       openAPIV3Schema:
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -40,22 +44,24 @@ spec:
                 description: BucketClaimName is the name of the BucketClaim.
                 type: string
               credentialsSecretName:
-                description: CredentialsSecretName is the name of the secret that
-                  COSI should populate with the credentials. If a secret by this name
-                  already exists, then it is assumed that credentials have already
-                  been generated. It is not overridden. This secret is deleted when
-                  the BucketAccess is delted.
+                description: |-
+                  CredentialsSecretName is the name of the secret that COSI should populate
+                  with the credentials. If a secret by this name already exists, then it is
+                  assumed that credentials have already been generated. It is not overridden.
+                  This secret is deleted when the BucketAccess is delted.
                 type: string
               protocol:
-                description: Protocol is the name of the Protocol that this access
-                  credential is supposed to support If left empty, it will choose
-                  the protocol supported by the bucket. If the bucket supports multiple
-                  protocols, the end protocol is determined by the driver.
+                description: |-
+                  Protocol is the name of the Protocol
+                  that this access credential is supposed to support
+                  If left empty, it will choose the protocol supported
+                  by the bucket. If the bucket supports multiple protocols,
+                  the end protocol is determined by the driver.
                 type: string
               serviceAccountName:
-                description: ServiceAccountName is the name of the serviceAccount
-                  that COSI will map to the OSP service account when IAM styled authentication
-                  is specified
+                description: |-
+                  ServiceAccountName is the name of the serviceAccount that COSI will map
+                  to the OSP service account when IAM styled authentication is specified
                 type: string
             required:
             - bucketAccessClassName
@@ -69,9 +75,9 @@ spec:
                   to access the bucket
                 type: boolean
               accountID:
-                description: AccountID is the unique ID for the account in the OSP.
-                  It will be populated by the COSI sidecar once access has been successfully
-                  granted.
+                description: |-
+                  AccountID is the unique ID for the account in the OSP. It will be populated
+                  by the COSI sidecar once access has been successfully granted.
                 type: string
             type: object
         type: object

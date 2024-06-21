@@ -14,23 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package cosiapi
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-api/client/apis/objectstorage/v1alpha1"
 )
 
 type SecretS3 struct {
-	Endpoint string `json:"endpoint"`
-	Region string `json:"region"`
-	AccessKeyID string `json:"accessKeyID"`
+	Endpoint        string `json:"endpoint"`
+	Region          string `json:"region"`
+	AccessKeyID     string `json:"accessKeyID"`
 	AccessSecretKey string `json:"accessSecretKey"`
 }
 
 type SecretAzure struct {
-	AccessToken string `json:"accessToken"`
+	AccessToken     string       `json:"accessToken"`
 	ExpiryTimeStamp *metav1.Time `json:"expiryTimeStamp"`
 }
 
@@ -45,7 +44,7 @@ type BucketInfo struct {
 }
 
 type BucketInfoSpec struct {
-	// BucketName is the name of the Bucket 
+	// BucketName is the name of the Bucket
 	BucketName string `json:"bucketName"`
 
 	// AuthenticationType denotes the style of authentication

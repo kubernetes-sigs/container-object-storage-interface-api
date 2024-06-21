@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubernetes Authors.
+Copyright 2024 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,11 +23,10 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
-	v1alpha1 "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	v1alpha1 "sigs.k8s.io/container-object-storage-interface-api/client/apis/objectstorage/v1alpha1"
 )
 
 // FakeBucketAccesses implements BucketAccessInterface
@@ -36,9 +35,9 @@ type FakeBucketAccesses struct {
 	ns   string
 }
 
-var bucketaccessesResource = schema.GroupVersionResource{Group: "objectstorage.k8s.io", Version: "v1alpha1", Resource: "bucketaccesses"}
+var bucketaccessesResource = v1alpha1.SchemeGroupVersion.WithResource("bucketaccesses")
 
-var bucketaccessesKind = schema.GroupVersionKind{Group: "objectstorage.k8s.io", Version: "v1alpha1", Kind: "BucketAccess"}
+var bucketaccessesKind = v1alpha1.SchemeGroupVersion.WithKind("BucketAccess")
 
 // Get takes name of the bucketAccess, and returns the corresponding bucketAccess object, and an error if there is any.
 func (c *FakeBucketAccesses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.BucketAccess, err error) {

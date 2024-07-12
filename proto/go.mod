@@ -1,4 +1,4 @@
-module sigs.k8s.io/container-object-storage-interface-spec
+module sigs.k8s.io/container-object-storage-interface-api/proto
 
 go 1.18
 

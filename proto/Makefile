@@ -32,6 +32,8 @@ endif
 PROTOC_ARCH := $(shell uname -m)
 ifeq (i386,$(PROTOC_ARCH))
 PROTOC_ARCH := x86_32
+else ifeq (arm64,$(PROTOC_ARCH))
+PROTOC_ARCH := aarch_64
 endif
 
 PROTOC := ./protoc

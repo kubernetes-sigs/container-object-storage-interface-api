@@ -9,13 +9,13 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
 	. "github.com/dave/jennifer/jen"
-	"github.com/golang/protobuf/proto"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/proto"
 )
 
 type GoFake struct {
@@ -25,13 +25,13 @@ type GoFake struct {
 }
 
 type FakeService struct {
-	Name string
+	Name    string
 	Methods []Method
 }
 
 type Method struct {
-	Name string
-	Input string
+	Name   string
+	Input  string
 	Output string
 }
 
@@ -50,7 +50,7 @@ func (runner *GoFake) getLocationMessage() map[string][]*FakeService {
 		for _, svc := range svcs {
 			_, _ = fmt.Fprintf(os.Stderr, "service: %+v\n", svc)
 			current := &FakeService{
-				Name:            fmt.Sprintf("%sClient", *svc.Name),
+				Name: fmt.Sprintf("%sClient", *svc.Name),
 			}
 			methods := make([]Method, 0)
 			for _, mtd := range svc.Method {
@@ -145,7 +145,7 @@ func main() {
 	req := &plugin.CodeGeneratorRequest{}
 	resp := &plugin.CodeGeneratorResponse{}
 
-	data, err := ioutil.ReadAll(os.Stdin)
+	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		panic(err)
 	}

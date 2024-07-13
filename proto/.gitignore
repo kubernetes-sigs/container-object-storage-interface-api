@@ -2,9 +2,6 @@
 .DS_Store
 .build
 *.swp
-cosi.proto.tmp
-protoc*
-cosi.a
 .protoc
 .idea
 .project

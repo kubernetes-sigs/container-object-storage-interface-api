@@ -222,6 +222,12 @@ func (b *BucketListener) Update(ctx context.Context, old, new *v1alpha1.Bucket) 
 		if err = b.handleDeletion(ctx, bucket); err != nil {
 			return err
 		}
+	} else {
+		// Trigger the Add logic to ensure that the Bucket is properly reconciled
+		err := b.Add(ctx, bucket)
+		if err != nil {
+			return b.recordError(bucket, v1.EventTypeWarning, events.FailedGrantAccess, err)
+		}
 	}
 
 	klog.V(3).InfoS("Update Bucket success",

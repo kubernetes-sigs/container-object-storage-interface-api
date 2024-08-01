@@ -297,6 +297,12 @@ func (b *BucketListener) Delete(ctx context.Context, inputBucket *v1alpha1.Bucke
 				return err
 			}
 		}
+	} else {
+		// Trigger the Add logic to ensure that the BucketAccess is properly reconciled
+		err := bal.Add(ctx, bucketAccess)
+		if err != nil {
+			return bal.recordError(bucketAccess, v1.EventTypeWarning, events.FailedGrantAccess, err)
+		}
 	}
 
 	return nil

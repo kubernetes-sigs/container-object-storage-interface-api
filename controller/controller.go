@@ -151,6 +151,7 @@ func NewObjectStorageControllerWithClientset(identity string, leaderLockName str
 	}
 
 	rb := record.NewBroadcaster()
+	rb.StartRecordingToSink(&corev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 
 	extendedScheme := scheme.Scheme
 	if err := v1alpha1.AddToScheme(extendedScheme); err != nil {

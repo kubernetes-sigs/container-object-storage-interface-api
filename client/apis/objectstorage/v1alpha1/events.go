@@ -1,4 +1,4 @@
-package events
+package v1alpha1
 
 // COSI relevant event reasons
 const (

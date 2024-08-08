@@ -10,11 +10,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
-	types "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-api/client/apis/objectstorage/v1alpha1"
 	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
-	"sigs.k8s.io/container-object-storage-interface-api/controller/events"
-	"sigs.k8s.io/container-object-storage-interface-controller/pkg/util"
+	"sigs.k8s.io/container-object-storage-interface-api/controller/pkg/util"
 )
 
 var classGoldParameters = map[string]string{
@@ -22,7 +20,7 @@ var classGoldParameters = map[string]string{
 	"param2": "value2",
 }
 
-var goldClass = types.BucketClass{
+var goldClass = v1alpha1.BucketClass{
 	TypeMeta: metav1.TypeMeta{
 		APIVersion: "objectstorage.k8s.io/v1alpha1",
 		Kind:       "BucketClass",
@@ -32,10 +30,10 @@ var goldClass = types.BucketClass{
 	},
 	DriverName:     "sample.cosi.driver",
 	Parameters:     classGoldParameters,
-	DeletionPolicy: types.DeletionPolicyDelete,
+	DeletionPolicy: v1alpha1.DeletionPolicyDelete,
 }
 
-var bucketClaim1 = types.BucketClaim{
+var bucketClaim1 = v1alpha1.BucketClaim{
 	TypeMeta: metav1.TypeMeta{
 		APIVersion: "objectstorage.k8s.io/v1alpha1",
 		Kind:       "BucketClaim",
@@ -45,13 +43,13 @@ var bucketClaim1 = types.BucketClaim{
 		Namespace: "default",
 		UID:       "12345-67890",
 	},
-	Spec: types.BucketClaimSpec{
+	Spec: v1alpha1.BucketClaimSpec{
 		BucketClassName: "classgold",
-		Protocols:       []types.Protocol{types.ProtocolAzure, types.ProtocolS3},
+		Protocols:       []v1alpha1.Protocol{v1alpha1.ProtocolAzure, v1alpha1.ProtocolS3},
 	},
 }
 
-var bucketClaim2 = types.BucketClaim{
+var bucketClaim2 = v1alpha1.BucketClaim{
 	TypeMeta: metav1.TypeMeta{
 		APIVersion: "objectstorage.k8s.io/v1alpha1",
 		Kind:       "BucketClaim",
@@ -61,9 +59,9 @@ var bucketClaim2 = types.BucketClaim{
 		Namespace: "default",
 		UID:       "abcde-fghijk",
 	},
-	Spec: types.BucketClaimSpec{
+	Spec: v1alpha1.BucketClaimSpec{
 		BucketClassName: "classgold",
-		Protocols:       []types.Protocol{types.ProtocolAzure, types.ProtocolGCP},
+		Protocols:       []v1alpha1.Protocol{v1alpha1.ProtocolAzure, v1alpha1.ProtocolGCP},
 	},
 }
 
@@ -259,7 +257,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "ExistingBucketNotFound",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedCreateBucket,
+				v1alpha1.FailedCreateBucket,
 				"buckets.objectstorage.k8s.io \"existing-bucket\" not found"),
 			eventTrigger: func(t *testing.T, bcl *BucketClaimListener) {
 				ctx := context.TODO()
@@ -277,7 +275,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "BucketClassNotFound",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedCreateBucket,
+				v1alpha1.FailedCreateBucket,
 				"bucketclasses.objectstorage.k8s.io \"test-bucketClass\" not found"),
 			eventTrigger: func(t *testing.T, listener *BucketClaimListener) {
 				ctx := context.TODO()

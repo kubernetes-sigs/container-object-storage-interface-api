@@ -339,7 +339,7 @@ func (c *ObjectStorageController) runController(ctx context.Context) {
 			ObjectType:       objType,
 			FullResyncPeriod: resyncPeriod,
 			RetryOnError:     true,
-			Process: func(obj interface{}) error {
+			Process: func(obj interface{}, isInInitialList bool) error {
 				for _, d := range obj.(cache.Deltas) {
 					switch d.Type {
 					case cache.Sync, cache.Replaced, cache.Added, cache.Updated:

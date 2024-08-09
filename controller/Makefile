@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := help
 SHELL = /usr/bin/env bash
+THIS_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # 'go env' vars aren't always available in make environments, so get defaults for needed ones
 GOARCH ?= $(shell go env GOARCH)
@@ -22,7 +23,7 @@ IMAGE_TAG ?= cosi-controller:latest
 .PHONY: build
 ## Build local image for development, defaulting linux/<hostarch>
 build:
-	$(DOCKER) build --platform $(PLATFORM) --tag $(IMAGE_TAG) .
+	cd .. && $(DOCKER) build --file $(THIS_DIR)/Dockerfile --platform $(PLATFORM) --tag $(IMAGE_TAG) .
 
 .PHONY: test
 ## Test packages

@@ -9,11 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	bucketcontroller "sigs.k8s.io/container-object-storage-interface-api/controller"
-	"sigs.k8s.io/container-object-storage-interface-controller/pkg/bucketclaim"
-
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/container-object-storage-interface-api/controller/pkg/bucketclaim"
+	bucketcontroller "sigs.k8s.io/container-object-storage-interface-api/internal/runtime"
 )
 
 var cmd = &cobra.Command{

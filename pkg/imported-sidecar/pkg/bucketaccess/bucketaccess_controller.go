@@ -69,6 +69,13 @@ func NewBucketAccessListener(driverName string, client cosi.ProvisionerClient) *
 func (bal *BucketAccessListener) Add(ctx context.Context, inputBucketAccess *v1alpha1.BucketAccess) error {
 	bucketAccess := inputBucketAccess.DeepCopy()
 
+	if !bucketAccess.GetDeletionTimestamp().IsZero() {
+		// If the bucketAccess has a deletion timestamp, handle it as a deletion
+		klog.V(3).InfoS("BucketAccess has deletion timestamp, handling deletion",
+			"name", bucketAccess.ObjectMeta.Name)
+		return bal.deleteBucketAccessOp(ctx, bucketAccess)
+	}
+
 	if bucketAccess.Status.AccessGranted && bucketAccess.Status.AccountID != "" {
 		klog.V(3).InfoS("BucketAccess already exists", bucketAccess.ObjectMeta.Name)
 		return nil

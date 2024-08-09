@@ -20,17 +20,15 @@ import (
 	"flag"
 	"strings"
 
-	"sigs.k8s.io/container-object-storage-interface-api/controller"
-	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/bucket"
-	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/bucketaccess"
-	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/provisioner"
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/container-object-storage-interface-api/internal/runtime"
+	cosi "sigs.k8s.io/container-object-storage-interface-api/proto"
+	"sigs.k8s.io/container-object-storage-interface-api/sidecar/pkg/bucket"
+	"sigs.k8s.io/container-object-storage-interface-api/sidecar/pkg/bucketaccess"
+	"sigs.k8s.io/container-object-storage-interface-api/sidecar/pkg/provisioner"
 )
 
 var (
@@ -90,7 +88,7 @@ func run(ctx context.Context, args []string) error {
 	}
 	klog.V(3).InfoS("Successfully connected to driver", "name", info.Name)
 
-	ctrl, err := controller.NewDefaultObjectStorageController("cosi", info.Name, 40)
+	ctrl, err := runtime.NewDefaultObjectStorageController("cosi", info.Name, 40)
 	if err != nil {
 		return err
 	}

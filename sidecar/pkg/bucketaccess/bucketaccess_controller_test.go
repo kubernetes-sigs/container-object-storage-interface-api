@@ -32,12 +32,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-api/client/apis/objectstorage/v1alpha1"
 	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
-	"sigs.k8s.io/container-object-storage-interface-api/controller/events"
-	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
-	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
+	cosi "sigs.k8s.io/container-object-storage-interface-api/proto"
+	fakespec "sigs.k8s.io/container-object-storage-interface-api/proto/fake"
+	"sigs.k8s.io/container-object-storage-interface-api/sidecar/pkg/consts"
 )
 
 func TestInitializeKubeClient(t *testing.T) {
@@ -338,7 +337,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "BucketAccessClassNotFound",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedGrantAccess,
+				v1alpha1.FailedGrantAccess,
 				"bucketaccessclasses.objectstorage.k8s.io \"bucket-access-class\" not found"),
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
 				bucketAccess := bucketAccess.DeepCopy()
@@ -363,7 +362,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "UndefinedServiceAccountName",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedGrantAccess,
+				v1alpha1.FailedGrantAccess,
 				consts.ErrUndefinedServiceAccountName.Error()),
 			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim},
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
@@ -389,7 +388,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "InvalidBucketState",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.WaitingForBucket,
+				v1alpha1.WaitingForBucket,
 				"BucketAccess can't be granted to Bucket not in Ready state: (isReady? false), (ID empty? true)"),
 			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucket},
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
@@ -416,7 +415,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "GrantInternalError",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedGrantAccess,
+				v1alpha1.FailedGrantAccess,
 				"failed to grant bucket access: rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucketReady},
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {
@@ -443,7 +442,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "RevokeInternalError",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedRevokeAccess,
+				v1alpha1.FailedRevokeAccess,
 				"failed to revoke access: rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketAccessClass, bucketClaim, bucketReady},
 			eventTrigger: func(t *testing.T, bal *BucketAccessListener) {

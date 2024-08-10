@@ -31,12 +31,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	"sigs.k8s.io/container-object-storage-interface-api/client/apis/objectstorage/v1alpha1"
 	fakebucketclientset "sigs.k8s.io/container-object-storage-interface-api/client/clientset/versioned/fake"
-	"sigs.k8s.io/container-object-storage-interface-api/controller/events"
-	"sigs.k8s.io/container-object-storage-interface-provisioner-sidecar/pkg/consts"
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
-	fakespec "sigs.k8s.io/container-object-storage-interface-spec/fake"
+	cosi "sigs.k8s.io/container-object-storage-interface-api/proto"
+	fakespec "sigs.k8s.io/container-object-storage-interface-api/proto/fake"
+	"sigs.k8s.io/container-object-storage-interface-api/sidecar/pkg/consts"
 )
 
 func TestInitializeKubeClient(t *testing.T) {
@@ -174,7 +173,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "BucketClassNameNotDefined",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedCreateBucket,
+				v1alpha1.FailedCreateBucket,
 				"BucketClassName not defined for Bucket bucket"),
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
 				if err := bl.Add(context.TODO(), bucket.DeepCopy()); !errors.Is(err, consts.ErrUndefinedBucketClassName) {
@@ -197,7 +196,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "BucketClassNotFound",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedCreateBucket,
+				v1alpha1.FailedCreateBucket,
 				"bucketclasses.objectstorage.k8s.io \"bucket-class\" not found"),
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
 				bucket := bucket.DeepCopy()
@@ -224,7 +223,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "CreateInternalError",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedCreateBucket,
+				v1alpha1.FailedCreateBucket,
 				"failed to create bucket: rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketClass},
 			eventTrigger: func(t *testing.T, bl *BucketListener) {
@@ -251,7 +250,7 @@ func TestRecordEvents(t *testing.T) {
 			name: "DeleteInternalError",
 			expectedEvent: newEvent(
 				v1.EventTypeWarning,
-				events.FailedDeleteBucket,
+				v1alpha1.FailedDeleteBucket,
 				"failed to delete bucket: rpc error: code = Internal desc = internal error test"),
 			cosiObjects: []runtime.Object{bucketClaim},
 			eventTrigger: func(t *testing.T, bl *BucketListener) {

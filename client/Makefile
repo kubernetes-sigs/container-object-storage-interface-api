@@ -1,5 +1,3 @@
-GO ?= go
-
 # # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
@@ -15,34 +13,14 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: generate
-generate: crds codegen fmt module vendor ## Run all code generation/modification tools.
-
-.PHONY: test
-test: vet ## Run all tests
+generate: crds codegen fmt ## Run all code generation/modification tools.
 
 ##@ Generators
 
 .PHONY: crds
 crds: ## Generate CustomResourceDefinitions.
-	$(GO) run -v ./vendor/sigs.k8s.io/controller-tools/cmd/controller-gen crd paths="./apis/objectstorage/..."
+	go run -v ./vendor/sigs.k8s.io/controller-tools/cmd/controller-gen crd paths="./apis/objectstorage/..."
 
 .PHONY:
 codegen: ## Generate deepcopy, client, informer, and lister implementations.
 	./hack/update-codegen.sh
-
-.PHONY: fmt
-fmt: ## Run go fmt
-	$(GO) fmt ./...
-
-.PHONY: module ## Update go mod
-	$(GO) mod tidy
-
-.PHONY: vendor
-vendor: ## Update vendor dir
-	$(GO) mod vendor
-
-##@ Tests
-
-.PHONY: vet
-vet: ## Run go vet
-	$(GO) vet ./...

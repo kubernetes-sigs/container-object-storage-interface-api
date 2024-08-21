@@ -3,16 +3,17 @@ package cositest
 import (
 	"e2e/assesments/cosi"
 	"e2e/envfuncs"
+	"e2e/setup"
 	"flag"
 	"log"
 	"os"
 	"testing"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 	cosiv1alpha1 "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -25,8 +26,6 @@ var (
 	noInstallCRDs         bool
 	noInstallController   bool
 	noInstallSampleDriver bool
-
-	foo string
 )
 
 func init() {
@@ -105,10 +104,13 @@ func TestMain(m *testing.M) {
 func TestBucketProvisioning(t *testing.T) {
 	testenv.Test(t,
 		features.New("Greenfield Bucket").
+			Setup(setup.RegisterResourcesForTest(
+				&v1alpha1.BucketClaim{},
+			)).
 			Assess("BucketClaim is created",
-				cosi.CreateBucketClaim(&v1alpha1.BucketClaim{})).
+				cosi.CreateBucketClaim()).
 			Assess("Bucket is created",
-				cosi.CreateBucket(&v1alpha1.Bucket{})).
+				cosi.BucketExists(true)).
 			Assess("BucketClaim has ready status",
 				cosi.BucketClaimStatusReady(true)).
 			Assess("BucketClaim is deleted",
@@ -118,10 +120,14 @@ func TestBucketProvisioning(t *testing.T) {
 			Feature(),
 
 		features.New("Brownfield Bucket").
+			Setup(setup.RegisterResourcesForTest(
+				&v1alpha1.Bucket{},
+				&v1alpha1.BucketClaim{},
+			)).
 			Assess("BucketClaim is created",
-				cosi.CreateBucketClaim(&v1alpha1.BucketClaim{})).
+				cosi.CreateBucketClaim()).
 			Assess("Bucket is created",
-				cosi.CreateBucket(&v1alpha1.Bucket{})).
+				cosi.CreateBucket()).
 			Assess("BucketClaim has ready status",
 				cosi.BucketClaimStatusReady(true)).
 			Assess("BucketClaim is deleted",
@@ -135,16 +141,20 @@ func TestBucketProvisioning(t *testing.T) {
 func TestBucketAccessProvisioning(t *testing.T) {
 	testenv.Test(t,
 		features.New("BucketAccess for S3").
+			Setup(setup.RegisterResourcesForTest(
+				&v1alpha1.BucketClaim{},
+				&v1alpha1.BucketAccess{},
+			)).
 			Assess("BucketClaim is created",
-				cosi.CreateBucketClaim(&v1alpha1.BucketClaim{})).
+				cosi.CreateBucketClaim()).
 			Assess("Bucket is created",
-				cosi.CreateBucket(&v1alpha1.Bucket{})).
+				cosi.BucketExists(true)).
 			Assess("BucketClaim has ready status",
 				cosi.BucketClaimStatusReady(true)).
 			Assess("BucketAccess is created",
-				cosi.CreateBucketAccess(&v1alpha1.BucketAccess{})).
+				cosi.CreateBucketAccess()).
 			Assess("BucketAccess has ready status",
-				cosi.BucketAccessStatusReady(true)).
+				cosi.BucketAccessStatusGranted(true)).
 			Assess("Secret is created",
 				cosi.SecretExists(true)).
 			Assess("BucketAccess is deleted",
@@ -158,16 +168,20 @@ func TestBucketAccessProvisioning(t *testing.T) {
 			Feature(),
 
 		features.New("BucketAccess for Azure").
+			Setup(setup.RegisterResourcesForTest(
+				&v1alpha1.BucketClaim{},
+				&v1alpha1.BucketAccess{},
+			)).
 			Assess("BucketClaim is created",
-				cosi.CreateBucketClaim(&v1alpha1.BucketClaim{})).
+				cosi.CreateBucketClaim()).
 			Assess("Bucket is created",
-				cosi.CreateBucket(&v1alpha1.Bucket{})).
+				cosi.BucketExists(true)).
 			Assess("BucketClaim has ready status",
 				cosi.BucketClaimStatusReady(true)).
 			Assess("BucketAccess is created",
-				cosi.CreateBucketAccess(&v1alpha1.BucketAccess{})).
+				cosi.CreateBucketAccess()).
 			Assess("BucketAccess has ready status",
-				cosi.BucketAccessStatusReady(true)).
+				cosi.BucketAccessStatusGranted(true)).
 			Assess("Secret is created",
 				cosi.SecretExists(true)).
 			Assess("BucketAccess is deleted",

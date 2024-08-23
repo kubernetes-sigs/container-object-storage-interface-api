@@ -1,0 +1,7 @@
+apiVersion: objectstorage.k8s.io/v1alpha1
+kind: BucketClaim
+metadata:
+  name: test-azure-iam-retain
+spec:
+  bucketClassName: test-azure-iam-retain
+  protocols: [ 'azure' ]

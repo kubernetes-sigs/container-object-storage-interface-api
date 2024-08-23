@@ -1,0 +1,7 @@
+apiVersion: objectstorage.k8s.io/v1alpha1
+kind: BucketClaim
+metadata:
+  name: test-azure-key-delete
+spec:
+  bucketClassName: test-azure-key-delete
+  protocols: [ 'azure' ]

@@ -1,0 +1,7 @@
+apiVersion: objectstorage.k8s.io/v1alpha1
+kind: BucketAccessClass
+metadata:
+  name: test-azure-key-delete
+driverName: sample-driver.objectstorage.k8s.io
+authenticationType: Key
+parameters: {}

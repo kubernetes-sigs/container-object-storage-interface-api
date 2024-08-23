@@ -1,0 +1,9 @@
+apiVersion: objectstorage.k8s.io/v1alpha1
+kind: BucketAccess
+metadata:
+  name: test-s3-iam-delete
+spec:
+  bucketClaimName: test-s3-iam-delete
+  protocol: S3
+  bucketAccessClassName: test-s3-iam-delete
+  credentialsSecretName: test-s3-iam-delete

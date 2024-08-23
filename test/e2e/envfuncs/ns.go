@@ -7,7 +7,7 @@ import (
 
 	"e2e/envfuncs/helpers"
 
-	v1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/types"
 )
@@ -20,7 +20,7 @@ func CreateNSForTest() types.TestEnvFunc {
 		ctx = context.WithValue(ctx, helpers.GetNamespaceKey(t), ns)
 
 		t.Logf("Creating NS %v for test %v", ns, t.Name())
-		nsObj := v1.Namespace{}
+		nsObj := core.Namespace{}
 		nsObj.Name = ns
 		return ctx, cfg.Client().Resources().Create(ctx, &nsObj)
 	}
@@ -32,7 +32,7 @@ func DeleteNSForTest() types.TestEnvFunc {
 		ns := fmt.Sprint(ctx.Value(helpers.GetNamespaceKey(t)))
 		t.Logf("Deleting NS %v for test %v", ns, t.Name())
 
-		nsObj := v1.Namespace{}
+		nsObj := core.Namespace{}
 		nsObj.Name = ns
 		return ctx, cfg.Client().Resources().Delete(ctx, &nsObj)
 	}

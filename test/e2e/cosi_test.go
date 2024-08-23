@@ -1,17 +1,16 @@
 package cositest
 
 import (
-	"e2e/assesments/cosi"
+	"e2e/assesments"
 	"e2e/envfuncs"
-	"e2e/setup"
+	"e2e/envfuncs/helpers"
 	"flag"
 	"log"
 	"os"
 	"testing"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
-	cosiv1alpha1 "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	cosi "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -29,8 +28,8 @@ var (
 )
 
 func init() {
-	apiextensionsv1.AddToScheme(scheme.Scheme)
-	cosiv1alpha1.AddToScheme(scheme.Scheme)
+	apiextensions.AddToScheme(scheme.Scheme)
+	cosi.AddToScheme(scheme.Scheme)
 }
 
 func TestMain(m *testing.M) {
@@ -66,7 +65,30 @@ func TestMain(m *testing.M) {
 	}
 	testenv = env.NewWithConfig(cfg)
 
+	crds := &apiextensions.CustomResourceDefinitionList{}
+	if !noInstallCRDs {
+		crdPaths := []string{
+			"../../client/config/crd/objectstorage.k8s.io_bucketaccessclasses.yaml",
+			"../../client/config/crd/objectstorage.k8s.io_bucketaccesses.yaml",
+			"../../client/config/crd/objectstorage.k8s.io_bucketclaims.yaml",
+			"../../client/config/crd/objectstorage.k8s.io_bucketclasses.yaml",
+			"../../client/config/crd/objectstorage.k8s.io_buckets.yaml",
+		}
+
+		for _, path := range crdPaths {
+
+			crd, err := helpers.Load(path)
+			if err != nil {
+				log.Fatalf("failed to load resource: %s", err)
+			}
+
+			crds.Items = append(crds.Items, *crd)
+		}
+
+	}
+
 	testenv.Setup(
+		envfuncs.RegisterResources(crds),
 		envfuncs.CreateCluster(noKinD),
 
 		envfuncs.InstallCRDs(noInstallCRDs),
@@ -91,7 +113,7 @@ func TestMain(m *testing.M) {
 	testenv.BeforeEachTest(
 		envfuncs.IsClusterReadyTest(),
 		envfuncs.CreateNSForTest(),
-		cosi.CRDsInstalled(),
+		assesments.CRDsInstalled(),
 	)
 
 	testenv.AfterEachTest(
@@ -104,36 +126,38 @@ func TestMain(m *testing.M) {
 func TestBucketProvisioning(t *testing.T) {
 	testenv.Test(t,
 		features.New("Greenfield Bucket").
-			Setup(setup.RegisterResourcesForTest(
-				&v1alpha1.BucketClaim{},
-			)).
+			Assess("Resources are registered",
+				assesments.RegisterResourcesForTest(
+					&cosi.BucketClaim{},
+				)).
 			Assess("BucketClaim is created",
-				cosi.CreateBucketClaim()).
+				assesments.CreateBucketClaim()).
 			Assess("Bucket is created",
-				cosi.BucketExists(true)).
+				assesments.BucketExists(true)).
 			Assess("BucketClaim has ready status",
-				cosi.BucketClaimStatusReady(true)).
+				assesments.BucketClaimStatusReady(true)).
 			Assess("BucketClaim is deleted",
-				cosi.DeleteBucketClaim()).
+				assesments.DeleteBucketClaim()).
 			Assess("Bucket is deleted",
-				cosi.BucketExists(false)).
+				assesments.BucketExists(false)).
 			Feature(),
 
 		features.New("Brownfield Bucket").
-			Setup(setup.RegisterResourcesForTest(
-				&v1alpha1.Bucket{},
-				&v1alpha1.BucketClaim{},
-			)).
+			Assess("Resources are registered",
+				assesments.RegisterResourcesForTest(
+					&cosi.Bucket{},
+					&cosi.BucketClaim{},
+				)).
 			Assess("BucketClaim is created",
-				cosi.CreateBucketClaim()).
+				assesments.CreateBucketClaim()).
 			Assess("Bucket is created",
-				cosi.CreateBucket()).
+				assesments.CreateBucket()).
 			Assess("BucketClaim has ready status",
-				cosi.BucketClaimStatusReady(true)).
+				assesments.BucketClaimStatusReady(true)).
 			Assess("BucketClaim is deleted",
-				cosi.DeleteBucketClaim()).
+				assesments.DeleteBucketClaim()).
 			Assess("Bucket is deleted",
-				cosi.BucketExists(false)).
+				assesments.BucketExists(false)).
 			Feature(),
 	)
 }
@@ -141,57 +165,59 @@ func TestBucketProvisioning(t *testing.T) {
 func TestBucketAccessProvisioning(t *testing.T) {
 	testenv.Test(t,
 		features.New("BucketAccess for S3").
-			Setup(setup.RegisterResourcesForTest(
-				&v1alpha1.BucketClaim{},
-				&v1alpha1.BucketAccess{},
-			)).
+			Assess("Resources are registered",
+				assesments.RegisterResourcesForTest(
+					&cosi.BucketClaim{},
+					&cosi.BucketAccess{},
+				)).
 			Assess("BucketClaim is created",
-				cosi.CreateBucketClaim()).
+				assesments.CreateBucketClaim()).
 			Assess("Bucket is created",
-				cosi.BucketExists(true)).
+				assesments.BucketExists(true)).
 			Assess("BucketClaim has ready status",
-				cosi.BucketClaimStatusReady(true)).
+				assesments.BucketClaimStatusReady(true)).
 			Assess("BucketAccess is created",
-				cosi.CreateBucketAccess()).
+				assesments.CreateBucketAccess()).
 			Assess("BucketAccess has ready status",
-				cosi.BucketAccessStatusGranted(true)).
+				assesments.BucketAccessStatusGranted(true)).
 			Assess("Secret is created",
-				cosi.SecretExists(true)).
+				assesments.SecretExists(true)).
 			Assess("BucketAccess is deleted",
-				cosi.DeleteBucketAccess()).
+				assesments.DeleteBucketAccess()).
 			Assess("Secret is deleted",
-				cosi.SecretExists(false)).
+				assesments.SecretExists(false)).
 			Assess("BucketClaim is deleted",
-				cosi.DeleteBucketClaim()).
+				assesments.DeleteBucketClaim()).
 			Assess("Bucket is deleted",
-				cosi.BucketExists(false)).
+				assesments.BucketExists(false)).
 			Feature(),
 
 		features.New("BucketAccess for Azure").
-			Setup(setup.RegisterResourcesForTest(
-				&v1alpha1.BucketClaim{},
-				&v1alpha1.BucketAccess{},
-			)).
+			Assess("Resources are registered",
+				assesments.RegisterResourcesForTest(
+					&cosi.BucketClaim{},
+					&cosi.BucketAccess{},
+				)).
 			Assess("BucketClaim is created",
-				cosi.CreateBucketClaim()).
+				assesments.CreateBucketClaim()).
 			Assess("Bucket is created",
-				cosi.BucketExists(true)).
+				assesments.BucketExists(true)).
 			Assess("BucketClaim has ready status",
-				cosi.BucketClaimStatusReady(true)).
+				assesments.BucketClaimStatusReady(true)).
 			Assess("BucketAccess is created",
-				cosi.CreateBucketAccess()).
+				assesments.CreateBucketAccess()).
 			Assess("BucketAccess has ready status",
-				cosi.BucketAccessStatusGranted(true)).
+				assesments.BucketAccessStatusGranted(true)).
 			Assess("Secret is created",
-				cosi.SecretExists(true)).
+				assesments.SecretExists(true)).
 			Assess("BucketAccess is deleted",
-				cosi.DeleteBucketAccess()).
+				assesments.DeleteBucketAccess()).
 			Assess("Secret is deleted",
-				cosi.SecretExists(false)).
+				assesments.SecretExists(false)).
 			Assess("BucketClaim is deleted",
-				cosi.DeleteBucketClaim()).
+				assesments.DeleteBucketClaim()).
 			Assess("Bucket is deleted",
-				cosi.BucketExists(false)).
+				assesments.BucketExists(false)).
 			Feature(),
 	)
 }

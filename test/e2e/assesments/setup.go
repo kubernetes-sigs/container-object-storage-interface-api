@@ -1,12 +1,14 @@
-package setup
+package assesments
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+	cosi "sigs.k8s.io/container-object-storage-interface-api/apis/objectstorage/v1alpha1"
+
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/types"
 )
@@ -14,6 +16,8 @@ import (
 type (
 	TypeCtxKey string
 )
+
+var ErrKeyNotFound = errors.New("required resource not found")
 
 const (
 	BucketTypeCtxKey       = TypeCtxKey("cosi.Bucket")
@@ -25,17 +29,17 @@ func RegisterResourcesForTest(objects ...runtime.Object) types.StepFunc {
 	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 		for _, obj := range objects {
 			switch typedObj := obj.(type) {
-			case *v1alpha1.Bucket:
+			case *cosi.Bucket:
 				ctx = context.WithValue(ctx, BucketTypeCtxKey, typedObj)
 
-			case *v1alpha1.BucketClaim:
+			case *cosi.BucketClaim:
 				ctx = context.WithValue(ctx, BucketClaimTypeCtxKey, typedObj)
 
-			case *v1alpha1.BucketAccess:
+			case *cosi.BucketAccess:
 				ctx = context.WithValue(ctx, BucketAccessTypeCtxKey, typedObj)
 
 			default:
-				panic(fmt.Sprintf("invalid type: %T (Kind: %s)", typedObj, obj.GetObjectKind()))
+				panic(fmt.Sprintf("unsupported type: %T (Kind: %s)", typedObj, obj.GetObjectKind()))
 			}
 		}
 

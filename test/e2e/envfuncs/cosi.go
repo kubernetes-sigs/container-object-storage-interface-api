@@ -2,10 +2,38 @@ package envfuncs
 
 import (
 	"context"
+	"fmt"
+
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/types"
 )
+
+type (
+	TypeCtxKey string
+)
+
+const (
+	CustomResourceDefinitionListTypeCtxKey = TypeCtxKey("apiextensions.CustomResourceDefinitionList")
+)
+
+func RegisterResources(objects ...runtime.Object) types.EnvFunc {
+	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		for _, obj := range objects {
+			switch typedObj := obj.(type) {
+			case *apiextensions.CustomResourceDefinitionList:
+				ctx = context.WithValue(ctx, CustomResourceDefinitionListTypeCtxKey, typedObj)
+
+			default:
+				panic(fmt.Sprintf("unsupported type: %T (Kind: %s)", typedObj, obj.GetObjectKind()))
+			}
+		}
+
+		return ctx, nil
+	}
+}
 
 // InstallCRDs installs the necessary CRDs unless skipping is specified.
 func InstallCRDs(skip bool) types.EnvFunc {
@@ -14,6 +42,14 @@ func InstallCRDs(skip bool) types.EnvFunc {
 	}
 
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		crds := ctx.Value(CustomResourceDefinitionListTypeCtxKey).(*apiextensions.CustomResourceDefinitionList)
+
+		for _, crd := range crds.Items {
+			if err := cfg.Client().Resources().Create(ctx, &crd); err != nil {
+				return ctx, err
+			}
+		}
+
 		return ctx, nil
 	}
 }
@@ -25,6 +61,14 @@ func UninstallCRDs(skip bool) types.EnvFunc {
 	}
 
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		crds := ctx.Value(CustomResourceDefinitionListTypeCtxKey).(*apiextensions.CustomResourceDefinitionList)
+
+		for _, crd := range crds.Items {
+			if err := cfg.Client().Resources().Delete(ctx, &crd); err != nil {
+				return ctx, err
+			}
+		}
+
 		return ctx, nil
 	}
 }

@@ -16,6 +16,8 @@ type (
 	ClusterCtxKey string
 )
 
+const clusterKey = ClusterCtxKey("cluster")
+
 // CreateCluster creates a new Kubernetes cluster unless skipping is specified.
 func CreateCluster(skip bool) types.EnvFunc {
 	if skip {
@@ -25,6 +27,7 @@ func CreateCluster(skip bool) types.EnvFunc {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		name := envconf.RandomName("cosi-e2e-cluster", 32)
 		cluster := kind.NewCluster(name)
+
 		kubeconfig, err := cluster.Create(ctx)
 		if err != nil {
 			return ctx, err
@@ -40,7 +43,7 @@ func CreateCluster(skip bool) types.EnvFunc {
 		cfg.WithKubeconfigFile(kubeconfig)
 
 		// propagate cluster value
-		return context.WithValue(ctx, ClusterCtxKey("cluster"), cluster), nil
+		return context.WithValue(ctx, clusterKey, cluster), nil
 	}
 }
 
@@ -74,7 +77,7 @@ func DeleteCluster(skip bool) types.EnvFunc {
 	}
 
 	return func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
-		cluster := ctx.Value(ClusterCtxKey("cluster")).(*kind.Cluster)
+		cluster := ctx.Value(clusterKey).(*kind.Cluster)
 		if cluster == nil {
 			return ctx, fmt.Errorf("error getting kind cluster from context")
 		}

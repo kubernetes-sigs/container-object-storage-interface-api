@@ -1,9 +1,0 @@
-apiVersion: objectstorage.k8s.io/v1alpha1
-kind: BucketAccess
-metadata:
-  name: test-s3-iam-retain
-spec:
-  bucketClaimName: test-s3-iam-retain
-  protocol: S3
-  bucketAccessClassName: test-s3-iam-retain
-  credentialsSecretName: test-s3-iam-retain

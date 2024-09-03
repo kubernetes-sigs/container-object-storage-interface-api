@@ -1,9 +1,0 @@
-apiVersion: objectstorage.k8s.io/v1alpha1
-kind: BucketAccess
-metadata:
-  name: test-azure-iam-delete
-spec:
-  bucketClaimName: test-azure-iam-delete
-  protocol: azure
-  bucketAccessClassName: test-azure-iam-delete
-  credentialsSecretName: test-azure-iam-delete

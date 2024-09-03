@@ -1,9 +1,0 @@
-apiVersion: objectstorage.k8s.io/v1alpha1
-kind: BucketAccess
-metadata:
-  name: test-azure-key-retain
-spec:
-  bucketClaimName: test-azure-key-retain
-  protocol: azure
-  bucketAccessClassName: test-azure-key-retain
-  credentialsSecretName: test-azure-key-retain

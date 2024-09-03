@@ -1,7 +1,0 @@
-apiVersion: objectstorage.k8s.io/v1alpha1
-kind: BucketAccessClass
-metadata:
-  name: test-azure-iam-retain
-driverName: sample-driver.objectstorage.k8s.io
-authenticationType: IAM
-parameters: {}

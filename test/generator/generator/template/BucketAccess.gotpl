@@ -1,0 +1,15 @@
+---
+apiVersion: objectstorage.k8s.io/v1alpha1
+kind: BucketAccess
+metadata:
+  name: {{ index . "name" }}
+spec:
+  bucketClaimName: {{ index . "name" }}
+  protocol: {{ index . "protocol" }}
+  bucketAccessClassName: {{ index . "name" }}
+{{- $auth := index . "authenticationType" }}
+{{- if eq $auth "Key" }}
+  credentialsSecretName: {{ index . "name" }}
+{{- else }}
+  serviceAccountName: {{ index . "name" }}
+{{- end }}

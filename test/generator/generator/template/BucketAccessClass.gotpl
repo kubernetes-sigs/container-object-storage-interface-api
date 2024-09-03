@@ -1,0 +1,11 @@
+---
+apiVersion: objectstorage.k8s.io/v1alpha1
+kind: BucketAccessClass
+metadata:
+  name: {{ index . "name" }}
+driverName: {{ index . "driver" }}
+authenticationType: {{ index . "authenticationType" }}
+parameters:
+{{- range $key, $value := index . "bucketAccessClassParams" }}
+  {{ $key }}: {{ $value }}
+{{- end }}

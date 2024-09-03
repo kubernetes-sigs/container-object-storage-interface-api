@@ -1,0 +1,10 @@
+templates: {}
+driver: sample-driver.objectstorage.k8s.io
+deletionPolicy:
+- Delete
+authenticationType:
+- Key
+protocol:
+- S3
+bucketClassParams: []
+bucketAccessClassParams: []

@@ -1,0 +1,8 @@
+---
+apiVersion: objectstorage.k8s.io/v1alpha1
+kind: BucketClaim
+metadata:
+  name: {{ index . "name" }}
+spec:
+  bucketClassName: {{ index . "name" }}
+  protocols: [ '{{ index . "protocol" }}' ]

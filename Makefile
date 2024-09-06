@@ -60,6 +60,16 @@ vet: vet.client vet.controller vet.sidecar ## Vet code
 .PHONY: test
 test: .test.proto test.client test.controller test.sidecar ## Run tests including unit tests
 
+.PHONY: test-e2e
+test-e2e: # Run e2e tests
+	@echo "unimplemented placeholder"
+
+.PHONY: lint
+lint: golangci-lint.client golangci-lint.controller golangci-lint.sidecar ## Run all linters (suggest `make -k`)
+
+.PHONY: lint-fix
+lint-fix: golangci-lint-fix.client golangci-lint-fix.controller golangci-lint-fix.sidecar ## Run all linters and perform fixes where possible (suggest `make -k`)
+
 
 ##@ Build
 
@@ -81,7 +91,38 @@ clean:
 ## Clean build environment and cached tools
 clobber:
 	$(MAKE) -C proto clobber
+	rm -rf $(CURDIR)/.cache
 
+##
+## === TOOLS === #
+
+GOLANGCI_LINT_VERSION ?= v1.61.0
+
+TOOLBIN ?= $(CURDIR)/.cache/tools
+$(TOOLBIN):
+	mkdir -p $(TOOLBIN)
+
+GOLANGCI_LINT ?= $(TOOLBIN)/golangci-lint
+# .PHONY: golangci-lint
+# golangci-lint: $(GOLANGCI_LINT)
+$(GOLANGCI_LINT): $(TOOLBIN)
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+
+# go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
+# $1 - target path with name of binary
+# $2 - package url which can be installed
+# $3 - specific version of package
+define go-install-tool
+@[ -f "$(1)-$(3)" ] || { \
+set -e; \
+package=$(2)@$(3) ;\
+echo "Downloading $${package}" ;\
+rm -f $(1) || true ;\
+GOBIN=$(TOOLBIN) go install $${package} ;\
+mv $(1) $(1)-$(3) ;\
+} ;\
+ln -sf $(1)-$(3) $(1)
+endef
 
 ##
 ## === INTERMEDIATES === #
@@ -100,6 +141,13 @@ vet.%: FORCE
 
 test.%: fmt.% vet.% FORCE
 	cd $* && go test ./...
+
+# golangci-lint --new flag only complains about new code
+golangci-lint.%: $(GOLANGCI_LINT)
+	cd $* && $(GOLANGCI_LINT) run --config $(CURDIR)/.golangci.yaml --new
+
+golangci-lint-fix.%: $(GOLANGCI_LINT)
+	cd $* && $(GOLANGCI_LINT) run --config $(CURDIR)/.golangci.yaml --new --fix
 
 .PHONY: .test.proto
 .test.proto: # gRPC proto has a special unit test

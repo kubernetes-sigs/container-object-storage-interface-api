@@ -48,7 +48,7 @@ spec:
                   CredentialsSecretName is the name of the secret that COSI should populate
                   with the credentials. If a secret by this name already exists, then it is
                   assumed that credentials have already been generated. It is not overridden.
-                  This secret is deleted when the BucketAccess is delted.
+                  This secret is deleted when the BucketAccess is deleted.
                 type: string
               protocol:
                 description: |-

@@ -16,7 +16,10 @@ COPY internal/ internal/
 COPY sidecar/go.mod sidecar/go.mod
 COPY sidecar/go.sum sidecar/go.sum
 
-RUN cd sidecar && go mod download
+WORKDIR /buildroot/sidecar
+RUN go mod download
+
+WORKDIR /buildroot
 
 COPY sidecar/cmd/ sidecar/cmd/
 COPY sidecar/pkg/ sidecar/pkg/

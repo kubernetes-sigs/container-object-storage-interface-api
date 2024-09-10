@@ -162,7 +162,7 @@ type BucketClaimSpec struct {
 }
 
 type BucketClaimStatus struct {
-	// BucketReady indicates that the bucket is ready for consumpotion
+	// BucketReady indicates that the bucket is ready for consumption
 	// by workloads
 	BucketReady bool `json:"bucketReady"`
 
@@ -287,7 +287,7 @@ type BucketAccessSpec struct {
 	// CredentialsSecretName is the name of the secret that COSI should populate
 	// with the credentials. If a secret by this name already exists, then it is
 	// assumed that credentials have already been generated. It is not overridden.
-	// This secret is deleted when the BucketAccess is delted.
+	// This secret is deleted when the BucketAccess is deleted.
 	CredentialsSecretName string `json:"credentialsSecretName"`
 
 	// ServiceAccountName is the name of the serviceAccount that COSI will map

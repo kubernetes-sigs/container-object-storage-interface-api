@@ -34,4 +34,4 @@ spec:
           image: gcr.io/k8s-staging-sig-storage/objectstorage-controller:v20221027-v0.1.1-8-g300019f
           imagePullPolicy: Always
           args:
-          - "--v=5"
+            - "--v=5"

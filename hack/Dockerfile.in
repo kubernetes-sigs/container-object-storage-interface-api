@@ -14,7 +14,10 @@ COPY internal/ internal/
 COPY {{COMPONENT}}/go.mod {{COMPONENT}}/go.mod
 COPY {{COMPONENT}}/go.sum {{COMPONENT}}/go.sum
 
-RUN cd {{COMPONENT}} && go mod download
+WORKDIR /buildroot/{{COMPONENT}}
+RUN go mod download
+
+WORKDIR /buildroot
 
 COPY {{COMPONENT}}/cmd/ {{COMPONENT}}/cmd/
 COPY {{COMPONENT}}/pkg/ {{COMPONENT}}/pkg/

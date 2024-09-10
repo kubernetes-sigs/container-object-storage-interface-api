@@ -1,0 +1,7 @@
+extends: default
+rules:
+  document-start: disable # don't care if doc doesn't start with ---
+  line-length:
+    level: warning
+  indentation: # kubebuilder generator uses non-recommended indentation, but it's consistent
+    indent-sequences: consistent

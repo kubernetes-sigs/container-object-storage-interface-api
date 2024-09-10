@@ -1,0 +1,50 @@
+// cSpell Settings
+{
+  // Version of the setting file.  Always 0.2
+  "version": "0.2",
+  // language - current active spelling language
+  "language": "en",
+  // words - list of words to be always considered correct
+  "words": [
+      "apiextensions",
+      "bucketaccess",
+      "bucketaccessclass",
+      "bucketaccessclasses",
+      "bucketaccesses",
+      "bucketclaim",
+      "bucketclaims",
+      "bucketclass",
+      "bucketclasses",
+      "buildroot",
+      "buildx",
+      "CDPATH",
+      "cloudbuild",
+      "codegen",
+      "cosi",
+      "crds",
+      "devel",
+      "distroless",
+      "ghash",
+      "GOARCH",
+      "golangci",
+      "hadolint",
+      "healthz",
+      "HIGHCPU",
+      "klog",
+      "kubebuilder",
+      "kustomization",
+      "nonroot",
+      "objectstorage",
+      "readyz",
+      "rolebinding",
+      "serviceaccount",
+      "serviceaccounts",
+      "shellcheck",
+  ],
+  // flagWords - list of words to be always considered incorrect
+  // This is useful for offensive words and common spelling errors.
+  // For example "hte" should be "the"
+  "flagWords": [
+      "hte"
+  ]
+}

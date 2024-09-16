@@ -1,8 +1,11 @@
 *.tmp
 .DS_Store
 .build
+.cache
 *.swp
 release-tools
 .idea
 travis.yml
-
+megalinter-reports/
+mega-linter.log
+*megalinter*.txt

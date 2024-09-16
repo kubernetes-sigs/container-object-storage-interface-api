@@ -16,7 +16,10 @@ COPY internal/ internal/
 COPY controller/go.mod controller/go.mod
 COPY controller/go.sum controller/go.sum
 
-RUN cd controller && go mod download
+WORKDIR /buildroot/controller
+RUN go mod download
+
+WORKDIR /buildroot
 
 COPY controller/cmd/ controller/cmd/
 COPY controller/pkg/ controller/pkg/

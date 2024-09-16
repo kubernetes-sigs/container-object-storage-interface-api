@@ -18,8 +18,10 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+# shellcheck disable=SC1091 # Not following: (with below) this is working to load the right path
 CLIENT_ROOT=$(unset CDPATH && cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)
 
+# shellcheck disable=SC1091 # Not following: (with above) this is working to load the right path
 source "${CLIENT_ROOT}/vendor/k8s.io/code-generator/kube_codegen.sh"
 
 kube::codegen::gen_helpers \

@@ -1,0 +1,18 @@
+# Configuration file for MegaLinter
+# See all available variables at https://megalinter.io/configuration/ and in linters documentation
+
+ENABLE_LINTERS: # all other linters will be disabled by default
+  - BASH_SHELLCHECK
+  - YAML_YAMLLINT
+  - DOCKERFILE_HADOLINT
+  - SPELL_CSPELL
+
+DISABLE_LINTERS:
+  # golangci-lint can't lint the whole project and needs called one-by-one for each submodule
+  - GO_GOLANGCI_LINT
+
+FILTER_REGEX_INCLUDE: '(\.*\.go)'
+
+FILTER_REGEX_EXCLUDE: '(\.github/workflows|.*/vendor|pkg/imported-.*)'
+
+# MARKDOWN_FILTER_REGEX_EXCLUDE: '(license\.md|docs/licenses)'

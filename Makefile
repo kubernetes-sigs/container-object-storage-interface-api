@@ -20,6 +20,9 @@ SHELL = /usr/bin/env bash
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+# If GOARCH is not set in the env, find it
+GOARCH ?= $(shell go env GOARCH)
+
 ##
 ## ==== ARGS ===== #
 
@@ -29,12 +32,14 @@ DOCKER ?= docker
 ## Platform for 'build'
 PLATFORM ?= linux/$(GOARCH)
 
+## Additional args for 'build'
+BUILD_ARGS ?=
+
 ## Image tag for controller image build
 CONTROLLER_TAG ?= cosi-controller:latest
 
 ## Image tag for sidecar image build
 SIDECAR_TAG ?= cosi-provisioner-sidecar:latest
-
 
 ##@ Development
 
@@ -78,9 +83,9 @@ build: build.controller build.sidecar ## Build all container images for developm
 
 .PHONY: build.controller build.sidecar
 build.controller: controller/Dockerfile ## Build only the controller container image
-	$(DOCKER) build --file controller/Dockerfile --platform $(PLATFORM) --tag $(CONTROLLER_TAG) .
+	$(DOCKER) build --file controller/Dockerfile --platform $(PLATFORM) $(BUILD_ARGS) --tag $(CONTROLLER_TAG) .
 build.sidecar: sidecar/Dockerfile ## Build only the sidecar container image
-	$(DOCKER) build --file sidecar/Dockerfile --platform $(PLATFORM) --tag $(SIDECAR_TAG) .
+	$(DOCKER) build --file sidecar/Dockerfile --platform $(PLATFORM) $(BUILD_ARGS) --tag $(SIDECAR_TAG) .
 
 .PHONY: clean
 ## Clean build environment

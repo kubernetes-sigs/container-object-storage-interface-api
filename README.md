@@ -1,49 +1,32 @@
 ![version](https://img.shields.io/badge/status-pre--alpha-lightgrey) ![apiVersion](https://img.shields.io/badge/apiVersion-v1alpha1-lightgreen)
 
 
-# Container Object Storage Interface API
+# Container Object Storage Interface
 
-This repository hosts the API defintion of the Custom Resource Definitions (CRD) used for the Container Object Storage Interface (COSI) project. The provisioned unit of storage is a `Bucket`. The following CRDs are defined for managing the lifecycle of Buckets:
+This repository hosts the Container Object Storage Interface (COSI) project.
 
- - BucketClaim - Represents a request to provision a Bucket
- - BucketClass - Represents a class of Buckets with similar characteristics
- - Bucket - Represents a Bucket or its equivalent in the storage backend
+## Documentation
 
- The following CRDs are defined for managing the lifecycle of workloads accessing the Bucket:
+To deploy, run `kubectl apply -k .`
 
- - BucketAccessClass - Represents a class of accessors with similar access requirements
- - BucketAccess - Represents a access token or service account in the storage backend
-
-**NOTE**: All of the APIs are defined under the API group `objectstorage.k8s.io`.
-
-For more information about COSI, visit our [documentation](https://container-object-storage-interface.github.io/docs).
 ## Developer Guide
 
-All API definitions are in [`apis/objectstorage.k8s.io/`](./apis/objectstorage/). All API changes **_MUST_** satisfy the following requirements:
+All API definitions are in [`client/apis/objectstorage`](./client/apis/objectstorage/). All API changes **_MUST_** satisfy the following requirements:
 
- - Must be backwards compatible
- - Must be in-sync with the API definitions in [sigs.k8s.io/container-object-storage-interface-spec](https://sigs.k8s.io/container-object-storage-interface-spec)
+- Must be backwards compatible
+- Must be in-sync with the API definitions in [sigs.k8s.io/container-object-storage-interface-spec](https://sigs.k8s.io/container-object-storage-interface-spec)
 
 ### Build and Test
 
-1. Test and Build the project
-
-```
-make all
-```
-
-2. Generate CRDs
-
-```
-make codegen
-```
+See `make help` for assistance
 
 ## Adding new fields to protocols
 
-1. Create a new issue raising a RFC for the changes following this format:
+Create a new issue raising a RFC for the changes following this format:
 
-Title: [RFC] Changes to protocol xyz
-> **Info**:
+**Title:** [RFC] Changes to protocol xyz
+
+**Description:**
 > 1. Protocol:
 > 2. Fields Added:
 > 3. Why is this change neccessary?
@@ -54,10 +37,8 @@ Title: [RFC] Changes to protocol xyz
 
 ## References
 
- - [Documentation](https://container-object-storage-interface.github.io/)
- - [Deployment Guide](https://container-object-storage-interface.github.io/docs/deployment-guide)
- - [Weekly Meetings](https://container-object-storage-interface.github.io/docs/community/weekly-meetings)
- - [Roadmap](https://github.com/orgs/kubernetes-sigs/projects/8)
+ - Weekly Meetings: Thursdays from 13:30 to 14:00 US Eastern Time
+ - [Roadmap](https://github.com/orgs/kubernetes-sigs/projects/63/)
 
 ## Community, discussion, contribution, and support
 

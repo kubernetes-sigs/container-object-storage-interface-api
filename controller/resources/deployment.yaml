@@ -4,10 +4,7 @@ apiVersion: apps/v1
 metadata:
   name: objectstorage-controller
   labels:
-    app.kubernetes.io/part-of: container-object-storage-interface
-    app.kubernetes.io/component: controller
-    app.kubernetes.io/version: main
-    app.kubernetes.io/name: container-object-storage-interface-controller
+    app: container-object-storage-interface-controller
 spec:
   replicas: 1
   strategy:
@@ -16,22 +13,15 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app.kubernetes.io/part-of: container-object-storage-interface
-      app.kubernetes.io/component: controller
-      app.kubernetes.io/version: main
-      app.kubernetes.io/name: container-object-storage-interface-controller
+      app: container-object-storage-interface-controller
   template:
     metadata:
       labels:
-        app.kubernetes.io/part-of: container-object-storage-interface
-        app.kubernetes.io/component: controller
-        app.kubernetes.io/version: main
-        app.kubernetes.io/name: container-object-storage-interface-controller
+        app: container-object-storage-interface-controller
     spec:
       serviceAccountName: objectstorage-controller-sa
       containers:
         - name: objectstorage-controller
           image: gcr.io/k8s-staging-sig-storage/objectstorage-controller:v20221027-v0.1.1-8-g300019f
-          imagePullPolicy: Always
           args:
-          - "--v=5"
+            - "--v=5"

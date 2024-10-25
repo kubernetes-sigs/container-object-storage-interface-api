@@ -41,22 +41,24 @@ var bucketclaimsKind = v1alpha1.SchemeGroupVersion.WithKind("BucketClaim")
 
 // Get takes name of the bucketClaim, and returns the corresponding bucketClaim object, and an error if there is any.
 func (c *FakeBucketClaims) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.BucketClaim, err error) {
+	emptyResult := &v1alpha1.BucketClaim{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(bucketclaimsResource, c.ns, name), &v1alpha1.BucketClaim{})
+		Invokes(testing.NewGetActionWithOptions(bucketclaimsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.BucketClaim), err
 }
 
 // List takes label and field selectors, and returns the list of BucketClaims that match those selectors.
 func (c *FakeBucketClaims) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.BucketClaimList, err error) {
+	emptyResult := &v1alpha1.BucketClaimList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(bucketclaimsResource, bucketclaimsKind, c.ns, opts), &v1alpha1.BucketClaimList{})
+		Invokes(testing.NewListActionWithOptions(bucketclaimsResource, bucketclaimsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -75,40 +77,43 @@ func (c *FakeBucketClaims) List(ctx context.Context, opts v1.ListOptions) (resul
 // Watch returns a watch.Interface that watches the requested bucketClaims.
 func (c *FakeBucketClaims) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(bucketclaimsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(bucketclaimsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a bucketClaim and creates it.  Returns the server's representation of the bucketClaim, and an error, if there is any.
 func (c *FakeBucketClaims) Create(ctx context.Context, bucketClaim *v1alpha1.BucketClaim, opts v1.CreateOptions) (result *v1alpha1.BucketClaim, err error) {
+	emptyResult := &v1alpha1.BucketClaim{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(bucketclaimsResource, c.ns, bucketClaim), &v1alpha1.BucketClaim{})
+		Invokes(testing.NewCreateActionWithOptions(bucketclaimsResource, c.ns, bucketClaim, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.BucketClaim), err
 }
 
 // Update takes the representation of a bucketClaim and updates it. Returns the server's representation of the bucketClaim, and an error, if there is any.
 func (c *FakeBucketClaims) Update(ctx context.Context, bucketClaim *v1alpha1.BucketClaim, opts v1.UpdateOptions) (result *v1alpha1.BucketClaim, err error) {
+	emptyResult := &v1alpha1.BucketClaim{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(bucketclaimsResource, c.ns, bucketClaim), &v1alpha1.BucketClaim{})
+		Invokes(testing.NewUpdateActionWithOptions(bucketclaimsResource, c.ns, bucketClaim, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.BucketClaim), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeBucketClaims) UpdateStatus(ctx context.Context, bucketClaim *v1alpha1.BucketClaim, opts v1.UpdateOptions) (*v1alpha1.BucketClaim, error) {
+func (c *FakeBucketClaims) UpdateStatus(ctx context.Context, bucketClaim *v1alpha1.BucketClaim, opts v1.UpdateOptions) (result *v1alpha1.BucketClaim, err error) {
+	emptyResult := &v1alpha1.BucketClaim{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(bucketclaimsResource, "status", c.ns, bucketClaim), &v1alpha1.BucketClaim{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(bucketclaimsResource, "status", c.ns, bucketClaim, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.BucketClaim), err
 }
@@ -123,7 +128,7 @@ func (c *FakeBucketClaims) Delete(ctx context.Context, name string, opts v1.Dele
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeBucketClaims) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(bucketclaimsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(bucketclaimsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.BucketClaimList{})
 	return err
@@ -131,11 +136,12 @@ func (c *FakeBucketClaims) DeleteCollection(ctx context.Context, opts v1.DeleteO
 
 // Patch applies the patch and returns the patched bucketClaim.
 func (c *FakeBucketClaims) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.BucketClaim, err error) {
+	emptyResult := &v1alpha1.BucketClaim{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(bucketclaimsResource, c.ns, name, pt, data, subresources...), &v1alpha1.BucketClaim{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(bucketclaimsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.BucketClaim), err
 }

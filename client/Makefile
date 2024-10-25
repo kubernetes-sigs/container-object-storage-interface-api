@@ -13,13 +13,13 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: generate
-generate: crds codegen fmt ## Run all code generation/modification tools.
+generate: crds codegen ## Run all code generation/modification tools.
 
 ##@ Generators
 
 .PHONY: crds
 crds: ## Generate CustomResourceDefinitions.
-	go run -v ./vendor/sigs.k8s.io/controller-tools/cmd/controller-gen crd paths="./apis/objectstorage/..."
+	go run -v sigs.k8s.io/controller-tools/cmd/controller-gen crd paths="./apis/objectstorage/..."
 
 .PHONY:
 codegen: ## Generate deepcopy, client, informer, and lister implementations.

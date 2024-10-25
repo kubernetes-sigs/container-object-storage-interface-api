@@ -19,8 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 	v1alpha1 "sigs.k8s.io/container-object-storage-interface-api/client/apis/objectstorage/v1alpha1"
 )
@@ -38,25 +38,17 @@ type BucketAccessLister interface {
 
 // bucketAccessLister implements the BucketAccessLister interface.
 type bucketAccessLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.BucketAccess]
 }
 
 // NewBucketAccessLister returns a new BucketAccessLister.
 func NewBucketAccessLister(indexer cache.Indexer) BucketAccessLister {
-	return &bucketAccessLister{indexer: indexer}
-}
-
-// List lists all BucketAccesses in the indexer.
-func (s *bucketAccessLister) List(selector labels.Selector) (ret []*v1alpha1.BucketAccess, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.BucketAccess))
-	})
-	return ret, err
+	return &bucketAccessLister{listers.New[*v1alpha1.BucketAccess](indexer, v1alpha1.Resource("bucketaccess"))}
 }
 
 // BucketAccesses returns an object that can list and get BucketAccesses.
 func (s *bucketAccessLister) BucketAccesses(namespace string) BucketAccessNamespaceLister {
-	return bucketAccessNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return bucketAccessNamespaceLister{listers.NewNamespaced[*v1alpha1.BucketAccess](s.ResourceIndexer, namespace)}
 }
 
 // BucketAccessNamespaceLister helps list and get BucketAccesses.
@@ -74,26 +66,5 @@ type BucketAccessNamespaceLister interface {
 // bucketAccessNamespaceLister implements the BucketAccessNamespaceLister
 // interface.
 type bucketAccessNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all BucketAccesses in the indexer for a given namespace.
-func (s bucketAccessNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.BucketAccess, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.BucketAccess))
-	})
-	return ret, err
-}
-
-// Get retrieves the BucketAccess from the indexer for a given namespace and name.
-func (s bucketAccessNamespaceLister) Get(name string) (*v1alpha1.BucketAccess, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("bucketaccess"), name)
-	}
-	return obj.(*v1alpha1.BucketAccess), nil
+	listers.ResourceIndexer[*v1alpha1.BucketAccess]
 }

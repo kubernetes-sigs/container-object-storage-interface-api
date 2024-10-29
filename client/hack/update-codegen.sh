@@ -20,6 +20,11 @@ set -o pipefail
 
 CLIENT_ROOT=$(unset CDPATH && cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)
 
+# because kubernetes/code-generator is used as a bash script instead of a go binary, it has to be
+# downloaded. kubernetes/code-generator project recommends vendor dir for this
+# this unfortunately requires downloading unnecessary other deps, but client has few
+go mod vendor
+
 source "${CLIENT_ROOT}/vendor/k8s.io/code-generator/kube_codegen.sh"
 
 kube::codegen::gen_helpers \
@@ -32,3 +37,6 @@ kube::codegen::gen_client \
     --boilerplate "${CLIENT_ROOT}/hack/boilerplate.go.txt" \
     --with-watch \
     "${CLIENT_ROOT}/apis"
+
+# an out-of date vendor dir can cause 'go vet' to fail, so delete it after we're done
+rm -rf "$CLIENT_ROOT"/vendor/

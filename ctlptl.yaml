@@ -8,3 +8,7 @@ apiVersion: ctlptl.dev/v1alpha1
 kind: Cluster
 product: kind
 registry: ctlptl-registry
+kindV1Alpha4Cluster:
+  nodes:
+  - role: control-plane
+    image: kindest/node:v1.31.1

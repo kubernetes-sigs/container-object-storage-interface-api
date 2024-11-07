@@ -99,37 +99,6 @@ clobber:
 	rm -rf $(CURDIR)/.cache
 
 ##
-## === TOOLS === #
-
-GOLANGCI_LINT_VERSION ?= v1.61.0
-
-TOOLBIN ?= $(CURDIR)/.cache/tools
-$(TOOLBIN):
-	mkdir -p $(TOOLBIN)
-
-GOLANGCI_LINT ?= $(TOOLBIN)/golangci-lint
-# .PHONY: golangci-lint
-# golangci-lint: $(GOLANGCI_LINT)
-$(GOLANGCI_LINT): $(TOOLBIN)
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
-
-# go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
-# $1 - target path with name of binary
-# $2 - package url which can be installed
-# $3 - specific version of package
-define go-install-tool
-@[ -f "$(1)-$(3)" ] || { \
-set -e; \
-package=$(2)@$(3) ;\
-echo "Downloading $${package}" ;\
-rm -f $(1) || true ;\
-GOBIN=$(TOOLBIN) go install $${package} ;\
-mv $(1) $(1)-$(3) ;\
-} ;\
-ln -sf $(1)-$(3) $(1)
-endef
-
-##
 ## === INTERMEDIATES === #
 
 %/Dockerfile: hack/Dockerfile.in hack/gen-dockerfile.sh
@@ -160,3 +129,88 @@ golangci-lint-fix.%: $(GOLANGCI_LINT)
 
 .PHONY: FORCE # use this to force phony behavior for targets with pattern rules
 FORCE:
+
+##@ Deployment
+
+.PHONY: cluster
+cluster: kind ctlptl ## Create Kind cluster and local registry
+	$(CTLPTL) apply -f ctlptl.yaml
+
+.PHONY: cluster-reset
+cluster-reset: kind ctlptl ## Delete Kind cluster
+	$(CTLPTL) delete -f ctlptl.yaml
+
+ifndef ignore-not-found
+  ignore-not-found = false
+endif
+
+.PHONY: deploy
+deploy: .gen kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build . | $(KUBECTL) apply -f -
+
+.PHONY: undeploy
+undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build . | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
+
+##@ Tools
+
+## Location to install dependencies to
+TOOLBIN ?= $(CURDIR)/.cache/tools
+$(TOOLBIN):
+	mkdir -p $(TOOLBIN)
+
+## Tool Binaries
+CHAINSAW ?= $(TOOLBIN)/chainsaw
+CTLPTL ?= $(TOOLBIN)/ctlptl
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+KIND ?= $(TOOLBIN)/kind
+KUBECTL ?= kubectl ## Special case, we do not manage it via tools.go
+KUSTOMIZE ?= $(TOOLBIN)/kustomize
+
+## Tool Versions
+CHAINSAW_VERSION ?= $(shell grep 'github.com/kyverno/chainsaw ' ./hack/tools/go.mod | cut -d ' ' -f 2)
+CTLPTL_VERSION ?= $(shell grep 'github.com/tilt-dev/ctlptl ' ./hack/tools/go.mod | cut -d ' ' -f 2)
+GOLANGCI_LINT_VERSION ?= $(shell grep 'github.com/golangci/golangci-lint ' ./hack/tools/go.mod | cut -d ' ' -f 2)
+KIND_VERSION ?= $(shell grep 'sigs.k8s.io/kind ' ./hack/tools/go.mod | cut -d ' ' -f 2)
+KUSTOMIZE_VERSION ?= $(shell grep 'sigs.k8s.io/kustomize/kustomize/v5 ' ./hack/tools/go.mod | cut -d ' ' -f 2)
+
+.PHONY: chainsaw
+chainsaw: $(CHAINSAW)$(CHAINSAW_VERSION) ## Download chainsaw locally if necessary.
+$(CHAINSAW)$(CHAINSAW_VERSION): $(TOOLBIN)
+	$(call go-install-tool,$(CHAINSAW),github.com/kyverno/chainsaw,$(CHAINSAW_VERSION))
+
+.PHONY: ctlptl
+ctlptl: $(CTLPTL)$(CTLPTL_VERSION) ## Download ctlptl locally if necessary.
+$(CTLPTL)$(CTLPTL_VERSION): $(TOOLBIN)
+	$(call go-install-tool,$(CTLPTL),github.com/tilt-dev/ctlptl/cmd/ctlptl,$(CTLPTL_VERSION))
+
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI_LINT)$(GOLANGCI_LINT_VERSION) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT)$(GOLANGCI_LINT_VERSION): $(LOCALBIN)
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+
+.PHONY: kind
+kind: $(KIND)$(KIND_VERSION) ## Download kind locally if necessary.
+$(KIND)$(KIND_VERSION): $(TOOLBIN)
+	$(call go-install-tool,$(KIND),sigs.k8s.io/kind,$(KIND_VERSION))
+
+.PHONY: kustomize
+kustomize: $(KUSTOMIZE)$(KUSTOMIZE_VERSION) ## Download kustomize locally if necessary.
+$(KUSTOMIZE)$(KUSTOMIZE_VERSION): $(TOOLBIN)
+	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
+
+# go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
+# $1 - target path with name of binary
+# $2 - package url which can be installed
+# $3 - specific version of package
+define go-install-tool
+@[ -f "$(1)-$(3)" ] || { \
+set -e; \
+package=$(2)@$(3) ;\
+echo "Downloading $${package}" ;\
+rm -f $(1) || true ;\
+GOBIN=$(TOOLBIN) go install $${package} ;\
+mv $(1) $(1)-$(3) ;\
+} ;\
+ln -sf $(1)-$(3) $(1)
+endef

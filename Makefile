@@ -66,15 +66,14 @@ vet: vet.client vet.controller vet.sidecar ## Vet code
 test: .test.proto test.client test.controller test.sidecar ## Run tests including unit tests
 
 .PHONY: test-e2e
-test-e2e: # Run e2e tests
-	@echo "unimplemented placeholder"
+test-e2e: chainsaw # Run e2e tests
+	$(CHAINSAW) test --values ./test/e2e/values.yaml
 
 .PHONY: lint
 lint: golangci-lint.client golangci-lint.controller golangci-lint.sidecar ## Run all linters (suggest `make -k`)
 
 .PHONY: lint-fix
 lint-fix: golangci-lint-fix.client golangci-lint-fix.controller golangci-lint-fix.sidecar ## Run all linters and perform fixes where possible (suggest `make -k`)
-
 
 ##@ Build
 

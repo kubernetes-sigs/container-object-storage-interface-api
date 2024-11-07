@@ -29,8 +29,8 @@ spec:
           apiVersion: apps/v1
           kind: Deployment
           metadata:
-            name: objectstorage-controller
-            namespace: default
+            name: container-object-storage-controller
+            namespace: container-object-storage-system
           status:
             availableReplicas: 1
   - name: Create test BucketClass and BucketAccessClass

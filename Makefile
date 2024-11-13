@@ -41,6 +41,11 @@ CONTROLLER_TAG ?= cosi-controller:latest
 ## Image tag for sidecar image build
 SIDECAR_TAG ?= cosi-provisioner-sidecar:latest
 
+## Location to install dependencies to
+TOOLBIN ?= $(CURDIR)/.cache/tools
+$(TOOLBIN):
+	mkdir -p $(TOOLBIN)
+
 ##@ Development
 
 .PHONY: all .gen
@@ -95,6 +100,7 @@ clean:
 ## Clean build environment and cached tools
 clobber:
 	$(MAKE) -C proto clobber
+	rm -rf $(TOOLBIN)
 	rm -rf $(CURDIR)/.cache
 
 ##
@@ -152,11 +158,6 @@ undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.
 	$(KUSTOMIZE) build . | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Tools
-
-## Location to install dependencies to
-TOOLBIN ?= $(CURDIR)/.cache/tools
-$(TOOLBIN):
-	mkdir -p $(TOOLBIN)
 
 ## Tool Binaries
 CHAINSAW ?= $(TOOLBIN)/chainsaw

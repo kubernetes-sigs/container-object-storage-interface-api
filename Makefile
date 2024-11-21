@@ -71,7 +71,7 @@ vet: vet.client vet.controller vet.sidecar ## Vet code
 test: .test.proto test.client test.controller test.sidecar ## Run tests including unit tests
 
 .PHONY: test-e2e
-test-e2e: chainsaw # Run e2e tests
+test-e2e: chainsaw # Run e2e tests against the K8s cluster specified in ~/.kube/config. It requires both controller and driver deployed. If you need to create a cluster beforehand, consider using 'cluster' and 'deploy' targets.
 	$(CHAINSAW) test --values ./test/e2e/values.yaml
 
 .PHONY: lint
@@ -145,17 +145,13 @@ cluster: kind ctlptl ## Create Kind cluster and local registry
 cluster-reset: kind ctlptl ## Delete Kind cluster
 	$(CTLPTL) delete -f ctlptl.yaml
 
-ifndef ignore-not-found
-  ignore-not-found = false
-endif
-
 .PHONY: deploy
-deploy: .gen kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config. The 'generate' and 'codegen' targets should be run manually, and are expected to be run at least once before the 'deploy' target, as those are not cached.
 	$(KUSTOMIZE) build . | $(KUBECTL) apply -f -
 
 .PHONY: undeploy
-undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build . | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
+undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build . | $(KUBECTL) delete --ignore-not-found=true -f -
 
 ##@ Tools
 

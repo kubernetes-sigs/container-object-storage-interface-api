@@ -2,7 +2,7 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: objectstorage-controller
+  name: controller
   labels:
     app: container-object-storage-interface-controller
 spec:
@@ -19,7 +19,7 @@ spec:
       labels:
         app: container-object-storage-interface-controller
     spec:
-      serviceAccountName: objectstorage-controller-sa
+      serviceAccountName: controller-sa
       containers:
         - name: objectstorage-controller
           image: gcr.io/k8s-staging-sig-storage/objectstorage-controller:v20221027-v0.1.1-8-g300019f

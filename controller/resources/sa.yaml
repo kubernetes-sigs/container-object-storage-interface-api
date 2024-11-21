@@ -2,4 +2,4 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: objectstorage-controller-sa
+  name: controller-sa

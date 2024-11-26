@@ -1,5 +1,7 @@
-![version](https://img.shields.io/badge/status-pre--alpha-lightgrey) ![apiVersion](https://img.shields.io/badge/apiVersion-v1alpha1-lightgreen)
+# MOVED: **This repo has been moved to https://github.com/kubernetes-sigs/container-object-storage-interface : see `client` directory**
 
+
+![version](https://img.shields.io/badge/status-pre--alpha-lightgrey) ![apiVersion](https://img.shields.io/badge/apiVersion-v1alpha1-lightgreen)
 
 # Container Object Storage Interface API
 
